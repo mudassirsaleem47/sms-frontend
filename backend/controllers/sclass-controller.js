@@ -1,0 +1,108 @@
+const Sclass = require('../models/sclassSchema.js');
+
+// 1. Nayi Class/Section Create karna
+const sclassCreate = async (req, res) => {
+    try {
+        const { sclassName, school } = req.body;
+        
+        // Check: Kya is school mein pehle se ye Class exist karti hai?
+        const sclassExists = await Sclass.findOne({ sclassName, school });
+
+        if (sclassExists) {
+            return res.status(400).json({ message: "Class already exists in this school." });
+        }
+
+        const newSclass = new Sclass(req.body);
+        const result = await newSclass.save();
+
+        res.status(201).json({ 
+            message: "Class created successfully!",
+            classId: result._id
+        });
+
+    } catch (err) {
+        res.status(500).json({ message: "Internal Server Error during Class Creation.", error: err.message });
+    }
+};
+
+// 2. Class List Fetch karna (School ID ke hisab se)
+const getSclassesBySchool = async (req, res) => {
+    try {
+        const { schoolId } = req.params;
+        
+        const sclasses = await Sclass.find({ school: schoolId });
+
+        if (sclasses.length === 0) {
+            return res.status(404).json({ message: "No classes found in this school." });
+        }
+
+        res.status(200).json(sclasses);
+
+    } catch (err) {
+        res.status(500).json({ message: "Internal Server Error while fetching classes.", error: err.message });
+    }
+};
+
+// 3. Class Delete karna
+const deleteSclass = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Class delete karne se pehle zaroori hai ke us class ke students, teachers ko bhi handle kiya jaye.
+        // Abhi hum sirf Class delete kar rahe hain.
+        const deletedClass = await Sclass.findByIdAndDelete(id);
+
+        if (!deletedClass) {
+            return res.status(404).json({ message: "Class not found." });
+        }
+
+        res.status(200).json({ message: "Class deleted successfully." });
+
+    } catch (err) {
+        res.status(500).json({ message: "Internal Server Error during Class Deletion.", error: err.message });
+    }
+};
+
+
+const addSection = async (req, res) => {
+    try {
+        // Class ID URL se milegi, Section Name body se
+        const { id } = req.params; 
+        const { sectionName } = req.body;
+
+        // Class dhoondo aur section push karo
+        const result = await Sclass.findByIdAndUpdate(
+            id,
+            { $push: { sections: { sectionName: sectionName } } },
+            { new: true } // Update hone ke baad wala data wapis karo
+        );
+
+        if (!result) return res.status(404).json({ message: "Class not found" });
+
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+// 5. Section Delete karna
+const deleteSection = async (req, res) => {
+    try {
+        const { id, sectionId } = req.params;
+
+        // Class dhoondo aur specific section ko 'pull' (nikal) do
+        const result = await Sclass.findByIdAndUpdate(
+            id,
+            { $pull: { sections: { _id: sectionId } } },
+            { new: true }
+        );
+
+        if (!result) return res.status(404).json({ message: "Class not found" });
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+// Export mein naye functions add karna mat bhoolna
+module.exports = { sclassCreate, getSclassesBySchool, deleteSclass, addSection, deleteSection };
