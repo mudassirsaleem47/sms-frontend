@@ -24,7 +24,7 @@ const Toast = ({ message, type, onClose }) => {
 
     const baseStyles = "fixed top-5 right-5 z-50 flex items-center gap-3 px-6 py-4 rounded-lg shadow-2xl";
     const typeStyles = type === 'success' 
-        ? "bg-white border-l-4 border-green-500 text-gray-800" 
+        ? "bg-white border-l-4 border-green-500 text-gray-800"
         : "bg-white border-l-4 border-red-500 text-gray-800";
     const animationStyles = isExiting ? "animate-slide-out" : "animate-slide-in";
 

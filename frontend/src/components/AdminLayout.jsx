@@ -1,8 +1,9 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Sidebar from './Sidebar'; // Sidebar ko alag se import karenge
+import Sidebar from './Sidebar';
+import NotificationCenter from './NotificationCenter';
 import { LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
   const { logout } = useAuth();
@@ -27,9 +28,12 @@ const AdminLayout = () => {
           <div className="text-sm text-gray-600">
             Welcome Back! 👋
           </div>
-          <div onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50 rounded-lg transition font-500 text-sm py-2 px-4">
-            <LogOut size={17} />
-                Logout
+          <div className="flex items-center gap-3">
+            <NotificationCenter />
+            <div onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-red-600 hover:bg-red-50 rounded-lg transition font-500 text-sm py-2 px-4">
+              <LogOut size={17} />
+                  Logout
+            </div>
           </div>
         </header>
 
@@ -42,6 +46,6 @@ const AdminLayout = () => {
       </div>
     </div>
   );
-};
+}; 
 
 export default AdminLayout;

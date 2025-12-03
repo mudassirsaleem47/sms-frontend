@@ -24,10 +24,28 @@ const studentAdmission = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Naya student object banana
+        // Handle file uploads
+        const studentPhoto = req.files && req.files['studentPhoto'] ? req.files['studentPhoto'][0].path : "";
+        const fatherPhoto = req.files && req.files['fatherPhoto'] ? req.files['fatherPhoto'][0].path : "";
+        const motherPhoto = req.files && req.files['motherPhoto'] ? req.files['motherPhoto'][0].path : "";
+        const guardianPhoto = req.files && req.files['guardianPhoto'] ? req.files['guardianPhoto'][0].path : "";
+
+        // Parse JSON fields
+        const father = req.body.father ? JSON.parse(req.body.father) : {};
+        const mother = req.body.mother ? JSON.parse(req.body.mother) : {};
+        const guardian = req.body.guardian ? JSON.parse(req.body.guardian) : {};
+        const transport = req.body.transport ? JSON.parse(req.body.transport) : {};
+        const siblings = req.body.siblings ? JSON.parse(req.body.siblings) : [];
+
         const newStudent = new Student({
-            ...req.body, // Name, details etc.
+            ...req.body,
             password: hashedPassword,
+            studentPhoto,
+            father: { ...father, photo: fatherPhoto },
+            mother: { ...mother, photo: motherPhoto },
+            guardian: { ...guardian, photo: guardianPhoto },
+            transport,
+            siblings
         });
 
         const result = await newStudent.save();
@@ -38,6 +56,7 @@ const studentAdmission = async (req, res) => {
         });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: "Internal Server Error during Admission.", error: err.message });
     }
 };
@@ -68,5 +87,25 @@ const getStudentsBySchool = async (req, res) => {
     }
 };
 
+const updateStudent = async (req, res) => {
+    try {
+        const studentId = req.params.id;
+        // Logic to update fields
+        const result = await Student.findByIdAndUpdate(studentId, req.body, { new: true });
+        res.status(200).json(result);
+    } catch (err) {
+        res.status(500).json({ message: "Error updating student", error: err.message });
+    }
+};
 
-module.exports = { studentAdmission, getStudentsBySchool };
+const deleteStudent = async (req, res) => {
+    try {
+        const studentId = req.params.id;
+        await Student.findByIdAndDelete(studentId);
+        res.status(200).json({ message: "Student deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Error deleting student", error: err.message });
+    }
+};
+
+module.exports = { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent };

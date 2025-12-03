@@ -1,13 +1,14 @@
 const router = require('express').Router();
 const upload = require('../middleware/uploadMiddleware');
 const { adminRegister, adminLogin } = require('../controllers/admin-controller.js');
-const { studentAdmission, getStudentsBySchool } = require('../controllers/student-controller.js');
+const { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent } = require('../controllers/student-controller.js');
 const { enquiryCreate, enquiryList, enquiryDelete, enquiryUpdate } = require('../controllers/enquiry-controller.js');
 const { sclassCreate, getSclassesBySchool, deleteSclass, addSection, deleteSection } = require('../controllers/sclass-controller.js');
 const { addTeacher, getTeachersBySchool, updateTeacher, deleteTeacher, assignClassToTeacher, removeClassFromTeacher } = require('../controllers/teacher-controller.js');
 const { visitorCreate, visitorList, visitorUpdate, visitorDelete } = require('../controllers/visitor-controller.js');
 const { createComplain, getComplains, getComplainById, updateComplain, deleteComplain } = require('../controllers/complain-controller.js');
 const { createPhoneCall, getPhoneCalls, getPhoneCallById, updatePhoneCall, deletePhoneCall } = require('../controllers/phonecall-controller.js');
+const { getNotifications, createNotification, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, getUnreadCount } = require('../controllers/notification-controller.js');
 
 
 // --- Admin Auth Routes ---
@@ -15,8 +16,20 @@ router.post('/AdminReg', adminRegister);
 router.post('/AdminLogin', adminLogin);
 
 // --- Student Routes ---
-router.post('/StudentRegister', studentAdmission); 
-router.get('/Students/:schoolId', getStudentsBySchool); 
+router.post('/StudentRegister', upload.fields([
+    { name: 'studentPhoto', maxCount: 1 },
+    { name: 'fatherPhoto', maxCount: 1 },
+    { name: 'motherPhoto', maxCount: 1 },
+    { name: 'guardianPhoto', maxCount: 1 }
+]), studentAdmission);
+router.get('/Students/:schoolId', getStudentsBySchool);
+router.put('/Student/:id', upload.fields([
+    { name: 'studentPhoto', maxCount: 1 },
+    { name: 'fatherPhoto', maxCount: 1 },
+    { name: 'motherPhoto', maxCount: 1 },
+    { name: 'guardianPhoto', maxCount: 1 }
+]), updateStudent);
+router.delete('/Student/:id', deleteStudent);
 
 // --- SClass (Academic) Routes ---
 router.post('/SclassCreate', sclassCreate);
@@ -58,6 +71,15 @@ router.get('/PhoneCalls/:schoolId', getPhoneCalls);
 router.get('/PhoneCall/:id', getPhoneCallById);
 router.put('/PhoneCall/:id', updatePhoneCall);
 router.delete('/PhoneCall/:id', deletePhoneCall);
+
+// --- Notification Routes ---
+router.get('/Notifications/:userId', getNotifications);
+router.post('/NotificationCreate', createNotification);
+router.put('/Notification/:id/read', markAsRead);
+router.put('/Notifications/read-all/:userId', markAllAsRead);
+router.delete('/Notification/:id', deleteNotification);
+router.delete('/Notifications/clear-all/:userId', clearAllNotifications);
+router.get('/Notifications/:userId/unread-count', getUnreadCount);
 
 
 module.exports = router;
