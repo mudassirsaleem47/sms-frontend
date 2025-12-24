@@ -30,7 +30,7 @@ const enquirySchema = new mongoose.Schema({
     // Assigned Teacher (User/Admin table se link hoga jinka role Teacher hai)
     assigned: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'admin', // Hum man rahe hain ke Teachers 'admin' collection mein hain
+        ref: 'teacher', // Changed from 'admin' to 'teacher'
         required: false
     },
     reference: {

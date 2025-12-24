@@ -35,7 +35,14 @@ const TeacherList = () => {
             setLoading(true);
             const schoolId = currentUser._id;
             
+            // Debug logging
+            console.log('👨‍🏫 Fetching teachers for School ID:', schoolId);
+            
+            // Clear previous data
+            setTeachers([]);
+            
             const response = await axios.get(`${API_BASE}/Teachers/${schoolId}`);
+            console.log(`✅ Loaded ${response.data.length} teachers`);
             setTeachers(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error("Error loading teachers", err);

@@ -61,4 +61,35 @@ const adminLogin = async (req, res) => {
     }
 };
 
-module.exports = { adminRegister, adminLogin };
+const getAdminDetail = async (req, res) => {
+    try {
+        let admin = await Admin.findById(req.params.id);
+        if (admin) {
+            admin.password = undefined;
+            res.send(admin);
+        } else {
+            res.send({ message: "No admin found" });
+        }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+}
+
+const updateAdmin = async (req, res) => {
+    try {
+        const { name, email, schoolName, address, phoneNumber, website } = req.body;
+        const updateData = { name, email, schoolName, address, phoneNumber, website };
+
+        if (req.file) {
+            updateData.schoolLogo = req.file.path;
+        }
+
+        const result = await Admin.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
+        result.password = undefined;
+        res.send(result);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+module.exports = { adminRegister, adminLogin, getAdminDetail, updateAdmin };

@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const upload = require('../middleware/uploadMiddleware');
-const { adminRegister, adminLogin } = require('../controllers/admin-controller.js');
-const { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent } = require('../controllers/student-controller.js');
+const { adminRegister, adminLogin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
+const { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent, getDisabledStudents } = require('../controllers/student-controller.js');
 const { enquiryCreate, enquiryList, enquiryDelete, enquiryUpdate } = require('../controllers/enquiry-controller.js');
 const { sclassCreate, getSclassesBySchool, deleteSclass, addSection, deleteSection } = require('../controllers/sclass-controller.js');
 const { addTeacher, getTeachersBySchool, updateTeacher, deleteTeacher, assignClassToTeacher, removeClassFromTeacher } = require('../controllers/teacher-controller.js');
@@ -14,6 +14,8 @@ const { getNotifications, createNotification, markAsRead, markAllAsRead, deleteN
 // --- Admin Auth Routes ---
 router.post('/AdminReg', adminRegister);
 router.post('/AdminLogin', adminLogin);
+router.get('/Admin/:id', getAdminDetail);
+router.put('/Admin/:id', upload.single('schoolLogo'), updateAdmin);
 
 // --- Student Routes ---
 router.post('/StudentRegister', upload.fields([
@@ -30,6 +32,7 @@ router.put('/Student/:id', upload.fields([
     { name: 'guardianPhoto', maxCount: 1 }
 ]), updateStudent);
 router.delete('/Student/:id', deleteStudent);
+router.get('/Students/Disabled/:schoolId', getDisabledStudents);
 
 // --- SClass (Academic) Routes ---
 router.post('/SclassCreate', sclassCreate);

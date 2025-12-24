@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Plus, Trash2, User, BookOpen, Users, Bus, Save, X, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../../context/ToastContext';
 
 const API_BASE = "http://localhost:5000";
 
 const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     const { currentUser } = useAuth();
+    const { showToast } = useToast();
     const [classesList, setClassesList] = useState([]);
     const [loading, setLoading] = useState(false);
     
@@ -86,7 +87,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
             setClassesList(res.data);
         } catch (err) {
             console.error("Error fetching classes:", err);
-            toast.error("Failed to load classes");
+            showToast("Failed to load classes", "error");
         }
     };
 
@@ -144,17 +145,17 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
 
         // Validation: Check if selected guardian details are filled
         if (guardianType === 'father' && !formData.father.name) {
-            toast.error("Please enter Father's Name");
+            showToast("Please enter Father's Name", "error");
             setLoading(false);
             return;
         }
         if (guardianType === 'mother' && !formData.mother.name) {
-            toast.error("Please enter Mother's Name");
+            showToast("Please enter Mother's Name", "error");
             setLoading(false);
             return;
         }
         if (guardianType === 'other' && !formData.guardian.name) {
-            toast.error("Please enter Guardian's Name");
+            showToast("Please enter Guardian's Name", "error");
             setLoading(false);
             return;
         }
@@ -182,11 +183,11 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            toast.success("Student admitted successfully!");
+            showToast("Student admitted successfully!", "success");
             if (onSuccess) onSuccess();
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.message || "Error admitting student");
+            showToast(err.response?.data?.message || "Error admitting student", "error");
         } finally {
             setLoading(false);
         }

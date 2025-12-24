@@ -31,6 +31,11 @@ const studentSchema = new mongoose.Schema({
         type: String,
         default: "Student"
     },
+    status: {
+        type: String,
+        enum: ['Active', 'Disabled'],
+        default: 'Active'
+    },
     // Personal Information
     firstName: String,
     lastName: String,

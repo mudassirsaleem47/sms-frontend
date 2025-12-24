@@ -37,7 +37,11 @@ const PhoneCallLog = () => {
             setLoading(true);
             const schoolId = currentUser._id;
             
+            console.log('📞 Fetching phone calls for School ID:', schoolId);
+            setPhoneCalls([]);
+            
             const response = await axios.get(`${API_BASE}/PhoneCalls/${schoolId}`);
+            console.log(`✅ Loaded ${response.data.length} phone calls`);
             setPhoneCalls(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error("Error loading phone calls", err);

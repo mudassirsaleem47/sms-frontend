@@ -68,10 +68,10 @@ const getStudentsBySchool = async (req, res) => {
         
         // Find students belonging to this school ID
         // .populate('sclassName') se class ka poora data bhi saath mein aa jayega
-        const students = await Student.find({ school: schoolId }).populate('sclassName');
+        const students = await Student.find({ school: schoolId, status: "Active" }).populate('sclassName');
 
         if (students.length === 0) {
-            return res.status(404).json({ message: "No students found in this school." });
+            return res.status(200).json([]);
         }
 
         // Security: Password ko response se hata diya
@@ -84,6 +84,29 @@ const getStudentsBySchool = async (req, res) => {
 
     } catch (err) {
         res.status(500).json({ message: "Internal Server Error while fetching students.", error: err.message });
+    }
+};
+
+// 3. Disabled Student List Fetch karna
+const getDisabledStudents = async (req, res) => {
+    try {
+        const { schoolId } = req.params;
+
+        const students = await Student.find({ school: schoolId, status: "Disabled" }).populate('sclassName');
+
+        if (students.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const safeStudents = students.map(student => {
+            const { password, ...rest } = student.toObject();
+            return rest;
+        });
+
+        res.status(200).json(safeStudents);
+
+    } catch (err) {
+        res.status(500).json({ message: "Internal Server Error while fetching disabled students.", error: err.message });
     }
 };
 
@@ -108,4 +131,4 @@ const deleteStudent = async (req, res) => {
     }
 };
 
-module.exports = { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent };
+module.exports = { studentAdmission, getStudentsBySchool, updateStudent, deleteStudent, getDisabledStudents };

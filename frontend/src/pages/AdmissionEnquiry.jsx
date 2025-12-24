@@ -39,12 +39,21 @@ const AdmissionEnquiry = () => {
             setLoading(true);
             const schoolId = currentUser._id;
             
+            // Debug logging
+            console.log('📋 Fetching enquiries for School ID:', schoolId);
+            
+            // Clear previous data
+            setEnquiries([]);
+            setClassesList([]);
+            setTeachersList([]);
+            
             const [enqRes, classRes, teachRes] = await Promise.all([
                 axios.get(`${API_BASE}/EnquiryList/${schoolId}`),
                 axios.get(`${API_BASE}/Sclasses/${schoolId}`),
                 axios.get(`${API_BASE}/Teachers/${schoolId}`).catch(() => ({ data: [] }))
             ]);
 
+            console.log(`✅ Loaded ${enqRes.data.length} enquiries`);
             setEnquiries(Array.isArray(enqRes.data) ? enqRes.data : []);
             setClassesList(classRes.data);
             setTeachersList(teachRes.data);

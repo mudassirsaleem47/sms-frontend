@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import Toast from '../components/Toast';
 import axios from 'axios';
+import { useAuth } from './AuthContext';
 
 const ToastContext = createContext();
 
@@ -10,19 +11,24 @@ export const ToastProvider = ({ children }) => {
     const [toast, setToast] = useState(null);
     const [notifications, setNotifications] = useState([]);
     const [userId, setUserId] = useState(null);
+    
+    const { currentUser } = useAuth();
 
-    // Get userId from localStorage (assuming it's stored during login)
+    // Get userId from AuthContext
     useEffect(() => {
-        const adminData = JSON.parse(localStorage.getItem('adminData'));
-        if (adminData && adminData._id) {
-            setUserId(adminData._id);
+        if (currentUser && currentUser._id) {
+            setUserId(currentUser._id);
+        } else {
+            setUserId(null);
         }
-    }, []);
+    }, [currentUser]);
 
     // Fetch notifications from backend when userId is available
     useEffect(() => {
         if (userId) {
             fetchNotifications();
+        } else {
+            setNotifications([]);
         }
     }, [userId]);
 
@@ -73,7 +79,7 @@ export const ToastProvider = ({ children }) => {
             }
         } catch (error) {
             console.error('Failed to save notification:', error);
-            // Fallback to local storage if backend fails
+            // Fallback to local state if backend fails (no persistence)
             const newNotification = {
                 id: Date.now() + Math.random(),
                 message,

@@ -12,6 +12,8 @@ import VisitorBook from './pages/VisitorBook';
 import PhoneCallLog from './pages/PhoneCallLog';
 import ComplainPage from './pages/ComplainPage';
 import StudentAdmission from './pages/StudentAdmission';
+import DisabledStudents from './pages/DisabledStudents';
+import SettingsProfile from './pages/SettingsProfile';
 
 
 import { ToastProvider } from './context/ToastContext';
@@ -39,6 +41,8 @@ function App() {
                 <Route path="phone-calls" element={<PhoneCallLog />} />
                 <Route path="complain" element={<ComplainPage />} />
                 <Route path="admission" element={<StudentAdmission />} />
+                <Route path="students/disabled" element={<DisabledStudents />} />
+                <Route path="settings" element={<SettingsProfile />} />
              </Route>
           </Route>
         </Routes>

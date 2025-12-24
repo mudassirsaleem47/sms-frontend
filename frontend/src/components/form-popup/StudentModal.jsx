@@ -14,7 +14,8 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         name: '',
         rollNum: '',
         password: '',
-        sclassName: ''
+        sclassName: '',
+        status: 'Active'
     });
 
     const [classesList, setClassesList] = useState([]);
@@ -43,7 +44,8 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 name: initialData.name || '',
                 rollNum: initialData.rollNum || '',
                 password: '', // Don't include password in edit mode
-                sclassName: initialData.sclassName?._id || ''
+                sclassName: initialData.sclassName?._id || '',
+                status: initialData.status || 'Active'
             };
             setFormData(formattedData);
         } else {
@@ -156,6 +158,21 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     ))}
                                 </select>
                             </div>
+
+                            {initialData && (
+                                <div>
+                                    <label className="block text-sm font-600 text-gray-700 mb-2">Status</label>
+                                    <select 
+                                        name="status" 
+                                        value={formData.status} 
+                                        onChange={handleChange} 
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Disabled">Disabled</option>
+                                    </select>
+                                </div>
+                            )}
                         </div>
                     </div>
 

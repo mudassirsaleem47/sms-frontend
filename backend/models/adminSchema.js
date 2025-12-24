@@ -22,6 +22,18 @@ const adminSchema = new mongoose.Schema({
         type: String,
         unique: true,
         required: true
+    },
+    schoolLogo: {
+        type: String,
+    },
+    address: {
+        type: String,
+    },
+    phoneNumber: {
+        type: String,
+    },
+    website: {
+        type: String,
     }
 });
 

@@ -37,7 +37,11 @@ const VisitorBook = () => {
             setLoading(true);
             const schoolId = currentUser._id;
             
+            console.log('👥 Fetching visitors for School ID:', schoolId);
+            setVisitors([]);
+            
             const response = await axios.get(`${API_BASE}/Visitors/${schoolId}`);
+            console.log(`✅ Loaded ${response.data.length} visitors`);
             setVisitors(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error("Error loading visitors", err);

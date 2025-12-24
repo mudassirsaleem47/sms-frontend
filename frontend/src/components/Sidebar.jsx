@@ -38,6 +38,7 @@ const Sidebar = ({ onLogout }) => {
             children: [
                 { name: 'Students Details', path: '/admin/students' },
                 { name: 'Student Admission', path: '/admin/admission' },
+                { name: 'Disabled Students', path: '/admin/students/disabled' },
             ]
         },
         { 
