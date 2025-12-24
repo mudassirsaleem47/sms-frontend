@@ -208,7 +208,7 @@ const TeacherList = () => {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{teacher.qualification}</td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{teacher.experience} years</td>
-                                            <td className="px-6 py-4 text-sm text-gray-900 font-600">₹{teacher.salary?.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 font-600">Rs. {teacher.salary?.toLocaleString()}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-3">
                                                     <button 

@@ -55,8 +55,9 @@ const Sidebar = ({ onLogout }) => {
             icon: DollarSign, 
             type: 'dropdown',
             children: [
-                { name: 'Collect Fees', path: '/admin/fees/collect' },
-                { name: 'Fee Structure', path: '/admin/fees/structure' },
+                { name: 'Collect Fees', path: '/admin/fee-collection' },
+                { name: 'Fee Management', path: '/admin/fee-management' },
+                { name: 'Fee Reports', path: '/admin/fee-reports' },
             ]
         },
         { name: 'Reports', path: '/admin/reports', icon: FileText, type: 'link' },

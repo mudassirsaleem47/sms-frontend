@@ -9,6 +9,7 @@ const { visitorCreate, visitorList, visitorUpdate, visitorDelete } = require('..
 const { createComplain, getComplains, getComplainById, updateComplain, deleteComplain } = require('../controllers/complain-controller.js');
 const { createPhoneCall, getPhoneCalls, getPhoneCallById, updatePhoneCall, deletePhoneCall } = require('../controllers/phonecall-controller.js');
 const { getNotifications, createNotification, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications, getUnreadCount } = require('../controllers/notification-controller.js');
+const { createFeeStructure, getFeeStructuresBySchool, updateFeeStructure, deleteFeeStructure, assignFeeToStudents, getStudentFees, getPendingFees, collectFee, getFeeTransactions, getReceiptDetails, getFeeStatistics } = require('../controllers/fee-controller.js');
 
 
 // --- Admin Auth Routes ---
@@ -83,6 +84,19 @@ router.put('/Notifications/read-all/:userId', markAllAsRead);
 router.delete('/Notification/:id', deleteNotification);
 router.delete('/Notifications/clear-all/:userId', clearAllNotifications);
 router.get('/Notifications/:userId/unread-count', getUnreadCount);
+
+// --- Fee Management Routes ---
+router.post('/FeeStructureCreate', createFeeStructure);
+router.get('/FeeStructures/:schoolId', getFeeStructuresBySchool);
+router.put('/FeeStructure/:id', updateFeeStructure);
+router.delete('/FeeStructure/:id', deleteFeeStructure);
+router.post('/AssignFee', assignFeeToStudents);
+router.get('/StudentFees/:studentId', getStudentFees);
+router.get('/PendingFees/:schoolId', getPendingFees);
+router.post('/CollectFee', collectFee);
+router.get('/FeeTransactions/:schoolId', getFeeTransactions);
+router.get('/FeeReceipt/:transactionId', getReceiptDetails);
+router.get('/FeeStatistics/:schoolId', getFeeStatistics);
 
 
 module.exports = router;
