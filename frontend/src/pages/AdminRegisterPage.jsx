@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { UserPlus, Mail, Lock, Building2, AlertCircle, CheckCircle, User } from 'lucide-react';
+import API_URL from '../config/api.js';
 
-const API_URL = "http://localhost:5000/AdminReg";
+const REGISTER_URL = `${API_URL}/AdminReg`;
 
 const AdminRegisterPage = () => {
     const navigate = useNavigate();
@@ -27,7 +28,7 @@ const AdminRegisterPage = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post(API_URL, formData);
+            const res = await axios.post(REGISTER_URL, formData);
             setMessageType('success');
             setMessage(`Admin registered successfully! School ID: ${res.data.schoolName}`);
             setFormData({ name: '', email: '', password: '', schoolName: '' });

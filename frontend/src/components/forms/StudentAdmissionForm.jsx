@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Upload, Plus, Trash2, User, BookOpen, Users, Bus, Save, X, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useCampus } from '../../context/CampusContext';
 import { useToast } from '../../context/ToastContext';
-
-const API_BASE = "http://localhost:5000";
+import API_URL from '../../config/api.js';
 
 const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     const { currentUser } = useAuth();
+    const { campuses, selectedCampus } = useCampus();
     const { showToast } = useToast();
     const [classesList, setClassesList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,6 +24,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
         sclassName: '',
         section: '', // Added Section
         school: currentUser?._id,
+        campus: selectedCampus?._id || '', // Campus field
         
         // Personal Info
         firstName: '',
@@ -83,7 +85,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
 
     const fetchClasses = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const res = await axios.get(`${API_URL}/Sclasses/${currentUser._id}`);
             setClassesList(res.data);
         } catch (err) {
             console.error("Error fetching classes:", err);
@@ -179,7 +181,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 if (photos[key]) data.append(key, photos[key]);
             });
 
-            await axios.post(`${API_BASE}/StudentRegister`, data, {
+            await axios.post(`${API_URL}/StudentRegister`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
@@ -230,6 +232,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                                 onChange={handleChange} 
                                 required
                                 options={sectionsList.map(sec => ({ value: sec.sectionName, label: sec.sectionName }))}
+                            />
+                            <SelectField
+                                label="Campus"
+                                name="campus"
+                                value={formData.campus}
+                                onChange={handleChange}
+                                options={campuses.map(campus => ({ value: campus._id, label: campus.campusName }))}
                             />
 
                             <InputField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required />

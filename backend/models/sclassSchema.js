@@ -12,6 +12,11 @@ const sclassSchema = new mongoose.Schema({
     school: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'admin'
+    },
+    campus: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'campus',
+        required: false // Optional for backward compatibility
     }
 }, { timestamps: true });
 

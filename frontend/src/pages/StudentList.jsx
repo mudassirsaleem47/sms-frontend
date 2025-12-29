@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import StudentModal from '../components/form-popup/StudentModal';
 import StudentDetailsModal from '../components/form-popup/StudentDetailsModal';
@@ -13,6 +14,7 @@ const API_BASE = "http://localhost:5000";
 
 const StudentList = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const navigate = useNavigate();
     
@@ -70,8 +72,11 @@ const StudentList = () => {
     }, [currentUser, showToast]);
 
     useEffect(() => {
-        if (currentUser) fetchData();
-    }, [currentUser, fetchData]);
+        if (currentUser) {
+            console.log('🏫 Selected Campus:', selectedCampus?.campusName || 'All Campuses');
+            fetchData();
+        }
+    }, [currentUser, selectedCampus, fetchData]);
 
     // --- 2. Action Handlers ---
 
@@ -173,11 +178,17 @@ const StudentList = () => {
         // Section Filter
         const matchesSection = !filterSection || student.section === filterSection;
 
-        return matchesSearch && matchesClass && matchesSection;
+        // Campus Filter - only filter if a specific campus is selected
+        const matchesCampus = !selectedCampus || student.campus?._id === selectedCampus._id || student.campus === selectedCampus._id;
+
+        return matchesSearch && matchesClass && matchesSection && matchesCampus;
     });
 
+    // Debug log to see filtering results
+    console.log(`📊 Total Students: ${students.length}, Filtered: ${filteredStudents.length}, Selected Campus: ${selectedCampus?.campusName || 'All'}`);
+
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
+        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-6 lg:p-8">
             
             {/* Header Section */}
             <div>
@@ -196,10 +207,10 @@ const StudentList = () => {
                                 <span className="text-gray-900 font-semibold">{selectedClass.sclassName}</span>
                             </div>
                         )}
-                        <h1 className="text-4xl font-bold text-gray-900">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                             {viewType === 'classes' ? 'Student Management' : `${selectedClass?.sclassName || 'Class'} Students`}
                         </h1>
-                        <p className="text-gray-600 mt-2">
+                        <p className="text-sm md:text-base text-gray-600 mt-2">
                             {viewType === 'classes'
                                 ? 'Select a class to view and manage students'
                                 : `Manage students in ${selectedClass?.sclassName || 'this class'}`
@@ -211,10 +222,11 @@ const StudentList = () => {
                     {viewType === 'students' && (
                         <button
                             onClick={handleBackToClasses}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base"
                         >
                             <ArrowLeft size={18} />
-                            Back to Classes
+                            <span className="hidden sm:inline">Back to Classes</span>
+                            <span className="sm:hidden">Back</span>
                         </button>
                     )}
                 </div>
@@ -278,14 +290,14 @@ const StudentList = () => {
                                 className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                                 title="List View"
                             >
-                                <ListIcon size={20} />
+                                <ListIcon size={18} className="md:w-5 md:h-5" />
                             </button>
                             <button
                                 onClick={() => setViewMode('grid')}
                                 className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
                                 title="Grid View"
                             >
-                                <LayoutGrid size={20} />
+                                <LayoutGrid size={18} className="md:w-5 md:h-5" />
                             </button>
                         </div>
                     </div>
@@ -396,8 +408,9 @@ const StudentList = () => {
                             {/* LIST VIEW */}
                             {viewMode === 'list' && (
                                 <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                                                    {/* Add horizontal scroll wrapper for mobile */}
                                     <div className="overflow-x-auto">
-                                        <table className="w-full">
+                                                        <table className="w-full min-w-[800px]">
                                             <thead>
                                                 <tr className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Admission No</th>

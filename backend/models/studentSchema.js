@@ -27,6 +27,11 @@ const studentSchema = new mongoose.Schema({
         ref: 'admin', // Link to Admin/School
         required: true
     },
+    campus: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'campus', // Link to Campus
+        required: false // Optional for backward compatibility
+    },
     role: {
         type: String,
         default: "Student"

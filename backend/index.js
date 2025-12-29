@@ -11,7 +11,15 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware (Data samajhne ke liye)
 app.use(express.json());
-app.use(cors());
+// CORS configuration for local network access
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://192.168.10.5:5173'  // Your local network IP
+    ],
+    credentials: true
+}));
 app.use('/uploads', express.static('uploads'));
 
 // Basic Route (Check karne ke liye ke server chal raha hai ya nahi)
@@ -26,8 +34,9 @@ mongoose
     .connect(process.env.MONGO_URL)
     .then(() => {
         console.log("✅ MongoDB Connected Successfully");
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server started on port ${PORT}`);
+            console.log(`📱 Access from other devices: http://<YOUR_IP>:${PORT}`);
         });
     })
     .catch((err) => {

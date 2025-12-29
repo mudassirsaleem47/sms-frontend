@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import API_URL from '../config/api.js';
 
 export const AuthContext = createContext();
 
-const API_URL = "http://localhost:5000/AdminLogin"; 
+const LOGIN_URL = `${API_URL}/AdminLogin`; 
 
 // Local Storage se data load karne ka function
 const getInitialUser = () => {
@@ -45,7 +46,7 @@ export const AuthContextProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.post(API_URL, credentials);
+            const res = await axios.post(LOGIN_URL, credentials);
             
             console.log('✅ Login successful!');
             setCurrentUser(res.data);

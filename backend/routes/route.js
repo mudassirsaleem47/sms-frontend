@@ -19,6 +19,9 @@ const {
     createMarksGrade, getMarksGradesBySchool, updateMarksGrade, deleteMarksGrade,
     createMarksDivision, getMarksDivisionsBySchool, updateMarksDivision, deleteMarksDivision
 } = require('../controllers/examination-controller.js');
+const { createCampus, getCampusesBySchool, getCampusById, updateCampus, deleteCampus, getCampusStats } = require('../controllers/campus-controller.js');
+const { createStaff, getStaffBySchool, getStaffById, updateStaff, deleteStaff, resetStaffPassword, staffLogin } = require('../controllers/staff-controller.js');
+
 
 
 // --- Admin Auth Routes ---
@@ -153,6 +156,24 @@ router.post('/MarksDivisionCreate', createMarksDivision);
 router.get('/MarksDivisions/:schoolId', getMarksDivisionsBySchool);
 router.put('/MarksDivision/:id', updateMarksDivision);
 router.delete('/MarksDivision/:id', deleteMarksDivision);
+
+// --- Campus Management Routes ---
+router.post('/Campus', createCampus);
+router.get('/Campuses/:schoolId', getCampusesBySchool);
+router.get('/Campus/:id', getCampusById);
+router.put('/Campus/:id', updateCampus);
+router.delete('/Campus/:id', deleteCampus);
+router.get('/CampusStats/:id', getCampusStats);
+
+
+// --- Staff Management Routes ---
+router.post('/StaffLogin', staffLogin);
+router.post('/Staff', createStaff);
+router.get('/Staff/:schoolId', getStaffBySchool);
+router.get('/StaffDetail/:id', getStaffById);
+router.put('/Staff/:id', updateStaff);
+router.delete('/Staff/:id', deleteStaff);
+router.put('/Staff/:id/resetPassword', resetStaffPassword);
 
 
 module.exports = router;

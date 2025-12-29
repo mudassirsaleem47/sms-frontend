@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import logo from '../assets/spark-logo.svg';
+import { X } from 'lucide-react';
 
 import { 
     Home, BookOpen, GraduationCap, DollarSign, Briefcase,
-    ChevronDown, ChevronRight, Settings, FileText, ChevronsRight, Wallet
+    ChevronDown, ChevronRight, Settings, FileText, ChevronsRight, Wallet, Users
 } from 'lucide-react';
 
-const Sidebar = ({ onLogout }) => {
+const Sidebar = ({ onLogout, isOpen, onClose }) => {
     const location = useLocation();
     const [openMenu, setOpenMenu] = useState(null);
 
@@ -16,6 +17,13 @@ const Sidebar = ({ onLogout }) => {
             setOpenMenu(null);
         } else {
             setOpenMenu(menuName);
+        }
+    };
+
+    const handleLinkClick = () => {
+        // Close sidebar on mobile when a link is clicked
+        if (onClose) {
+            onClose();
         }
     };
 
@@ -47,7 +55,6 @@ const Sidebar = ({ onLogout }) => {
             type: 'dropdown',
             children: [
                 { name: 'Classes', path: '/admin/classes' },
-                { name: 'Teachers', path: '/admin/teachers' },
             ]
         },
         { 
@@ -82,94 +89,123 @@ const Sidebar = ({ onLogout }) => {
                 { name: 'Marks Division', path: '/admin/marks-division' },
             ]
         },
+        { name: 'Staff Management', path: '/admin/staff', icon: Users, type: 'link' },
         { name: 'Reports', path: '/admin/reports', icon: FileText, type: 'link' },
         { name: 'Settings', path: '/admin/settings', icon: Settings, type: 'link' },
     ];
 
     return (
-        <div className="w-64 pb-5 flex flex-col border-r overflow-y-auto" style={{ backgroundColor: 'var(--sidebar-bg)', color: '#ffffff' }}>
-            
-            {/* Logo Section */}
-            <div className="p-3 pl-7 border-b flex items-center  gap-3" style={{ borderColor: '#262626' }}>
-                <a href="/admin/dashboard">
-                <img src={logo}  className="h-15 w-auto" />
-                </a>
-            </div>
-            
-            {/* Navigation Links */}
-            <nav className="flex-1 px-3 py-4 space-y-1">
-                {navItems.map((item, index) => (
-                    <div key={index}>
-                        
-                        {/* CASE 1: Simple Link */}
-                        {item.type === 'link' ? (
-                            <NavLink
-                                to={item.path}
-                                className={({ isActive }) => 
-                                    `flex items-center px-3 py-2.5 rounded-lg transition duration-200 text-sm font-500
-                                    ${isActive 
-                                        ? 'text-white' 
-                                        : 'text-gray-300 hover:text-white'}`
-                                }
-                                style={({ isActive }) => ({
-                                    backgroundColor: isActive ? 'var(--navitem-bg-hover)' : 'transparent'
-                                })}
-                            >
-                                <item.icon className="w-5 h-5 mr-3" />
-                                <span>{item.name}</span>
-                            </NavLink>
-                        ) : (
-                            
-                        /* CASE 2: Dropdown Menu */
-                            <div>
-                                <button
-                                    onClick={() => toggleMenu(item.name)}
-                                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition duration-200 text-sm font-500
-                                        ${(openMenu === item.name || location.pathname.includes(item.name.toLowerCase())) 
-                                            ? 'text-white' 
+        <>
+            {/* Mobile Overlay/Backdrop */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+                    onClick={onClose}
+                />
+            )}
+
+            {/* Sidebar */}
+            <div
+                className={`
+                    fixed md:static inset-y-0 left-0 z-50
+                    w-64 pb-5 flex flex-col border-r overflow-y-auto
+                    transform transition-transform duration-300 ease-in-out
+                    ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                `}
+                style={{ backgroundColor: 'var(--sidebar-bg)', color: '#ffffff' }}
+            >
+
+                {/* Logo Section */}
+                <div className="p-3 pl-7 border-b flex items-center justify-between gap-3" style={{ borderColor: '#262626' }}>
+                    <a href="/admin/dashboard">
+                        <img src={logo} className="h-15 w-auto" alt="Logo" />
+                    </a>
+                    {/* Close button for mobile */}
+                    <button
+                        onClick={onClose}
+                        className="md:hidden p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                        <X className="w-5 h-5 text-gray-300" />
+                    </button>
+                </div>
+
+                {/* Navigation Links */}
+                <nav className="flex-1 px-3 py-4 space-y-1">
+                    {navItems.map((item, index) => (
+                        <div key={index}>
+
+                            {/* CASE 1: Simple Link */}
+                            {item.type === 'link' ? (
+                                <NavLink
+                                    to={item.path}
+                                    onClick={handleLinkClick}
+                                    className={({ isActive }) =>
+                                        `flex items-center px-3 py-2.5 rounded-lg transition duration-200 text-sm font-500
+                                        ${isActive
+                                            ? 'text-white'
                                             : 'text-gray-300 hover:text-white'}`
                                     }
-                                    style={{
-                                        backgroundColor: (openMenu === item.name || location.pathname.includes(item.name.toLowerCase())) 
-                                            ? 'var(--navitem-bg-hover)' 
-                                            : 'transparent'
-                                    }}
+                                    style={({ isActive }) => ({
+                                        backgroundColor: isActive ? 'var(--navitem-bg-hover)' : 'transparent'
+                                    })}
                                 >
-                                    <div className="flex items-center">
-                                        <item.icon className="w-5 h-5 mr-3" />
-                                        <span>{item.name}</span>
-                                    </div>
-                                    {openMenu === item.name ? (
-                                        <ChevronDown className="w-4 h-4" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4 opacity-70" />
-                                    )}
-                                </button>
+                                    <item.icon className="w-5 h-5 mr-3" />
+                                    <span>{item.name}</span>
+                                </NavLink>
+                            ) : (
 
-                                {/* Sub-menu Items */}
-                                {openMenu === item.name && (
-                                    <div className="ml-2 space-y-1 rounded-lg  transition-all duration-300">
-                                        {item.children.map((child, childIndex) => (
-                                            <NavLink
-                                                key={childIndex}
-                                                to={child.path}
-                                                className={({ isActive }) => 
-                                                    `flex items-center gap-2 px-3 pt-2 text-sm rounded transition
-                                                    ${isActive ? 'font-500 text-white' : 'text-gray-400 hover:text-gray-200'}`
-                                                }
-                                            >
-                                                <ChevronsRight className="w-4 h-4" />
-                                                {child.name}
-                                            </NavLink>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </nav>
-        </div>
+                                /* CASE 2: Dropdown Menu */
+                                <div>
+                                    <button
+                                        onClick={() => toggleMenu(item.name)}
+                                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition duration-200 text-sm font-500
+                                            ${(openMenu === item.name || location.pathname.includes(item.name.toLowerCase()))
+                                                ? 'text-white'
+                                                : 'text-gray-300 hover:text-white'}`
+                                        }
+                                        style={{
+                                            backgroundColor: (openMenu === item.name || location.pathname.includes(item.name.toLowerCase()))
+                                                ? 'var(--navitem-bg-hover)'
+                                                : 'transparent'
+                                        }}
+                                    >
+                                        <div className="flex items-center">
+                                            <item.icon className="w-5 h-5 mr-3" />
+                                            <span>{item.name}</span>
+                                        </div>
+                                        {openMenu === item.name ? (
+                                            <ChevronDown className="w-4 h-4" />
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4 opacity-70" />
+                                        )}
+                                    </button>
+
+                                        {/* Sub-menu Items */}
+                                        {openMenu === item.name && (
+                                            <div className="ml-2 space-y-1 rounded-lg transition-all duration-300">
+                                                {item.children.map((child, childIndex) => (
+                                                    <NavLink
+                                                        key={childIndex}
+                                                        to={child.path}
+                                                        onClick={handleLinkClick}
+                                                        className={({ isActive }) =>
+                                                            `flex items-center gap-2 px-3 pt-2 text-sm rounded transition
+                                                        ${isActive ? 'font-500 text-white' : 'text-gray-400 hover:text-gray-200'}`
+                                                        }
+                                                    >
+                                                        <ChevronsRight className="w-4 h-4" />
+                                                        {child.name}
+                                                    </NavLink>
+                                                ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </nav>
+            </div>
+        </>
     );
 };
 

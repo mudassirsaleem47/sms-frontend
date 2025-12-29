@@ -14,6 +14,7 @@ import {
   Filter,
   X
 } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const API_BASE = "http://localhost:5000";
 
@@ -33,6 +34,8 @@ const ExpenseManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   
   const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
     setShowModal(false);
@@ -118,16 +121,21 @@ const ExpenseManagement = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this expense entry?')) {
-      try {
-        await axios.delete(`${API_BASE}/Expense/${id}`);
-        showToast('Expense deleted successfully!', 'success');
-        fetchData();
-      } catch (error) {
-        showToast(error.response?.data?.message || 'Error deleting expense', 'error');
-      }
+  const handleDelete = (id) => {
+    setDeletingId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`${API_BASE}/Expense/${deletingId}`);
+      showToast('Expense deleted successfully!', 'success');
+      fetchData();
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Error deleting expense', 'error');
     }
+    setShowDeleteConfirm(false);
+    setDeletingId(null);
   };
 
   const resetForm = () => {
@@ -203,10 +211,10 @@ const ExpenseManagement = () => {
       </div>
 
       {/* Expense Table Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg pt-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Expense Entries</h2>
-          <div className="flex gap-3">
+          <h2 className="text-2xl ml-6 font-bold text-gray-900">Expense Entries</h2>
+          <div className="flex gap-3 mr-6">
             {/* Category Filter */}
             <select
               value={filterCategory}
@@ -426,6 +434,17 @@ const ExpenseManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+        onConfirm={confirmDelete}
+        title="Delete Expense Entry"
+        message="Are you sure you want to delete this expense entry? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

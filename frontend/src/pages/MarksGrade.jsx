@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { Award, Plus, Edit, Trash2, TrendingUp } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const API_BASE = "http://localhost:5000";
 
@@ -15,6 +16,8 @@ const MarksGrade = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
   
   const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
     setShowModal(false);
@@ -91,16 +94,21 @@ const MarksGrade = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this grade?')) {
-      try {
-        await axios.delete(`${API_BASE}/MarksGrade/${id}`);
+    const handleDelete = (id) => {
+        setDeletingId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await axios.delete(`${API_BASE}/MarksGrade/${deletingId}`);
         showToast('Grade deleted successfully!', 'success');
         fetchGrades();
-      } catch (error) {
+        } catch (error) {
         showToast(error.response?.data?.message || 'Error deleting grade', 'error');
-      }
-    }
+        }
+        setShowDeleteConfirm(false);
+        setDeletingId(null);
   };
 
   const resetForm = () => {
@@ -332,6 +340,17 @@ const MarksGrade = () => {
           </div>
         </div>
       )}
+
+          {/* Delete Confirmation Modal */}
+          <ConfirmationModal
+              isOpen={showDeleteConfirm}
+              onClose={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+              onConfirm={confirmDelete}
+              title="Delete Grade"
+              message="Are you sure you want to delete this grade? This action cannot be undone."
+              confirmText="Delete"
+              cancelText="Cancel"
+          />
     </div>
   );
 };

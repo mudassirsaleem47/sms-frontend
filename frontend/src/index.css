@@ -1,7 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Stack+Sans+Text:wght@200..700&display=swap');
 @import "tailwindcss";
 
-body ,html, button{
+html {
+  scroll-behavior: smooth;
+}
+
+body,
+html,
+button {
   font-family: 'Geist', 'Stack Sans Text', sans-serif;
 }
 

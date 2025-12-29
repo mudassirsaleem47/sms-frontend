@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { Calendar, Plus, Edit, Trash2, Clock, BookOpen, FileText } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const API_BASE = "http://localhost:5000";
 
@@ -18,6 +19,8 @@ const ExamSchedule = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState('');
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
   
   const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
     setShowModal(false);
@@ -124,16 +127,21 @@ const ExamSchedule = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this exam schedule?')) {
-      try {
-        await axios.delete(`${API_BASE}/ExamSchedule/${id}`);
+    const handleDelete = (id) => {
+        setDeletingId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await axios.delete(`${API_BASE}/ExamSchedule/${deletingId}`);
         showToast('Schedule deleted successfully!', 'success');
         fetchSchedules();
-      } catch (error) {
+        } catch (error) {
         showToast(error.response?.data?.message || 'Error deleting schedule', 'error');
-      }
-    }
+        }
+        setShowDeleteConfirm(false);
+        setDeletingId(null);
   };
 
   const resetForm = () => {
@@ -450,6 +458,17 @@ const ExamSchedule = () => {
           </div>
         </div>
       )}
+
+          {/* Delete Confirmation Modal */}
+          <ConfirmationModal
+              isOpen={showDeleteConfirm}
+              onClose={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+              onConfirm={confirmDelete}
+              title="Delete Exam Schedule"
+              message="Are you sure you want to delete this exam schedule? This action cannot be undone."
+              confirmText="Delete"
+              cancelText="Cancel"
+          />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useToast } from '../context/ToastContext';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { BookOpen, Plus, Edit, Trash2, Calendar, FileText, X } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const API_BASE = "http://localhost:5000";
 
@@ -15,6 +16,8 @@ const ExamGroup = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
   
   const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
     setShowModal(false);
@@ -83,16 +86,21 @@ const ExamGroup = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this exam group?')) {
-      try {
-        await axios.delete(`${API_BASE}/ExamGroup/${id}`);
+    const handleDelete = (id) => {
+        setDeletingId(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+        await axios.delete(`${API_BASE}/ExamGroup/${deletingId}`);
         showToast('Exam group deleted successfully!', 'success');
         fetchGroups();
-      } catch (error) {
+    } catch (error) {
         showToast(error.response?.data?.message || 'Error deleting exam group', 'error');
-      }
     }
+      setShowDeleteConfirm(false);
+      setDeletingId(null);
   };
 
   const resetForm = () => {
@@ -287,6 +295,17 @@ const ExamGroup = () => {
           </div>
         </div>
       )}
+
+          {/* Delete Confirmation Modal */}
+          <ConfirmationModal
+              isOpen={showDeleteConfirm}
+              onClose={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+              onConfirm={confirmDelete}
+              title="Delete Exam Group"
+              message="Are you sure you want to delete this exam group? This action cannot be undone."
+              confirmText="Delete"
+              cancelText="Cancel"
+          />
     </div>
   );
 };

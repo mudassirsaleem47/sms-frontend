@@ -213,12 +213,12 @@ const FeeManagement = () => {
       </div>
 
       {/* Fee Structures Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg pt-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Fee Structures</h2>
+          <h2 className="text-2xl ml-6 font-bold text-gray-900">Fee Structures</h2>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 mr-6 text-white rounded-lg hover:bg-indigo-700 transition"
           >
             <Plus className="w-5 h-5" />
             Create New
@@ -233,7 +233,7 @@ const FeeManagement = () => {
             <p className="text-gray-400 text-sm">Create your first fee structure to get started</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl">
+          <div className="overflow-x-auto rounded-b-2xl">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>

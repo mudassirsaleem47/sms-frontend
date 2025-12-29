@@ -14,6 +14,17 @@ const adminSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+
+    // Subscription Management
+    subscriptionStatus: {
+        type: String,
+        enum: ['active', 'inactive', 'trial'],
+        default: 'trial',
+    },
+    subscriptionExpiry: {
+        type: Date,
+    },
+
     role: {
         type: String,
         default: "Admin",

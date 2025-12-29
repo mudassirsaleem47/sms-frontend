@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import Home from './Website/pages/Home';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -25,22 +26,27 @@ import MarksGrade from './pages/MarksGrade';
 import ExamSchedule from './pages/ExamSchedule';
 import MarksDivision from './pages/MarksDivision';
 import ExamResult from './pages/ExamResult';
+import CampusManagement from './pages/CampusManagement';
+import StaffManagement from './pages/StaffManagement';
+
 
 
 
 import { ToastProvider } from './context/ToastContext';
+import { CampusProvider } from './context/CampusContext';
 
 function App() {
   return (
     <div className="App">
       <ToastProvider>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<AdminLoginPage />} /> {/* Default route Admin Login */}
-          <Route path="/AdminLogin" element={<AdminLoginPage />} />
-          <Route path="/AdminRegister" element={<AdminRegisterPage />} />
+        <CampusProvider>
+          <Routes>
+            {/* Public Website Route */}
+            <Route path="/" element={<Home />} />
 
-          {/* Protected Routes (Saare admin pages iske andar aayenge) */}
+            {/* Admin Auth Routes */}
+          <Route path="/AdminLogin" element={<AdminLoginPage />} />
+            <Route path="/AdminRegister" element={<AdminRegisterPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<AdminLayout />}> {/* <--- Layout Wrapper */}
               <Route index element={<AdminDashboard />} />
@@ -66,9 +72,12 @@ function App() {
               <Route path="exam-schedule" element={<ExamSchedule />} />
               <Route path="marks-division" element={<MarksDivision />} />
               <Route path="exam-result" element={<ExamResult />} />
+                <Route path="campuses" element={<CampusManagement />} />
+                <Route path="staff" element={<StaffManagement />} />
             </Route>
           </Route>
         </Routes>
+        </CampusProvider>
       </ToastProvider>
     </div>
   );

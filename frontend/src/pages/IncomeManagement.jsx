@@ -14,6 +14,7 @@ import {
   Filter,
   X
 } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const API_BASE = "http://localhost:5000";
 
@@ -33,6 +34,8 @@ const IncomeManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingIncome, setEditingIncome] = useState(null);
   const [filterCategory, setFilterCategory] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   
   const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
     setShowModal(false);
@@ -119,16 +122,21 @@ const IncomeManagement = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this income entry?')) {
-      try {
-        await axios.delete(`${API_BASE}/Income/${id}`);
-        showToast('Income deleted successfully!', 'success');
-        fetchData();
-      } catch (error) {
-        showToast(error.response?.data?.message || 'Error deleting income', 'error');
-      }
+  const handleDelete = (id) => {
+    setDeletingId(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`${API_BASE}/Income/${deletingId}`);
+      showToast('Income deleted successfully!', 'success');
+      fetchData();
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Error deleting income', 'error');
     }
+    setShowDeleteConfirm(false);
+    setDeletingId(null);
   };
 
   const resetForm = () => {
@@ -204,10 +212,10 @@ const IncomeManagement = () => {
       </div>
 
       {/* Income Table Section */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-lg pt-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Income Entries</h2>
-          <div className="flex gap-3">
+          <h2 className="text-2xl ml-6 font-bold text-gray-900">Income Entries</h2>
+          <div className="flex gap-3 mr-6">
             {/* Category Filter */}
             <select
               value={filterCategory}
@@ -427,6 +435,17 @@ const IncomeManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => { setShowDeleteConfirm(false); setDeletingId(null); }}
+        onConfirm={confirmDelete}
+        title="Delete Income Entry"
+        message="Are you sure you want to delete this income entry? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 };

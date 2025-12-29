@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import Toast from '../components/Toast';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import API_URL from '../config/api.js';
 
 const ToastContext = createContext();
 
@@ -36,7 +37,7 @@ export const ToastProvider = ({ children }) => {
         try {
             if (!userId) return;
             
-            const response = await axios.get(`http://localhost:5000/Notifications/${userId}`);
+            const response = await axios.get(`${API_URL}/Notifications/${userId}`);
             if (response.data.success) {
                 // Convert backend format to frontend format
                 const formattedNotifications = response.data.notifications.map(notif => ({
@@ -59,7 +60,7 @@ export const ToastProvider = ({ children }) => {
         // Add to notification history in backend
         try {
             if (userId) {
-                const response = await axios.post('http://localhost:5000/NotificationCreate', {
+                const response = await axios.post(`${API_URL}/NotificationCreate`, {
                     userId,
                     message,
                     type
@@ -98,7 +99,7 @@ export const ToastProvider = ({ children }) => {
     const markAsRead = async (id) => {
         try {
             // Update backend
-            await axios.put(`http://localhost:5000/Notification/${id}/read`);
+            await axios.put(`${API_URL}/Notification/${id}/read`);
             
             // Update local state
             setNotifications(prev => 
@@ -121,7 +122,7 @@ export const ToastProvider = ({ children }) => {
         try {
             if (userId) {
                 // Clear from backend
-                await axios.delete(`http://localhost:5000/Notifications/clear-all/${userId}`);
+                await axios.delete(`${API_URL}/Notifications/clear-all/${userId}`);
             }
             // Clear local state
             setNotifications([]);

@@ -20,20 +20,20 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-6 lg:p-8">
       <div>
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-2">Welcome back, {currentUser ? currentUser.name : 'Admin'}!</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-sm md:text-base text-gray-600 mt-2">Welcome back, {currentUser ? currentUser.name : 'Admin'}!</p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg hover:shadow-xl transition duration-200 font-600"
+            className="w-full md:w-auto flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg hover:shadow-xl transition duration-200 font-600 text-sm md:text-base"
           >
-            <LogOut className="w-5 h-5 mr-2" /> Logout
+            <LogOut className="w-4 md:w-5 h-4 md:h-5 mr-2" /> Logout
           </button>
         </div>
 
