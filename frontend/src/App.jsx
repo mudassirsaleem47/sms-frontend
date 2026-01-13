@@ -34,8 +34,8 @@ import TeacherLayout from './components/TeacherLayout';
 import AttendancePage from './pages/teacher/AttendancePage';
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage';
 import SchedulePage from './pages/teacher/SchedulePage';
-import AssignmentsPage from './pages/teacher/AssignmentsPage';
-import AnalyticsPage from './pages/teacher/AnalyticsPage';
+import TeacherResultsPage from './pages/teacher/TeacherResultsPage';
+
 
 
 
@@ -92,9 +92,8 @@ function App() {
                 <Route path="dashboard" element={<TeacherDashboard />} />
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="students" element={<TeacherStudentsPage />} />
+                <Route path="results" element={<TeacherResultsPage />} />
                 <Route path="schedule" element={<SchedulePage />} />
-                <Route path="assignments" element={<AssignmentsPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
                 <Route path="settings" element={<SettingsProfile />} />
               </Route>
           </Route>

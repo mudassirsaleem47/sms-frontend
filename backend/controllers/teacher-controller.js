@@ -179,7 +179,7 @@ const teacherLogin = async (req, res) => {
 
         // Find teacher by email
         const teacher = await Teacher.findOne({ email })
-            .populate('school', 'schoolName')
+            .populate('school', 'schoolName _id')
             .populate('campus', 'name')
             .populate('assignedClasses', 'sclassName');
 

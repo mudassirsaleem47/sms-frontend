@@ -1,258 +1,242 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
+import axios from 'axios';
 import { 
-  LogOut, 
-  BookOpen, 
   Users, 
-  Calendar, 
-  ClipboardCheck,
-  Award,
-  TrendingUp,
+  BookOpen, 
+  TrendingUp, 
+  Calendar,
   Clock,
-  Bell,
-  FileText,
-  BarChart3
+  CheckCircle,
+  AlertCircle,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
+const API_BASE = "http://localhost:5000";
+
 const TeacherDashboard = () => {
-  const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+
+  // Real data states
+  const [students, setStudents] = useState([]);
+  const [examSchedules, setExamSchedules] = useState([]);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalClasses: 0,
+    avgAttendance: 0,
+    avgPerformance: 0
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/teacher/login');
+  useEffect(() => {
+    if (currentUser) {
+      fetchDashboardData();
+    }
+  }, [currentUser]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school;
+
+      if (!schoolId) {
+        showToast('School information not found. Please login again.', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch students
+      const studentsRes = await axios.get(`${API_BASE}/Students/${schoolId}`);
+      const allStudents = studentsRes.data || [];
+
+      // Filter students by teacher's assigned classes
+      let teacherStudents = allStudents;
+      if (currentUser.assignedClasses && currentUser.assignedClasses.length > 0) {
+        const assignedClassIds = currentUser.assignedClasses.map(cls => cls._id);
+        teacherStudents = allStudents.filter(student =>
+          assignedClassIds.includes(student.sclassName?._id)
+        );
+      }
+
+      setStudents(teacherStudents);
+
+      // Fetch exam schedules for today
+      if (currentUser.assignedClasses && currentUser.assignedClasses.length > 0) {
+        const schedulesPromises = currentUser.assignedClasses.map(cls =>
+          axios.get(`${API_BASE}/ExamSchedules/Class/${cls._id}`).catch(() => ({ data: [] }))
+        );
+        const schedulesResults = await Promise.all(schedulesPromises);
+        const allSchedules = schedulesResults.flatMap(res => res.data || []);
+
+        // Filter today's schedules
+        const today = new Date().toISOString().split('T')[0];
+        const todaySchedules = allSchedules.filter(schedule => {
+          const scheduleDate = new Date(schedule.examDate).toISOString().split('T')[0];
+          return scheduleDate === today;
+        });
+
+        setExamSchedules(todaySchedules.slice(0, 3)); // Show max 3
+      }
+
+      // Calculate stats
+      setStats({
+        totalStudents: teacherStudents.length,
+        totalClasses: currentUser.assignedClasses?.length || 0,
+        avgAttendance: 0, // Will be calculated from attendance data if available
+        avgPerformance: 0 // Will be calculated from exam results if available
+      });
+
+      setLoading(false);
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Error fetching dashboard data', 'error');
+      setLoading(false);
+    }
   };
 
-  // Stats data
-  const stats = [
-    { 
-      icon: BookOpen, 
-      label: 'Assigned Classes', 
-      count: currentUser?.assignedClasses?.length || '0', 
-      color: 'bg-blue-50', 
-      iconColor: 'text-blue-600',
-      trend: '+2 this month'
-    },
-    { 
-      icon: Users, 
-      label: 'Total Students', 
-      count: '156', 
-      color: 'bg-emerald-50', 
-      iconColor: 'text-emerald-600',
-      trend: '+12 new'
-    },
-    { 
-      icon: ClipboardCheck, 
-      label: 'Attendance Today', 
-      count: '92%', 
-      color: 'bg-purple-50', 
-      iconColor: 'text-purple-600',
-      trend: 'Above average'
-    },
-    { 
-      icon: Award, 
-      label: 'Avg Performance', 
-      count: '85%', 
-      color: 'bg-amber-50', 
-      iconColor: 'text-amber-600',
-      trend: '+5% from last'
-    },
-  ];
-
-  // Quick actions
-  const quickActions = [
-    { label: 'Mark Attendance', icon: ClipboardCheck, color: 'bg-blue-50 text-blue-700 hover:bg-blue-100', path: '/teacher/attendance' },
-    { label: 'View Students', icon: Users, color: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100', path: '/teacher/students' },
-    { label: 'Exam Results', icon: Award, color: 'bg-purple-50 text-purple-700 hover:bg-purple-100', path: '/teacher/results' },
-    { label: 'My Schedule', icon: Calendar, color: 'bg-amber-50 text-amber-700 hover:bg-amber-100', path: '/teacher/schedule' },
-    { label: 'Assignments', icon: FileText, color: 'bg-pink-50 text-pink-700 hover:bg-pink-100', path: '/teacher/assignments' },
-    { label: 'Analytics', icon: BarChart3, color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100', path: '/teacher/analytics' },
-  ];
-
-  // Recent activities
-  const recentActivities = [
-    { action: 'Marked attendance for Class 10-A', time: '2 hours ago', icon: ClipboardCheck, color: 'text-blue-600' },
-    { action: 'Uploaded exam results for Math', time: '5 hours ago', icon: Award, color: 'text-emerald-600' },
-    { action: 'Created new assignment', time: '1 day ago', icon: FileText, color: 'text-purple-600' },
-    { action: 'Updated student grades', time: '2 days ago', icon: TrendingUp, color: 'text-amber-600' },
-  ];
-
-  // Upcoming classes
-  const upcomingClasses = [
-    { class: 'Class 10-A', subject: 'Mathematics', time: '09:00 AM', room: 'Room 201' },
-    { class: 'Class 9-B', subject: 'Mathematics', time: '11:00 AM', room: 'Room 105' },
-    { class: 'Class 10-C', subject: 'Mathematics', time: '02:00 PM', room: 'Room 201' },
-  ];
-
-  const formatTime = (date) => {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-
-  const formatDate = (date) => {
-    return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-6 lg:p-8">
-      <div>
-        
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+      </div>
+
+      {/* Hero Card - Total Students */}
+      <div className="bg-linear-to-br from-emerald-600 to-emerald-700 rounded-2xl p-8 mb-6 text-white shadow-xl">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Teacher Dashboard</h1>
-            <p className="text-sm md:text-base text-gray-600 mt-2">
-              Welcome back, <span className="font-600 text-emerald-600">{currentUser?.name || 'Teacher'}</span>!
-            </p>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>{formatDate(currentTime)}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{formatTime(currentTime)}</span>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full md:w-auto flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-lg hover:shadow-xl transition duration-200 font-600 text-sm md:text-base"
-          >
-            <LogOut className="w-4 md:w-5 h-4 md:h-5 mr-2" /> Logout
-          </button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div key={idx} className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition duration-200 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${stat.color} p-3 rounded-lg`}>
-                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
-                  </div>
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                </div>
-                <p className="text-gray-600 text-sm font-600">{stat.label}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stat.count}</p>
-                <p className="text-xs text-gray-500 mt-2">{stat.trend}</p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          
-          {/* Quick Actions */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Bell className="w-5 h-5 text-emerald-600" />
-              Quick Actions
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {quickActions.map((action, idx) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => navigate(action.path)}
-                    className={`px-4 py-4 ${action.color} rounded-lg font-600 transition text-left flex flex-col items-center justify-center gap-2 hover:scale-105`}
-                  >
-                    <Icon className="w-6 h-6" />
-                    <span className="text-sm text-center">{action.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Upcoming Classes */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-emerald-600" />
-              Today's Schedule
-            </h3>
-            <div className="space-y-3">
-              {upcomingClasses.map((cls, idx) => (
-                <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-emerald-300 transition">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="font-600 text-gray-900 text-sm">{cls.class}</p>
-                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded">{cls.time}</span>
-                  </div>
-                  <p className="text-xs text-gray-600">{cls.subject}</p>
-                  <p className="text-xs text-gray-500 mt-1">{cls.room}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-emerald-100 text-sm mb-2">Total Students</p>
+            <h2 className="text-5xl font-bold mb-2">{stats.totalStudents}</h2>
+            <p className="text-emerald-100 text-sm">Under your classes</p>
           </div>
         </div>
+      </div>
 
-        {/* Recent Activity & Assigned Classes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-emerald-600" />
-              Recent Activity
-            </h3>
-            <div className="space-y-3">
-              {recentActivities.map((activity, idx) => {
-                const Icon = activity.icon;
-                return (
-                  <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                    <div className="mt-1">
-                      <Icon className={`w-5 h-5 ${activity.color}`} />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Classes Card */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalClasses}</h3>
+          <p className="text-gray-500 text-sm">Assigned Classes</p>
+        </div>
+
+        {/* Students per Class Card */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">
+            {stats.totalClasses > 0 ? Math.round(stats.totalStudents / stats.totalClasses) : 0}
+          </h3>
+          <p className="text-gray-500 text-sm">Avg Students/Class</p>
+        </div>
+
+        {/* Subject Card */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-1">{currentUser?.subject || 'N/A'}</h3>
+          <p className="text-gray-500 text-sm">Your Subject</p>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Assigned Classes */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="p-6 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900">Your Assigned Classes</h3>
+          </div>
+          <div className="p-6">
+            {currentUser?.assignedClasses && currentUser.assignedClasses.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {currentUser.assignedClasses.map((cls, index) => {
+                  const classStudents = students.filter(s => s.sclassName?._id === cls._id);
+                  return (
+                    <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-emerald-300 hover:shadow-md transition">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900">{cls.sclassName}</h4>
+                          <p className="text-xs text-gray-500">{currentUser?.subject || 'Subject'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-3">
+                        <Users className="w-4 h-4" />
+                        <span>{classStudents.length} Students</span>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-900 font-500">{activity.action}</p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No classes assigned yet</p>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Assigned Classes Details */}
-          <div className="bg-linear-to-br from-emerald-600 to-emerald-700 rounded-xl shadow-lg p-6 text-white">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              My Classes
-            </h3>
-            <div className="space-y-3">
-              {currentUser?.assignedClasses && currentUser.assignedClasses.length > 0 ? (
-                currentUser.assignedClasses.map((cls, idx) => (
-                  <div key={idx} className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition">
-                    <p className="font-600 text-lg">{cls.sclassName || `Class ${idx + 1}`}</p>
-                    <p className="text-emerald-100 text-sm mt-1">Subject: {currentUser.subject}</p>
+        {/* Today's Exam Schedule */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Today's Exams</h3>
+          <div className="space-y-4">
+            {examSchedules.length > 0 ? (
+              examSchedules.map((schedule, index) => (
+                <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                  <div className="flex flex-col items-center justify-center bg-emerald-100 rounded-lg px-3 py-2">
+                    <Clock className="w-4 h-4 text-emerald-600 mb-1" />
+                    <span className="text-xs font-medium text-emerald-700">
+                      {new Date(schedule.examDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <div className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
-                  <p className="text-emerald-100">No classes assigned yet</p>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 text-sm">{schedule.subject}</p>
+                    <p className="text-xs text-gray-500">{schedule.class?.sclassName}</p>
+                    <p className="text-xs text-gray-400 mt-1">Total Marks: {schedule.totalMarks}</p>
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="mt-6 pt-4 border-t border-white/20">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-emerald-100">Subject Specialization</span>
-                <span className="font-600">{currentUser?.subject || 'N/A'}</span>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">No exams scheduled for today</p>
               </div>
-              <div className="flex items-center justify-between text-sm mt-2">
-                <span className="text-emerald-100">Experience</span>
-                <span className="font-600">{currentUser?.experience || '0'} years</span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

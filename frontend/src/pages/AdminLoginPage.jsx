@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, Shield, GraduationCap } from 'lucide-react';
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -26,7 +26,27 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-linear-to-br from-gray-50 to-gray-100">
+      {/* Navigation Tabs */}
+      <div className="w-full max-w-5xl mb-6">
+        <div className="bg-white rounded-lg shadow-md p-2 flex gap-2">
+          <Link
+            to="/AdminLogin"
+            className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg font-600 text-center transition hover:bg-indigo-700 flex items-center justify-center gap-2"
+          >
+            <Shield className="w-5 h-5" />
+            Admin
+          </Link>
+          <Link
+            to="/teacher/login"
+            className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-600 text-center transition hover:bg-gray-200 flex items-center justify-center gap-2"
+          >
+            <GraduationCap className="w-5 h-5" />
+            Teacher
+          </Link>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl w-full">
         
         {/* Left Side - Branding */}
@@ -67,6 +87,13 @@ const AdminLoginPage = () => {
         {/* Right Side - Login Form */}
         <div className="flex flex-col justify-center">
           <div className="bg-white p-8 md:p-10 rounded-2xl shadow-2xl">
+            {/* Role Badge */}
+            <div className="flex justify-center mb-4">
+              <span className="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full text-sm font-bold border-2 border-indigo-600">
+                ADMIN PORTAL
+              </span>
+            </div>
+
             <div className="text-center mb-8">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Admin Login</h2>
               <p className="text-gray-600 mt-2">Sign in to your school management account</p>
