@@ -1,5 +1,6 @@
 const Student = require('../models/studentSchema.js');
 const Sclass = require('../models/sclassSchema.js');
+const Teacher = require('../models/teacherSchema.js');
 const bcrypt = require('bcryptjs');
 
 // 1. New Student ka Admission
@@ -15,7 +16,7 @@ const studentAdmission = async (req, res) => {
         }
 
         // Check: Class ID valid hai?
-        const sclass = await Sclass.findById(sclassName);
+        const sclass = await Sclass.findById(sclassName).populate('classIncharge');
         if (!sclass) {
             return res.status(404).json({ message: "Class not found." });
         }
@@ -49,6 +50,19 @@ const studentAdmission = async (req, res) => {
         });
 
         const result = await newStudent.save();
+
+        // Auto-assign student to class incharge
+        if (sclass.classIncharge) {
+            const teacher = await Teacher.findById(sclass.classIncharge);
+            if (teacher) {
+                // Check agar class pehle se assigned nahi hai to add karo
+                if (!teacher.assignedClasses.includes(sclassName)) {
+                    teacher.assignedClasses.push(sclassName);
+                    await teacher.save();
+                    console.log(`✅ Class ${sclass.sclassName} assigned to teacher ${teacher.name}`);
+                }
+            }
+        }
 
         res.status(201).json({ 
             message: "Student admitted successfully!",

@@ -6,30 +6,21 @@ import { useCampus } from '../../context/CampusContext';
 import { useToast } from '../../context/ToastContext';
 import { useModalAnimation } from '../../hooks/useModalAnimation';
 import API_URL from '../../config/api.js';
-import { X, User, Mail, Phone, GraduationCap, Calculator, Phone as PhoneIcon, Building2, Hash, Calendar } from 'lucide-react';
+import { X, User, Mail, Phone, GraduationCap, Building2, Calendar, Briefcase } from 'lucide-react';
 
 const StaffModal = ({ staff, onClose }) => {
     const { currentUser } = useAuth();
     const { campuses } = useCampus();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [designations, setDesignations] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
         phone: '',
-        role: 'Teacher',
+        designation: '',
         campus: '',
-        
-        // Teacher fields
-        subject: '',
-        qualification: '',
-        
-        // Accountant fields
-        employeeId: '',
-        department: '',
-        
-        // Common fields
         salary: '',
         joiningDate: new Date().toISOString().split('T')[0],
         status: 'active'
@@ -37,6 +28,25 @@ const StaffModal = ({ staff, onClose }) => {
 
     const isOpen = true;
     const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, () => onClose(false));
+
+    // Fetch designations
+    useEffect(() => {
+        if (currentUser && currentUser._id) {
+            fetchDesignations();
+        }
+    }, [currentUser]);
+
+    const fetchDesignations = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/Designations/${currentUser._id}`);
+            if (response.data.success) {
+                setDesignations(response.data.designations.filter(d => d.isActive === 'active'));
+            }
+        } catch (error) {
+            console.error('Error fetching designations:', error);
+            showToast('Failed to load designations', 'error');
+        }
+    };
 
     useEffect(() => {
         if (staff) {
@@ -46,12 +56,8 @@ const StaffModal = ({ staff, onClose }) => {
                 email: staff.email || '',
                 password: '', // Don't populate password
                 phone: staff.phone || '',
-                role: staff.role || 'Teacher',
+                designation: staff.designation?._id || '',
                 campus: staff.campus?._id || '',
-                subject: staff.subject || '',
-                qualification: staff.qualification || '',
-                employeeId: staff.employeeId || '',
-                department: staff.department || '',
                 salary: staff.salary || '',
                 joiningDate: staff.joiningDate ? staff.joiningDate.split('T')[0] : new Date().toISOString().split('T')[0],
                 status: staff.status || 'active'
@@ -70,7 +76,7 @@ const StaffModal = ({ staff, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!formData.name || !formData.email || (!staff && !formData.password) || !formData.role) {
+        if (!formData.name || !formData.email || (!staff && !formData.password) || !formData.designation) {
             showToast('Please fill all required fields', 'error');
             return;
         }
@@ -99,7 +105,7 @@ const StaffModal = ({ staff, onClose }) => {
                 // Create
                 const response = await axios.post(`${API_URL}/Staff`, payload);
                 if (response.data.success) {
-                    showToast(`${formData.role} added successfully`, 'success');
+                    showToast('Staff added successfully', 'success');
                     onClose(true);
                 }
             }
@@ -113,17 +119,12 @@ const StaffModal = ({ staff, onClose }) => {
 
     if (!isVisible) return null;
 
-    const getRoleIcon = () => {
-        switch (formData.role) {
-            case 'Teacher': return <GraduationCap className="w-6 h-6 text-blue-600" />;
-            case 'Accountant': return <Calculator className="w-6 h-6 text-green-600" />;
-            case 'Receptionist': return <PhoneIcon className="w-6 h-6 text-purple-600" />;
-            default: return <User className="w-6 h-6 text-gray-600" />;
-        }
+    const getDesignationIcon = () => {
+        return <Briefcase className="w-6 h-6 text-indigo-600" />;
     };
 
     return createPortal(
-        <div className={`fixed inset-0 z-[9999] overflow-y-auto bg-black/70 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
+        <div className={`fixed inset-0 z-9999 overflow-y-auto bg-black/70 backdrop-blur-sm ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
             <div className="flex min-h-full items-center justify-center p-4">
                 <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
                     
@@ -131,8 +132,8 @@ const StaffModal = ({ staff, onClose }) => {
                     <div className="p-7 rounded-t-2xl flex justify-between items-start gap-4">
                         <div className="flex-1">
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                {getRoleIcon()}
-                                {staff ? `Edit ${staff.role}` : 'Add Staff Member'}
+                                {getDesignationIcon()}
+                                {staff ? 'Edit Staff Member' : 'Add Staff Member'}
                             </h2>
                             <p className="text-gray-600 text-sm mt-2">
                                 {staff ? 'Update staff member details below' : 'Fill in the details to add a new staff member'}
@@ -226,23 +227,29 @@ const StaffModal = ({ staff, onClose }) => {
                                 </div>
                             </div>
 
-                            {/* Row 3: Role, Campus */}
+                            {/* Row 3: Designation, Campus */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div>
                                     <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Role <span className="text-red-500">*</span>
+                                        Designation <span className="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        name="role"
-                                        value={formData.role}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        required
-                                    >
-                                        <option value="Teacher">Teacher</option>
-                                        <option value="Accountant">Accountant</option>
-                                        <option value="Receptionist">Receptionist</option>
-                                    </select>
+                                    <div className="relative">
+                                        <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                                        <select
+                                            name="designation"
+                                            value={formData.designation}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                            required
+                                        >
+                                            <option value="">Select designation</option>
+                                            {designations.map(designation => (
+                                                <option key={designation._id} value={designation._id}>
+                                                    {designation.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div>
@@ -267,72 +274,6 @@ const StaffModal = ({ staff, onClose }) => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Role-Specific Fields */}
-                            {formData.role === 'Teacher' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-blue-50 rounded-lg">
-                                    <div>
-                                        <label className="block text-sm font-600 text-gray-700 mb-2">
-                                            Subject
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="subject"
-                                            value={formData.subject}
-                                            onChange={handleChange}
-                                            placeholder="e.g., Mathematics"
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-600 text-gray-700 mb-2">
-                                            Qualification
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="qualification"
-                                            value={formData.qualification}
-                                            onChange={handleChange}
-                                            placeholder="e.g., M.Sc Mathematics"
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.role === 'Accountant' && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-4 bg-green-50 rounded-lg">
-                                    <div>
-                                        <label className="block text-sm font-600 text-gray-700 mb-2">
-                                            Employee ID
-                                        </label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                name="employeeId"
-                                                value={formData.employeeId}
-                                                onChange={handleChange}
-                                                placeholder="EMP-001"
-                                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-600 text-gray-700 mb-2">
-                                            Department
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="department"
-                                            value={formData.department}
-                                            onChange={handleChange}
-                                            placeholder="e.g., Finance"
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Row 4: Salary, Joining Date, Status */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

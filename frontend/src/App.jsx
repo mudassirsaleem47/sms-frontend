@@ -28,6 +28,7 @@ import MarksDivision from './pages/MarksDivision';
 import ExamResult from './pages/ExamResult';
 import CampusManagement from './pages/CampusManagement';
 import StaffManagement from './pages/StaffManagement';
+import DesignationManagement from './pages/DesignationManagement';
 import TeacherLoginPage from './pages/TeacherLoginPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import TeacherLayout from './components/TeacherLayout';
@@ -85,6 +86,7 @@ function App() {
               <Route path="exam-result" element={<ExamResult />} />
                 <Route path="campuses" element={<CampusManagement />} />
                 <Route path="staff" element={<StaffManagement />} />
+                <Route path="designations" element={<DesignationManagement />} />
             </Route>
 
               {/* Teacher Protected Routes */}

@@ -17,6 +17,11 @@ const sclassSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'campus',
         required: false // Optional for backward compatibility
+    },
+    classIncharge: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'teacher',
+        required: false // Optional - class incharge assign karna zaroori nahi
     }
 }, { timestamps: true });
 

@@ -14,11 +14,13 @@ const ShowClasses = () => {
     
     // --- State Management ---
     const [sclasses, setSclasses] = useState([]);
+    const [teachers, setTeachers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
     // Add Class Modal State
     const [sclassName, setSclassName] = useState(""); 
+    const [classIncharge, setClassIncharge] = useState("");
     const [showPopup, setShowPopup] = useState(false);
     const { isVisible, isClosing, handleClose } = useModalAnimation(showPopup, () => setShowPopup(false));
 
@@ -51,8 +53,23 @@ const ShowClasses = () => {
         }
     };
 
+    // --- Fetch Teachers ---
+    const fetchTeachers = async () => {
+        if (!currentUser || !currentUser._id) return;
+
+        try {
+            const result = await axios.get(`${API_BASE}/Teachers/${currentUser._id}`);
+            if (Array.isArray(result.data)) {
+                setTeachers(result.data);
+            }
+        } catch (err) {
+            console.error("Error fetching teachers:", err);
+        }
+    };
+
     useEffect(() => {
         fetchClasses();
+        fetchTeachers();
     }, [currentUser]);
 
     // --- 2. Add Class ---
@@ -62,12 +79,14 @@ const ShowClasses = () => {
         try {
             const data = {
                 sclassName: sclassName,
-                school: currentUser._id
+                school: currentUser._id,
+                classIncharge: classIncharge || undefined
             };
             
             await axios.post(`${API_BASE}/SclassCreate`, data);
             
             setSclassName("");
+            setClassIncharge("");
             setShowPopup(false);
             fetchClasses();
             showToast("Class added successfully!", "success");
@@ -158,6 +177,9 @@ const ShowClasses = () => {
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">{item.sclassName}</h3>
                                     <p className="text-xs text-gray-500 mt-1">ID: {item._id.slice(-4)}</p>
+                                    {item.classIncharge && (
+                                        <p className="text-xs text-emerald-600 mt-1 font-500">📚 Incharge: {item.classIncharge.name}</p>
+                                    )}
                                 </div>
                                 <button onClick={() => deleteClass(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"><Trash2 className="w-5 h-5" /></button>
                             </div>
@@ -241,6 +263,22 @@ const ShowClasses = () => {
                                     onChange={(e) => setSclassName(e.target.value)}
                                     required
                                 />
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-sm font-600 text-gray-700 mb-2">Class Incharge (Optional)</label>
+                                <select
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    value={classIncharge}
+                                    onChange={(e) => setClassIncharge(e.target.value)}
+                                >
+                                    <option value="">-- Select Teacher --</option>
+                                    {teachers.map((teacher) => (
+                                        <option key={teacher._id} value={teacher._id}>
+                                            {teacher.name} ({teacher.subject})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             
                             {/* Buttons */}

@@ -89,8 +89,16 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
                 { name: 'Marks Division', path: '/admin/marks-division' },
             ]
         },
+        {
+            name: 'Staff Management',
+            icon: Users,
+            type: 'dropdown',
+            children: [
+                { name: 'Staff List', path: '/admin/staff' },
+                { name: 'Designations', path: '/admin/designations' },
+            ]
+        },
         { name: 'Campuses', path: '/admin/campuses', icon: Building2, type: 'link' },
-        { name: 'Staff Management', path: '/admin/staff', icon: Users, type: 'link' },
         { name: 'Reports', path: '/admin/reports', icon: FileText, type: 'link' },
         { name: 'Settings', path: '/admin/settings', icon: Settings, type: 'link' },
     ];

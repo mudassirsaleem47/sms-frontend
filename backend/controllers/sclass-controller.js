@@ -3,7 +3,7 @@ const Sclass = require('../models/sclassSchema.js');
 // 1. Nayi Class/Section Create karna
 const sclassCreate = async (req, res) => {
     try {
-        const { sclassName, school } = req.body;
+        const { sclassName, school, classIncharge } = req.body;
         
         // Check: Kya is school mein pehle se ye Class exist karti hai?
         const sclassExists = await Sclass.findOne({ sclassName, school });
@@ -15,9 +15,13 @@ const sclassCreate = async (req, res) => {
         const newSclass = new Sclass(req.body);
         const result = await newSclass.save();
 
+        // Populate classIncharge data for response
+        const populatedClass = await Sclass.findById(result._id).populate('classIncharge', 'name email');
+
         res.status(201).json({ 
             message: "Class created successfully!",
-            classId: result._id
+            classId: result._id,
+            class: populatedClass
         });
 
     } catch (err) {
@@ -31,7 +35,7 @@ const getSclassesBySchool = async (req, res) => {
         const { schoolId } = req.params;
         console.log("Fetching classes for School ID:", schoolId);
         
-        const sclasses = await Sclass.find({ school: schoolId });
+        const sclasses = await Sclass.find({ school: schoolId }).populate('classIncharge', 'name email');
         console.log("Classes found:", sclasses.length);
 
         if (sclasses.length === 0) {

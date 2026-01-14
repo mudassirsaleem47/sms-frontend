@@ -22,11 +22,17 @@ const staffSchema = new mongoose.Schema({
         trim: true
     },
     
-    // Role - Teacher, Accountant, or Receptionist
+    // Designation reference (new dynamic system)
+    designation: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'designation',
+        required: true
+    },
+
+    // Legacy role field (kept for backward compatibility)
     role: {
         type: String,
-        required: true,
-        enum: ['Teacher', 'Accountant', 'Receptionist']
+        trim: true
     },
     
     // School and Campus Association
