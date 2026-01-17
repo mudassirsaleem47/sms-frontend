@@ -13,16 +13,19 @@ const StaffManagement = () => {
     const { showToast } = useToast();
     const navigate = useNavigate();
     const [staff, setStaff] = useState([]);
+    const [designations, setDesignations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [staffToDelete, setStaffToDelete] = useState(null);
+    const [activeTab, setActiveTab] = useState('all');
 
-    // Fetch staff
+    // Fetch staff and designations
     useEffect(() => {
         if (currentUser && currentUser._id) {
             fetchStaff();
+            fetchDesignations();
         }
     }, [currentUser]);
 
@@ -38,6 +41,17 @@ const StaffManagement = () => {
             showToast('Failed to load staff', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchDesignations = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/Designations/${currentUser._id}`);
+            if (response.data.success) {
+                setDesignations(response.data.designations.filter(d => d.isActive === 'active'));
+            }
+        } catch (error) {
+            console.error('Error fetching designations:', error);
         }
     };
 
@@ -84,6 +98,11 @@ const StaffManagement = () => {
     const totalStaff = staff.length;
     const activeStaff = staff.filter(s => s.status === 'active').length;
     const inactiveStaff = staff.filter(s => s.status === 'inactive').length;
+
+    // Filter staff based on active tab
+    const filteredStaff = activeTab === 'all'
+        ? staff
+        : staff.filter(s => s.designation?._id === activeTab);
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -148,6 +167,37 @@ const StaffManagement = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Designation Tabs */}
+                    <div className="mt-6">
+                        <div className="flex gap-2 overflow-x-auto">
+                            <button
+                                onClick={() => setActiveTab('all')}
+                                className={`px-5 py-2.5 rounded-lg font-medium transition whitespace-nowrap ${activeTab === 'all'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                                    }`}
+                            >
+                                All Staff ({totalStaff})
+                            </button>
+                            {designations.map(designation => {
+                                const count = staff.filter(s => s.designation?._id === designation._id).length;
+                                return (
+                                    <button
+                                        key={designation._id}
+                                        onClick={() => setActiveTab(designation._id)}
+                                        className={`px-5 py-2.5 rounded-lg font-medium transition whitespace-nowrap flex items-center gap-2 ${activeTab === designation._id
+                                            ? 'bg-indigo-600 text-white shadow-md'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                                            }`}
+                                    >
+                                        <Briefcase className="w-4 h-4" />
+                                        {designation.name} ({count})
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Staff Table */}
@@ -155,17 +205,23 @@ const StaffManagement = () => {
                     <div className="flex justify-center items-center h-64">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                     </div>
-                ) : staff.length === 0 ? (
+                ) : filteredStaff.length === 0 ? (
                     <div className="bg-white rounded-lg shadow-sm p-12 text-center">
                         <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-600 text-gray-900 mb-2">No Staff Members Found</h3>
-                        <p className="text-gray-600 mb-4">Start by adding your first staff member</p>
-                        <button
-                            onClick={handleAddStaff}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                        >
-                            Add Staff
-                        </button>
+                            <p className="text-gray-600 mb-4">
+                                {activeTab === 'all'
+                                    ? 'Start by adding your first staff member'
+                                    : 'No staff members found for this designation'}
+                            </p>
+                            {activeTab === 'all' && (
+                                <button
+                                    onClick={handleAddStaff}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                                >
+                                    Add Staff
+                                </button>
+                            )}
                     </div>
                 ) : (
                             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -194,7 +250,7 @@ const StaffManagement = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {staff.map((staffMember) => (
+                                            {filteredStaff.map((staffMember) => (
                                                 <tr key={staffMember._id} className="hover:bg-gray-50 transition">
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center">
