@@ -118,7 +118,7 @@ const Sidebar = ({ onLogout, isOpen, onClose }) => {
             children: [
                 { name: 'Student ID Card', path: '/admin/card-management/student' },
                 { name: 'Staff ID Card', path: '/admin/card-management/staff' },
-                { name: 'Admit Card', path: '/admin/card-management/admit-card' },
+                { name: 'Result Card', path: '/admin/report-card' },
                 { name: 'Template Designer', path: '/admin/card-management/designer' },
             ]
         },

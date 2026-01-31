@@ -7,6 +7,7 @@ import CalendarModal from './CalendarModal';
 import TaskModal from './TaskModal';
 import { LogOut, User, Settings, Mail, Lock, Globe, ChevronDown, Menu, Search, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Tooltip from './ui/Tooltip';
 
 const AdminLayout = () => {
   const { logout, currentUser } = useAuth();
@@ -123,6 +124,7 @@ const AdminLayout = () => {
             <CampusSelector />
 
             {/* Calendar Icon */}
+            <Tooltip text="School Calendar" position="bottom">
             <button
               onClick={() => setShowCalendar(true)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative"
@@ -130,6 +132,7 @@ const AdminLayout = () => {
             >
               <Calendar className="w-5 h-5 text-gray-700" />
             </button>
+            </Tooltip>
 
             {/* Task Icon */}
             <TaskModal />

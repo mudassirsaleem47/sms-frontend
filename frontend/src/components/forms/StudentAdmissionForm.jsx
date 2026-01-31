@@ -171,6 +171,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                      data.append('name', fullName);
                 } else if (['father', 'mother', 'guardian', 'transport', 'siblings'].includes(key)) {
                     data.append(key, JSON.stringify(formData[key]));
+                } else if (key === 'campus' && !formData[key]) {
+                    // Skip empty campus to avoid ObjectId cast error
                 } else {
                     data.append(key, formData[key]);
                 }

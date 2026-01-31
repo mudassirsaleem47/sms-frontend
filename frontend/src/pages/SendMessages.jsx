@@ -250,14 +250,14 @@ const SendMessages = () => {
                                         placeholder="Search name or phone..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+                                        className="flex h-9 w-full rounded-md border border-slate-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 pl-9"
                                     />
                                 </div>
                                 {recipientGroup === 'student' ? (
                                     <select
                                         value={classFilter}
                                         onChange={(e) => setClassFilter(e.target.value)}
-                                        className="flex h-9 items-center justify-between whitespace-nowrap rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50 w-32"
+                                        className="flex h-9 items-center justify-between whitespace-nowrap rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 w-32"
                                     >
                                         <option value="">All Classes</option>
                                         {classes.map(cls => (
@@ -268,7 +268,7 @@ const SendMessages = () => {
                                     <select
                                         value={designationFilter}
                                         onChange={(e) => setDesignationFilter(e.target.value)}
-                                            className="flex h-9 items-center justify-between whitespace-nowrap rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50 w-32"
+                                            className="flex h-9 items-center justify-between whitespace-nowrap rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 w-32"
                                         >
                                             <option value="">All Roles</option>
                                             {designations.map(des => (
@@ -288,7 +288,7 @@ const SendMessages = () => {
                                 onClick={() => handleSelectAll(!selectAll)}
                                 className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
                             >
-                                {selectAll ? <CheckSquare className="w-4 h-4 text-slate-900" /> : <Square className="w-4 h-4" />}
+                                {selectAll ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4" />}
                                 <span>Select All ({filteredRecipients.length})</span>
                             </button>
                         </div>
@@ -316,7 +316,7 @@ const SendMessages = () => {
                                                         className={`flex items-center px-6 py-3 hover:bg-slate-50/80 cursor-pointer transition-colors ${isSelected ? 'bg-slate-50' : ''
                                                             }`}
                                                     >
-                                                        <div className={`mr-4 ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
+                                                        <div className={`mr-4 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`}>
                                                             {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
@@ -406,7 +406,7 @@ const SendMessages = () => {
                                     <select
                                         value={selectedTemplate}
                                         onChange={(e) => handleTemplateSelect(e.target.value)}
-                                        className="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <option value="">-- Choose a template --</option>
                                         {templates.map(t => (
@@ -423,7 +423,7 @@ const SendMessages = () => {
                                     value={customMessage}
                                     onChange={(e) => setCustomMessage(e.target.value)}
                                     placeholder="Type your message here..."
-                                    className="flex min-h-[160px] w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                                    className="flex min-h-[160px] w-full rounded-md border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                                     disabled={contentSource === 'template' && selectedTemplate}
                                 />
                                 <div className="flex justify-end">

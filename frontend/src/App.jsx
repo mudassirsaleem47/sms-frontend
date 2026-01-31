@@ -44,10 +44,8 @@ import BirthdayWish from './pages/BirthdayWish';
 import MessagingSetup from './pages/MessagingSetup';
 import StudentIdCard from './pages/card-design/StudentIdCard';
 import StaffIdCard from './pages/card-design/StaffIdCard';
-import AdmitCard from './pages/card-design/AdmitCard';
 import CardDesigner from './pages/card-design/CardDesigner';
-
-
+import ReportCard from './pages/card-design/ReportCard';
 
 
 import { ToastProvider } from './context/ToastContext';
@@ -108,8 +106,10 @@ function App() {
                 <Route path="card-management" element={<Navigate to="card-management/student" />} />
                 <Route path="card-management/student" element={<StudentIdCard />} />
                 <Route path="card-management/staff" element={<StaffIdCard />} />
-                <Route path="card-management/admit-card" element={<AdmitCard />} />
                 <Route path="card-management/designer" element={<CardDesigner />} />
+                <Route path="/admin/report-card" element={<ReportCard />} />
+
+                {/* Exam Management */}
             </Route>
 
               {/* Teacher Protected Routes */}

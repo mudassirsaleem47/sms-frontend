@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useReactToPrint } from 'react-to-print';
-import { Printer, Loader2, Search, Filter, Briefcase, Building2 } from 'lucide-react';
+import { Printer, Loader2, Search, Filter, Briefcase, Building2, LayoutTemplate } from 'lucide-react';
 import API_URL from '../../config/api';
+import CardRenderer from './CardRenderer';
 
 const StaffIdCard = () => {
     const [loading, setLoading] = useState(false);
@@ -10,10 +11,33 @@ const StaffIdCard = () => {
     const [staffList, setStaffList] = useState([]);
     const [schoolInfo, setSchoolInfo] = useState(null);
     
+    // Template State
+    const [templates, setTemplates] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+
     const user = JSON.parse(localStorage.getItem('currentUser'));
     const schoolId = user?.schoolName ? user._id : user?.school; 
 
     const componentRef = useRef();
+
+    useEffect(() => {
+        fetchTemplates();
+    }, []);
+
+    const fetchTemplates = async () => {
+        try {
+            // Filter for 'staff' card type if possible, or filter locally
+            const res = await axios.get(`${API_URL}/CardTemplate/${schoolId}`);
+            // Filter locally for staff templates
+            const staffTemplates = res.data.filter(t => t.cardType === 'staff');
+            setTemplates(staffTemplates);
+            if (staffTemplates.length > 0) {
+                setSelectedTemplate(staffTemplates[0]);
+            }
+        } catch (error) {
+            console.error("Error fetching templates:", error);
+        }
+    };
 
     const fetchStaff = async () => {
         setLoading(true);
@@ -50,13 +74,39 @@ const StaffIdCard = () => {
                         </div>
 
                         {/* Toolbar */}
-                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200">
+                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200 flex-wrap">
+
+                            {/* Template Selector */}
+                            {templates.length > 0 ? (
+                                <div className="relative">
+                                    <LayoutTemplate className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                                    <select
+                                        value={selectedTemplate?._id || ''}
+                                        onChange={(e) => {
+                                            const t = templates.find(temp => temp._id === e.target.value);
+                                            setSelectedTemplate(t);
+                                        }}
+                                        className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-48 shadow-sm"
+                                    >
+                                        {templates.map(t => (
+                                            <option key={t._id} value={t._id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : (
+                                <div className="text-xs text-red-500 font-medium px-2">
+                                    No Templates Found (Create in Designer)
+                                </div>
+                            )}
+
+                            <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
+
                             <div className="relative">
                                 <Filter className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                                 <select 
                                     value={staffType} 
                                     onChange={(e) => setStaffType(e.target.value)}
-                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-48 shadow-sm"
+                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-emerald-500 outline-none w-40 shadow-sm"
                                 >
                                     <option value="all">All Staff</option>
                                     <option value="teacher">Teachers</option>
@@ -74,7 +124,7 @@ const StaffIdCard = () => {
                             </button>
 
                             {staffList.length > 0 && (
-                                <div className="h-6 w-px bg-gray-300 mx-1"></div>
+                                <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
                             )}
 
                             {staffList.length > 0 && (
@@ -99,89 +149,31 @@ const StaffIdCard = () => {
                                 <Building2 className="w-4 h-4" />
                                 Found {staffList.length} staff members
                             </span>
+                            {selectedTemplate && (
+                                <span className="font-medium text-emerald-700">
+                                    Using template: {selectedTemplate.name}
+                                </span>
+                            )}
                         </div>
 
                         <div className="bg-gray-200/80 p-8 rounded-xl border border-gray-300 overflow-auto shadow-inner">
                             <div ref={componentRef} className="bg-white mx-auto p-8 shadow-2xl max-w-[210mm] min-h-[297mm]">
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 print:grid-cols-2 print:gap-4">
-                                {staffList.map((staff) => (
-                                    <div key={staff._id} className="border-[1.5px] border-gray-300 rounded-xl overflow-hidden w-full max-w-[350px] aspect-[1.586/1] flex flex-col relative bg-white page-break-inside-avoid shadow-sm print:shadow-none print:border-black group hover:shadow-md transition-shadow">
-                                        
-                                        {/* Header / School Info */}
-                                        <div className="bg-linear-to-r from-emerald-800 to-emerald-900 text-white p-2.5 flex items-center gap-3 h-[28%] relative overflow-hidden">
-                                            <div className="absolute -left-4 -bottom-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-
-                                            {schoolInfo?.schoolLogo && (
-                                                <div className="w-11 h-11 bg-white p-0.5 rounded-full shrink-0 shadow-lg z-10">
-                                                    <img 
-                                                        src={schoolInfo.schoolLogo.startsWith('http') ? schoolInfo.schoolLogo : `${API_URL}/${schoolInfo.schoolLogo}`} 
-                                                        alt="Logo" 
-                                                        className="w-full h-full rounded-full object-cover"
-                                                    />
-                                                </div>
-                                            )}
-                                            <div className="flex-1 text-center leading-tight z-10 flex flex-col justify-center">
-                                                <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/95">{schoolInfo?.schoolName}</h3>
-                                                <p className="text-[9px] text-emerald-100/90 truncate max-w-[180px] mx-auto mt-0.5">{schoolInfo?.address}</p>
+                                <div className="flex flex-wrap gap-4 justify-center print:justify-start">
+                                    {selectedTemplate ? (
+                                        staffList.map((staff) => (
+                                            <div key={staff._id} className="print:break-inside-avoid mb-4">
+                                                <CardRenderer
+                                                    template={selectedTemplate}
+                                                    data={staff}
+                                                    schoolData={schoolInfo}
+                                                />
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div className="w-full text-center py-12 text-gray-500">
+                                            Please select a template to generate cards.
                                         </div>
-
-                                        {/* Stripe */}
-                                        <div className="h-1 bg-gray-900 w-full"></div>
-
-                                        {/* Body */}
-                                        <div className="flex-1 p-3 flex gap-3.5 items-center bg-white relative">
-                                            {/* Watermark */}
-                                            {schoolInfo?.schoolLogo && (
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-                                                    <img src={schoolInfo.schoolLogo.startsWith('http') ? schoolInfo.schoolLogo : `${API_URL}/${schoolInfo.schoolLogo}`} className="w-32 h-32 grayscale" />
-                                                </div>
-                                            )}
-
-                                            {/* Staff Photo */}
-                                            <div className="w-20 h-24 border border-gray-200 bg-gray-50 shrink-0 rounded-sm shadow-sm p-0.5 relative z-10">
-                                                {staff.profilePicture ? (
-                                                     <img 
-                                                        src={staff.profilePicture.startsWith('http') ? staff.profilePicture : `${API_URL}/${staff.profilePicture}`} 
-                                                        className="w-full h-full object-cover rounded-sm"
-                                                        alt={staff.name} 
-                                                     />
-                                                ) : (
-                                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
-                                                        <Briefcase className="w-6 h-6 mb-1" />
-                                                        <span className="text-[8px]">No Photo</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Details */}
-                                            <div className="text-[10px] space-y-2 flex-1 z-10 pr-1">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[11px] font-bold text-gray-900 leading-tight uppercase">{staff.name}</span>
-                                                    <span className="text-emerald-700 font-semibold text-[10px] uppercase mt-0.5">{staff.designation?.title || staff.role || 'Staff'}</span>
-                                                </div>
-                                                <div className="space-y-1.5 mt-2 pt-2 border-t border-dashed border-gray-200">
-                                                    <div className="flex gap-2">
-                                                        <span className="font-semibold text-gray-500 w-10">Phone:</span>
-                                                        <span className="text-gray-900 font-medium">{staff.phone || '-'}</span>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <span className="font-semibold text-gray-500 w-10">Email:</span>
-                                                        <span className="text-gray-900 font-medium truncate">{staff.email || '-'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Footer */}
-                                        <div className="bg-emerald-50/50 border-t border-gray-200 p-1.5 px-3 flex justify-between items-center h-[12%]">
-                                            <span className="text-[9px] font-medium text-gray-500">
-                                                Ph: {schoolInfo?.phoneNumber || '-'}
-                                            </span>
-                                            <span className="text-[9px] uppercase font-bold text-emerald-900 tracking-wider">Staff ID</span>
-                                        </div>
-                                    </div>
-                                ))}
+                                    )}
                                 </div>
                             </div>
                         </div>

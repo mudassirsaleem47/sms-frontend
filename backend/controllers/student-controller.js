@@ -8,6 +8,8 @@ const studentAdmission = async (req, res) => {
     try {
         // Front-end se aane wala data
         const { rollNum, password, sclassName, school } = req.body;
+        console.log("Students Admission Request Body:", JSON.stringify(req.body, null, 2)); // DEBUG LOG
+        console.log("Students Admission Request Files:", req.files ? Object.keys(req.files) : "No files"); // DEBUG LOG
 
         // Check: Roll Number ya Email pehle se exist toh nahi karta? (Email check later)
         const studentExists = await Student.findOne({ rollNum, sclassName });

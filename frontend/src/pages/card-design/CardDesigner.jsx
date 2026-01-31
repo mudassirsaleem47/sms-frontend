@@ -1,10 +1,13 @@
+
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Draggable from 'react-draggable';
 import axios from 'axios';
-import { Upload, Save, X, Move, Plus, Image as ImageIcon, LayoutTemplate, Printer } from 'lucide-react';
+import { Maximize2, Minimize2, Upload, Save, X, Move, Plus, Image as ImageIcon, LayoutTemplate, Printer, Trash2, Edit, ChevronDown } from 'lucide-react';
 import API_URL from '../../config/api';
 import { useToast } from '../../context/ToastContext';
 import ColorPicker from '../../components/ui/ColorPicker';
+import Tooltip from '../../components/ui/Tooltip';
 
 const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
     const nodeRef = useRef(null);
@@ -18,6 +21,10 @@ const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
         >
             <div
                 ref={nodeRef}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(element.id); // Ensure click also selects
+                }}
                 className={`absolute cursor-move hover:outline-1 hover:outline-blue-400 ${isSelected ? 'outline-2 outline-blue-600 z-10' : 'z-0'}`}
                 style={{
                     fontSize: `${element.fontSize}px`,
@@ -28,8 +35,22 @@ const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
                 }}
             >
                 {element.type === 'image' ? (
-                    <div className="w-full h-full bg-gray-200 opacity-80 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-500">
+                    <div className="w-full h-full bg-gray-200 opacity-80 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-500 overflow-hidden text-center leading-tight p-1">
                         {element.label}
+                    </div>
+                ) : element.type === 'marksTable' ? (
+                    <div className="w-full h-full bg-white/90 border border-gray-800 text-[8px] overflow-hidden flex flex-col">
+                        <div className="bg-gray-200 border-b border-gray-800 font-bold p-1 text-center">MARKS TABLE</div>
+                        <table className="w-full text-center flex-1">
+                            <thead className="border-b border-gray-300 bg-gray-50">
+                                <tr><th>Subject</th><th>Max</th><th>Obt</th></tr>
+                            </thead>
+                            <tbody className="opacity-50">
+                                <tr><td>Math</td><td>100</td><td>95</td></tr>
+                                <tr><td>Eng</td><td>100</td><td>88</td></tr>
+                                <tr><td>Sci</td><td>100</td><td>92</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <span>{`{${element.label}}`}</span>
@@ -41,6 +62,7 @@ const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
 
 const CardDesigner = () => {
     const { showToast } = useToast();
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('currentUser'));
     const schoolId = user?.schoolName ? user._id : user?.school;
 
@@ -54,6 +76,7 @@ const CardDesigner = () => {
     const [templates, setTemplates] = useState([]);
     const [view, setView] = useState('design'); // 'design' | 'list'
     const [saving, setSaving] = useState(false);
+    const [focusMode, setFocusMode] = useState(false);
 
     // New State for Presets
     const [preset, setPreset] = useState('cr80'); // cr80, a4, custom, etc.
@@ -81,7 +104,9 @@ const CardDesigner = () => {
             { id: 'dob', label: 'Date of Birth' },
             { id: 'phone', label: 'Phone' },
             { id: 'address', label: 'Address' },
-            { id: 'photo', label: 'Student Photo', type: 'image' }
+            { id: 'photo', label: 'Student Photo', type: 'image' },
+            { id: 'logo', label: 'School Logo', type: 'image' },
+            { id: 'signature', label: 'Auth. Signature', type: 'image' }
         ],
         staff: [
             { id: 'name', label: 'Staff Name' },
@@ -89,15 +114,29 @@ const CardDesigner = () => {
             { id: 'email', label: 'Email' },
             { id: 'phone', label: 'Phone' },
             { id: 'joiningDate', label: 'Joining Date' },
-            { id: 'photo', label: 'Staff Photo', type: 'image' }
+            { id: 'photo', label: 'Staff Photo', type: 'image' },
+            { id: 'logo', label: 'School Logo', type: 'image' },
+            { id: 'signature', label: 'Auth. Signature', type: 'image' }
         ],
-        admit: [
+
+        report: [
             { id: 'name', label: 'Student Name' },
-            { id: 'examGroup', label: 'Exam Group' },
             { id: 'rollNum', label: 'Roll Number' },
             { id: 'class', label: 'Class' },
-            { id: 'examCenter', label: 'Exam Center' },
-            { id: 'photo', label: 'Student Photo', type: 'image' }
+            { id: 'section', label: 'Section' },
+            { id: 'admissionId', label: 'Admission No' },
+            { id: 'examName', label: 'Exam Name' },
+            { id: 'session', label: 'Session/Year' },
+            { id: 'marksTable', label: 'Marks Table', type: 'marksTable' },
+            { id: 'percentage', label: 'Percentage' },
+            { id: 'grade', label: 'Overall Grade' },
+            { id: 'status', label: 'Pass/Fail Status' },
+            { id: 'attendance', label: 'Attendance' },
+            { id: 'remarks', label: 'Remarks' },
+            { id: 'classTeacherSignature', label: 'Class Teacher Sig', type: 'image' },
+            { id: 'principalSignature', label: 'Principal Sig', type: 'image' },
+            { id: 'logo', label: 'School Logo', type: 'image' },
+            { id: 'parentSignature', label: 'Parent Signature', type: 'image' }
         ]
     };
 
@@ -174,8 +213,8 @@ const CardDesigner = () => {
             fontSize: 14,
             fontWeight: 'normal',
             color: '#000000',
-            width: field.type === 'image' ? 80 : undefined,
-            height: field.type === 'image' ? 100 : undefined
+            width: field.type === 'image' ? 80 : field.type === 'marksTable' ? 300 : undefined,
+            height: field.type === 'image' ? 100 : field.type === 'marksTable' ? 200 : undefined
         };
         setElements([...elements, newElement]);
         setSelectedElementId(newElement.id);
@@ -188,6 +227,22 @@ const CardDesigner = () => {
     const removeElement = (id) => {
         setElements(elements.filter(el => el.id !== id));
         if (selectedElementId === id) setSelectedElementId(null);
+    };
+
+    const navigateToPrint = (template) => {
+        switch (template.cardType) {
+            case 'student':
+                navigate('/admin/card-management/student');
+                break;
+            case 'staff':
+                navigate('/admin/card-management/staff');
+                break;
+            case 'report':
+                navigate('/admin/report-card');
+                break;
+            default:
+                showToast('Unknown card type', 'error');
+        }
     };
 
     const saveDetails = async () => {
@@ -301,7 +356,7 @@ const CardDesigner = () => {
                     </div>
                 )}
                 
-                {el.type === 'image' && (
+                {(el.type === 'image' || el.type === 'marksTable') && (
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
@@ -330,16 +385,26 @@ const CardDesigner = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 flex flex-col h-screen overflow-hidden">
+        <div className={`flex flex-col h-screen overflow-hidden transition-all duration-300 ${focusMode ? 'fixed inset-0 z-[100] w-screen h-screen bg-white' : 'min-h-screen bg-gray-50/50'}`}>
 
             {/* Header */}
-            <div className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between shrink-0 z-20">
+            <div className="h-16 bg-white border-b rounded-lg border-gray-200 px-6 flex items-center justify-between shrink-0 z-20">
                 <div className="flex items-center gap-4">
                     <div className="bg-indigo-600 p-2 rounded-lg">
                         <LayoutTemplate className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Card Designer</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-gray-900">Card Designer</h1>
+                            {view === 'design' && (
+                                <button
+                                    onClick={() => setFocusMode(!focusMode)}
+                                    className={`p-1.5 rounded-lg transition ${focusMode ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                                >
+                                    {focusMode ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -394,8 +459,8 @@ const CardDesigner = () => {
                                 </div>
 
                                 {templates.map(t => (
-                                    <div key={t._id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col h-64">
-                                        <div className="h-32 bg-gray-100 relative overflow-hidden">
+                                    <div key={t._id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group flex flex-col h-64 z-0 hover:z-10 relative">
+                                        <div className="h-32 bg-gray-100 relative overflow-hidden rounded-t-xl">
                                             {t.backgroundImage ? (
                                                 <img src={t.backgroundImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                             ) : (
@@ -415,9 +480,31 @@ const CardDesigner = () => {
                                                 <span>{new Date(t.createdAt).toLocaleDateString()}</span>
                                                 <span className="flex items-center gap-1"><LayoutTemplate size={10} /> {t.elements.length} items</span>
                                             </div>
-                                            <div className="mt-auto pt-3 flex gap-2">
-                                                <button className="flex-1 bg-indigo-50 text-indigo-700 text-sm font-semibold py-2 rounded-lg hover:bg-indigo-100 transition">Edit</button>
-                                                <button className="flex-1 bg-gray-50 text-gray-700 text-sm font-semibold py-2 rounded-lg hover:bg-gray-100 transition">Print</button>
+                                            <div className="mt-auto pt-3 flex justify-end gap-2">
+                                                <Tooltip text="Edit Template" position="top">
+                                                    <button
+                                                        onClick={() => loadTemplate(t)}
+                                                        className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                </Tooltip>
+                                                <Tooltip text="Print Cards" position="top">
+                                                    <button
+                                                        onClick={() => navigateToPrint(t)}
+                                                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition"
+                                                    >
+                                                        <Printer size={16} />
+                                                    </button>
+                                                </Tooltip>
+                                                <Tooltip text="Delete Template" position="top">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); deleteTemplate(t._id); }}
+                                                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </Tooltip>
                                             </div>
                                         </div>
                                     </div>
@@ -466,7 +553,7 @@ const CardDesigner = () => {
                                                     >
                                                         <option value="student">Student ID Card</option>
                                                         <option value="staff">Staff ID Card</option>
-                                                        <option value="admit">Admit Card</option>
+                                                        <option value="report">Result / Report Card</option>
                                                     </select>
                                                     <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                                                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -478,15 +565,20 @@ const CardDesigner = () => {
                                             <div className="space-y-1.5">
                                                 <label className="text-sm font-medium text-gray-700">Dimensions</label>
                                                 <div className="space-y-2">
-                                                    <select
-                                                        value={preset}
-                                                        onChange={(e) => setPreset(e.target.value)}
-                                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
-                                                    >
-                                                        {Object.entries(CARD_PRESETS).map(([key, val]) => (
-                                                            <option key={key} value={key}>{val.label} {key !== 'custom' && `(${val.width} x ${val.height} ${val.unit})`}</option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="relative">
+                                                        <select
+                                                            value={preset}
+                                                            onChange={(e) => setPreset(e.target.value)}
+                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
+                                                        >
+                                                            {Object.entries(CARD_PRESETS).map(([key, val]) => (
+                                                                <option key={key} value={key}>{val.label} {key !== 'custom' && `(${val.width} x ${val.height} ${val.unit})`}</option>
+                                                            ))}
+                                                        </select>
+                                                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                                            <ChevronDown size={16} className="text-gray-400" />
+                                                        </div>
+                                                    </div>
 
                                                     {preset === 'custom' && (
                                                         <div className="grid grid-cols-2 gap-2 animate-fade-in">
@@ -587,11 +679,8 @@ const CardDesigner = () => {
                                         className="relative bg-white shadow-2xl transition-all duration-300 ring-1 ring-gray-900/5"
                                         onClick={() => setSelectedElementId(null)}
                                         style={{
-                                            width: '450px', 
-                                            height: '280px',
-                                            backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
-                                            backgroundSize: 'cover',
-                                            backgroundPosition: 'center'
+                                            ...getCanvasStyle(),
+                                            // Override scale in render
                                         }}
                                     >
                                         {!backgroundImage && (
@@ -625,7 +714,7 @@ const CardDesigner = () => {
                                 <div className="p-5 flex-1 overflow-y-auto">
                                     {renderElementEditor()}
                                 </div>
-                        </div>
+                            </div>
 
                     </div>
                 )}

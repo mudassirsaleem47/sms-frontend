@@ -78,7 +78,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
     };
 
     return createPortal(
-        <div className={`fixed inset-0 z-[9999] overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
+        <div className={`fixed inset-0 z-9999 overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
             <div className="flex min-h-full items-center justify-center p-4">
                 <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-6xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
                 
@@ -106,7 +106,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                     <div className="p-6 md:p-8">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Complain Information */}
-                            <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-6 border border-red-100">
+                            <div className="bg-linear-to-r from-red-50 to-pink-50 rounded-lg p-6 border border-red-100">
                                 <h3 className="text-lg font-bold text-red-900 mb-4 flex items-center">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -133,7 +133,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 
                             {/* Action Details */}
                             {(formData.actionTaken || formData.assigned) && (
-                                <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-6 border border-green-100">
+                                <div className="bg-linear-to-r from-green-50 to-teal-50 rounded-lg p-6 border border-green-100">
                                     <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center">
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -158,7 +158,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                             )}
 
                             {/* Description */}
-                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100 col-span-full">
+                            <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100 col-span-full">
                                 <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center">
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -170,7 +170,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 
                             {/* Note */}
                             {formData.note && (
-                                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-6 border border-amber-100 col-span-full">
+                                <div className="bg-linear-to-r from-amber-50 to-orange-50 rounded-lg p-6 border border-amber-100 col-span-full">
                                     <h3 className="text-lg font-bold text-amber-900 mb-3 flex items-center">
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
@@ -183,7 +183,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 
                             {/* Attached Document/Image */}
                             {formData.document && (
-                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-100 col-span-full">
+                                <div className="bg-linear-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-100 col-span-full">
                                     <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center">
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />

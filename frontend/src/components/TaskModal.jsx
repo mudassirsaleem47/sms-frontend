@@ -3,6 +3,7 @@ import { X, Plus, Check, CheckSquare, Calendar as CalendarIcon, ArrowLeft, Trash
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import Tooltip from './ui/Tooltip';
 
 
 const API_BASE = "http://localhost:5000";
@@ -198,6 +199,7 @@ const TaskModal = () => {
     return (
         <div className="relative" ref={dropdownRef}>
             {/* Task Icon Button */}
+            <Tooltip text="Tasks" position="bottom">
             <button
                 onClick={handleToggle}
                 className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -210,6 +212,7 @@ const TaskModal = () => {
                     </span>
                 )}
             </button>
+            </Tooltip>
 
             {/* Dropdown Panel */}
             {isOpen && (

@@ -16,7 +16,7 @@ const cardTemplateSchema = new mongoose.Schema({
     },
     cardType: {
         type: String,
-        enum: ['student', 'staff', 'admit'],
+        enum: ['student', 'staff', 'admit', 'report'],
         default: 'student'
     },
     dimensions: {

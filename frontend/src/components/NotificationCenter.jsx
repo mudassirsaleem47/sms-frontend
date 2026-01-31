@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, BellDot, CheckCircle, XCircle, Trash2, X } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import Tooltip from './ui/Tooltip';
 
 const NotificationCenter = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -60,6 +61,7 @@ const NotificationCenter = () => {
     return (
         <div className="relative" ref={dropdownRef}>
             {/* Bell Icon Button */}
+            <Tooltip text="Notifications" position="bottom">
             <button
                 onClick={handleToggle}
                 className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
@@ -77,6 +79,7 @@ const NotificationCenter = () => {
                     </span>
                 )}
             </button>
+            </Tooltip>
 
             {/* Dropdown Panel */}
             {isOpen && (
