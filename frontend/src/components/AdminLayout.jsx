@@ -1,310 +1,227 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
-import CampusSelector from './CampusSelector';
-import NotificationCenter from './NotificationCenter';
-import CalendarModal from './CalendarModal';
-import TaskModal from './TaskModal';
-import { LogOut, User, Settings, Mail, Lock, Globe, ChevronDown, Menu, Search, Calendar } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Tooltip from './ui/Tooltip';
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { ModeToggle } from "@/components/mode-toggle"
-
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { AppSidebar } from "@/components/app-sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+import {
+  IconSearch,
+  IconUsers,
+  IconSchool,
+  IconBook,
+  IconCalendar,
+  IconCurrencyDollar,
+  IconFileText,
+  IconSettings,
+  IconChartBar,
+  IconUserPlus,
+  IconClipboardList
+} from "@tabler/icons-react";
 
 const AdminLayout = () => {
-  const { logout, currentUser } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const dropdownRef = useRef(null);
+  const [open, setOpen] = useState(false);
 
-  const handleLogout = () => {
-    handleCloseDropdown();
-    setTimeout(() => {
-      logout();
-    }, 150);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    setSidebarOpen(false);
-  };
-
-  const handleCloseDropdown = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-      setShowDropdown(false);
-      setIsClosing(false);
-    }, 150);
-  };
-
-  const handleToggleDropdown = () => {
-    if (showDropdown) {
-      handleCloseDropdown();
-    } else {
-      setShowDropdown(true);
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Search functionality yahan implement kar sakte hain
-    console.log('Searching for:', searchQuery);
-  };
-
-  // Close dropdown when clicking outside
+  // Keyboard shortcut for Ctrl+K
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        handleCloseDropdown();
+    const down = (e) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
       }
     };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
+  // Navigation items for search
+  const navigationItems = [
+    {
+      group: "Main",
+      items: [
+        { name: "Dashboard", icon: IconChartBar, path: "/admin/dashboard" },
+        { name: "Students", icon: IconUsers, path: "/admin/students" },
+        { name: "Teachers", icon: IconSchool, path: "/admin/teachers" },
+        { name: "Classes", icon: IconBook, path: "/admin/classes" },
+      ]
+    },
+    {
+      group: "Academic",
+      items: [
+        { name: "Subjects", icon: IconBook, path: "/admin/subjects" },
+        { name: "Class Schedule", icon: IconCalendar, path: "/admin/class-schedule" },
+        { name: "Teacher Schedule", icon: IconCalendar, path: "/admin/teacher-schedule" },
+        { name: "Attendance", icon: IconClipboardList, path: "/admin/attendance" },
+      ]
+    },
+    {
+      group: "Admissions",
+      items: [
+        { name: "Student Admission", icon: IconUserPlus, path: "/admin/admissions" },
+        { name: "Enquiry", icon: IconFileText, path: "/admin/enquiry" },
+        { name: "Promote Students", icon: IconUsers, path: "/admin/promote" },
+      ]
+    },
+    {
+      group: "Finance",
+      items: [
+        { name: "Fee Collection", icon: IconCurrencyDollar, path: "/admin/fees" },
+        { name: "Expenses", icon: IconCurrencyDollar, path: "/admin/expenses" },
+      ]
+    },
+    {
+      group: "Settings",
+      items: [
+        { name: "School Settings", icon: IconSettings, path: "/admin/settings" },
+      ]
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
-
-  const menuItems = [
-    { icon: User, label: 'Profile', action: () => navigate('/admin/profile') },
-    { icon: Lock, label: 'Reset Password', action: () => navigate('/admin/reset-password') },
-    { icon: Mail, label: 'Mailbox', action: () => navigate('/admin/mailbox') },
-    { icon: Globe, label: 'Global Settings', action: () => navigate('/admin/settings') },
   ];
+
+  // Generate breadcrumb dari current path
+  const generateBreadcrumbs = () => {
+    const paths = location.pathname.split('/').filter(Boolean);
+
+    // Skip first 'admin' segment
+    const pathsWithoutAdmin = paths.slice(1);
+
+    // Convert path to readable title
+    const toTitle = (str) => {
+      return str
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+
+    return pathsWithoutAdmin.map((path, index) => {
+      const href = `/admin/${pathsWithoutAdmin.slice(0, index + 1).join('/')}`;
+      const isLast = index === pathsWithoutAdmin.length - 1;
+
+      return {
+        title: toTitle(path),
+        href: href,
+        isLast: isLast
+      };
+    });
+  };
+
+  const breadcrumbs = generateBreadcrumbs();
+
+  const handleSelect = (path) => {
+    setOpen(false);
+    navigate(path);
+  };
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
+      <AppSidebar />
+      <SidebarInset>
+        {/* Header with Breadcrumb */}
+        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {/* Dashboard Link */}
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink asChild>
+                  <Link to="/admin/dashboard">Dashboard</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
 
-        {/* 1. Sidebar - Now responsive */}
-        {/* <Sidebar onLogout={handleLogout} isOpen={sidebarOpen} onClose={closeSidebar} /> */}
-        <AppSidebar />
+              {/* Dynamic Breadcrumbs */}
+              {breadcrumbs.length > 0 && (
+                <>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  {breadcrumbs.map((crumb, index) => (
+                    <React.Fragment key={crumb.href}>
+                      <BreadcrumbItem>
+                        {crumb.isLast ? (
+                          <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
+                        ) : (
+                          <BreadcrumbLink asChild>
+                            <Link to={crumb.href}>{crumb.title}</Link>
+                          </BreadcrumbLink>
+                        )}
+                      </BreadcrumbItem>
+                      {!crumb.isLast && <BreadcrumbSeparator />}
+                    </React.Fragment>
+                  ))}
+                </>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
 
-      {/* 2. Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-
-          {/* Header/Navbar - Mobile responsive */}
-          <header className="bg-card border-b border-border px-4 md:px-7 py-4 md:py-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            {/* Hamburger Menu for Mobile */}
+          {/* Search Bar Trigger */}
+          <div className="ml-auto">
             <button
-              onClick={toggleSidebar}
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Toggle menu"
+              onClick={() => setOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground border border-input rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
             >
-              <Menu className="w-5 h-5 text-gray-700" />
+              <IconSearch className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Search...</span>
+              <kbd className="hidden sm:inline pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
             </button>
-
-          
-
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search students, classes, teachers..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition duration-200 text-sm text-gray-900 placeholder-gray-400"
-                />
-              </div>
-            </form>
-          </div>
-          
-          <div className="flex items-center gap-2 md:gap-4">
-            <CampusSelector />
-            <ModeToggle />  
-
-            {/* Calendar Icon */}
-              <Tooltip>
-            <button
-              onClick={() => setShowCalendar(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative"
-              title="School Calendar"
-            >
-              <Calendar className="w-5 h-5 text-gray-700" />
-            </button>
-            </Tooltip>
-
-            {/* Task Icon */}
-            <TaskModal />
-
-            <NotificationCenter />
-            
-            {/* Profile Dropdown */}
-            {currentUser && (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={handleToggleDropdown}
-                  className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                >
-                  <div className="w-8 md:w-9 h-8 md:h-9 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <User className="w-4 md:w-5 h-4 md:h-5 text-indigo-600" />
-                  </div>
-                  <ChevronDown className={`w-3 md:w-4 h-3 md:h-4 text-gray-500 transition-transform hidden sm:block ${showDropdown ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Dropdown Menu */}
-                {showDropdown && (
-                  <div className={`profile-dropdown ${isClosing ? 'profile-dropdown-closing' : 'profile-dropdown-opening'}`}>
-                    {/* User Info Section */}
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
-                          <span className="text-lg font-bold text-indigo-600">
-                            {currentUser.schoolName?.charAt(0) || 'S'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {currentUser.schoolName}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {currentUser.email}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      {menuItems.map((item, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            handleCloseDropdown();
-                            setTimeout(() => {
-                              item.action();
-                            }, 150);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                        >
-                          <item.icon className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-700">{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Logout */}
-                    <div className="border-t border-gray-100 pt-2">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-left"
-                      >
-                        <LogOut className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-red-600 font-medium">Logout</span>
-                      </button>
-                    </div>
-
-                    <style jsx>{`
-                      .profile-dropdown {
-                        position: absolute;
-                        right: 0;
-                        margin-top: 0.5rem;
-                        width: 16rem;
-                        background-color: white;
-                        border-radius: 0.75rem;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                        border: 1px solid #e5e7eb;
-                        padding-top: 0.5rem;
-                        padding-bottom: 0.5rem;
-                        z-index: 50;
-                      }
-
-                      @media (min-width: 768px) {
-                        .profile-dropdown {
-                          width: 18rem;
-                        }
-                      }
-
-                      .profile-dropdown-opening {
-                        animation: slideDownFadeIn 0.15s ease-out forwards;
-                        -webkit-animation: slideDownFadeIn 0.15s ease-out forwards;
-                      }
-
-                      .profile-dropdown-closing {
-                        animation: fadeOut 0.15s ease-in forwards;
-                        -webkit-animation: fadeOut 0.15s ease-in forwards;
-                      }
-
-                      @keyframes slideDownFadeIn {
-                        from {
-                          opacity: 0;
-                          transform: translateY(-10px) scale(0.95);
-                        }
-                        to {
-                          opacity: 1;
-                          transform: translateY(0) scale(1);
-                        }
-                      }
-
-                      @-webkit-keyframes slideDownFadeIn {
-                        from {
-                          opacity: 0;
-                          -webkit-transform: translateY(-10px) scale(0.95);
-                        }
-                        to {
-                          opacity: 1;
-                          -webkit-transform: translateY(0) scale(1);
-                        }
-                      }
-
-                      @keyframes fadeOut {
-                        from {
-                          opacity: 1;
-                          transform: translateY(0) scale(1);
-                        }
-                        to {
-                          opacity: 0;
-                          transform: translateY(-10px) scale(0.95);
-                        }
-                      }
-
-                      @-webkit-keyframes fadeOut {
-                        from {
-                          opacity: 1;
-                          -webkit-transform: translateY(0) scale(1);
-                        }
-                        to {
-                          opacity: 0;
-                          -webkit-transform: translateY(-10px) scale(0.95);
-                        }
-                      }
-                    `}</style>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </header>
 
-        {/* Page Content (Jahan Dashboard, Students, Fees load honge) */}
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
-          <div className="p-4 md:p-6">
-            <Outlet /> {/* <-- Ye component child routes ko load karega */}
-          </div>
-        </main>
-      </div>
+        {/* Command Palette Dialog */}
+        <CommandDialog open={open} onOpenChange={setOpen}>
+          <CommandInput placeholder="Type a command or search..." />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
 
-      {/* Calendar Modal */}
-      <CalendarModal isOpen={showCalendar} onClose={() => setShowCalendar(false)} />
-    </div>
-    </SidebarProvider >
+            {navigationItems.map((section) => (
+              <React.Fragment key={section.group}>
+                <CommandGroup heading={section.group}>
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <CommandItem
+                        key={item.path}
+                        onSelect={() => handleSelect(item.path)}
+                      >
+                        <Icon className="mr-2 h-3.5 w-3.5" />
+                        <span>{item.name}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+                <CommandSeparator />
+              </React.Fragment>
+            ))}
+          </CommandList>
+        </CommandDialog>
+
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col gap-6 p-4">
+          <Outlet />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
-}; 
+};
 
 export default AdminLayout;
