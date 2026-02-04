@@ -124,6 +124,7 @@ const navMainData = [
     items: [
       { title: 'Profile Settings', url: '/admin/settings' },
       { title: 'Toast Test', url: '/admin/toast-test' },
+      { title: 'Component Test', url: '/admin/component-test' },
     ]
   },
 ]

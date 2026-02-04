@@ -9,8 +9,7 @@ export default {
   theme: {
 	  extend: {
 		  fontFamily: {
-			  sans: ['Geist Sans', 'sans-serif'],
-			  mono: ['Geist Mono', 'monospace'],
+			  sans: ['Inter', 'sans-serif'],
 		  },
 		  borderRadius: {
 			  lg: 'var(--radius)',

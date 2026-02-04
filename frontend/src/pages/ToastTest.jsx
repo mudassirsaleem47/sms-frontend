@@ -11,11 +11,155 @@ const ToastTest = () => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Toast Notification Test</h1>
+        <h1 className="text-3xl font-bold">Component & Color Test Page</h1>
         <p className="text-muted-foreground mt-2">
-          Test different types of toast notifications
+          Test colors, components, and toast notifications
         </p>
       </div>
+
+      {/* Color Variables Showcase */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Shadcn Color Variables</CardTitle>
+          <CardDescription>
+            All theme color variables with their current values
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Base Colors */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Base Colors</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-background border-2" />
+                <div>
+                  <p className="text-sm font-medium">background</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--background))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-foreground" />
+                <div>
+                  <p className="text-sm font-medium">foreground</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--foreground))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-card border-2" />
+                <div>
+                  <p className="text-sm font-medium">card</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--card))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-popover border-2" />
+                <div>
+                  <p className="text-sm font-medium">popover</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--popover))</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Colors */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Action Colors</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-primary" />
+                <div>
+                  <p className="text-sm font-medium">primary</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--primary))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-secondary" />
+                <div>
+                  <p className="text-sm font-medium">secondary</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--secondary))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-muted" />
+                <div>
+                  <p className="text-sm font-medium">muted</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--muted))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-accent" />
+                <div>
+                  <p className="text-sm font-medium">accent</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--accent))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-destructive" />
+                <div>
+                  <p className="text-sm font-medium">destructive</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--destructive))</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Border & Input */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Border & Input</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md border-4 border-border bg-background" />
+                <div>
+                  <p className="text-sm font-medium">border</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--border))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-input" />
+                <div>
+                  <p className="text-sm font-medium">input</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--input))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md border-4 border-ring bg-background" />
+                <div>
+                  <p className="text-sm font-medium">ring</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--ring))</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar Colors */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Sidebar Colors</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-sidebar" />
+                <div>
+                  <p className="text-sm font-medium">sidebar</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--sidebar-background))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-sidebar-primary" />
+                <div>
+                  <p className="text-sm font-medium">sidebar-primary</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--sidebar-primary))</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <div className="w-12 h-12 rounded-md bg-sidebar-accent" />
+                <div>
+                  <p className="text-sm font-medium">sidebar-accent</p>
+                  <p className="text-xs text-muted-foreground">hsl(var(--sidebar-accent))</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Basic Toast Types */}
       <Card>

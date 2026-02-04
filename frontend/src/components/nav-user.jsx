@@ -1,6 +1,9 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
-
+import { useTheme } from "@/components/theme-provider"
+import { Moon, Sun } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import {
   IconBadge,
   IconBell,
@@ -37,6 +40,12 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { logout } = useAuth()
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  const handleToggle = (checked) => {
+    setTheme(checked ? "dark" : "light")
+  }
 
   return (
     <SidebarMenu>
@@ -76,9 +85,19 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconSparkles />
-                Upgrade to Pro
+              <DropdownMenuItem asChild>
+                <div className="flex items-center justify-between w-full px-2 py-1.5 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    {!isDark && <Sun className="h-4 w-4" />}
+                    {isDark && <Moon className="h-4 w-4" />}
+                    <span>Dark Mode</span>
+                  </div>
+                  <Switch
+                    checked={isDark}
+                    onCheckedChange={handleToggle}
+                    aria-label="Toggle theme"
+                  />
+                </div>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

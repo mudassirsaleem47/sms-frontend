@@ -16,6 +16,13 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     Empty,
     EmptyHeader,
     EmptyTitle,
@@ -36,6 +43,9 @@ import {
     IconCalendar,
     IconSchool,
     IconLoader2,
+    IconDots,
+    IconCopy,
+    IconStar,
 } from '@tabler/icons-react';
 
 const API_BASE = "http://localhost:5000";
@@ -155,6 +165,25 @@ const AdmissionEnquiry = () => {
         setCurrentEnquiry(null);
         setViewMode(false);
         setIsModalOpen(true);
+    };
+
+    // Copy Enquiry Logic
+    const handleCopy = (enquiry) => {
+        const copiedData = {
+            ...enquiry,
+            _id: undefined,
+            name: enquiry.name + ' (Copy)'
+        };
+        setCurrentEnquiry(copiedData);
+        setViewMode(false);
+        setIsModalOpen(true);
+        showToast("Creating copy of enquiry", "info");
+    };
+
+    // Favorite Toggle Logic (placeholder - you can add state management for favorites)
+    const handleFavorite = (enquiry) => {
+        showToast(`${enquiry.name} marked as favorite!`, "success");
+        // TODO: Implement favorite persistence logic
     };
 
     // Filter enquiries based on search query
@@ -318,7 +347,7 @@ const AdmissionEnquiry = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="secondary" className="gap-1">
+                                                <Badge variant="default" className="gap-1">
                                                     <IconSchool className="w-3 h-3" />
                                                     {item.class?.sclassName || 'N/A'}
                                                 </Badge>
@@ -340,36 +369,36 @@ const AdmissionEnquiry = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleView(item)}
-                                                        title="View details"
-                                                    >
-                                                        <IconEye className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleEdit(item)}
-                                                        title="Edit enquiry"
-                                                    >
-                                                        <IconEdit className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant={selectedDeleteId === item._id ? "destructive" : "ghost"}
-                                                        size="icon"
-                                                        onClick={() => handleDelete(item._id)}
-                                                        title={selectedDeleteId === item._id ? "Click to confirm" : "Delete enquiry"}
-                                                    >
-                                                        {selectedDeleteId === item._id ? (
-                                                            <IconCheck className="w-4 h-4" />
-                                                        ) : (
-                                                                <IconTrash className="w-4 h-4" />
-                                                        )}
-                                                    </Button>
-                                                </div>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <IconDots className="h-4 w-4" />
+                                                            <span className="sr-only">Actions</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                                            <IconEdit className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleCopy(item)}>
+                                                            <IconCopy className="mr-2 h-4 w-4" />
+                                                            Make a copy
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleFavorite(item)}>
+                                                            <IconStar className="mr-2 h-4 w-4" />
+                                                            Favorite
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => handleDelete(item._id)}
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <IconTrash className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </TableCell>
                                         </TableRow>
                                     ))}

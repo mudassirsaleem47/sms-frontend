@@ -51,6 +51,7 @@ import ClassSchedule from './pages/ClassSchedule';
 import TeacherSchedule from './pages/TeacherSchedule';
 import Promotion from './pages/Promotion';
 import ToastTest from './pages/ToastTest';
+import ComponentTest from './pages/ComponentTest';
 
 
 import { ToastProvider } from './context/ToastContext';
@@ -95,6 +96,7 @@ function App() {
                   <Route path="students/disable-reasons" element={<DisableReasonPage />} />
                   <Route path="settings" element={<SettingsProfile />} />
                   <Route path="toast-test" element={<ToastTest />} />
+                  <Route path="component-test" element={<ComponentTest />} />
                   <Route path="fee-management" element={<FeeManagement />} />
                   <Route path="fee-assignment" element={<FeeAssignment />} />
                   <Route path="fee-collection" element={<FeeCollection />} />

@@ -85,7 +85,7 @@ const AdminLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-gray-50">
+      <div className="flex h-screen w-full bg-background">
 
         {/* 1. Sidebar - Now responsive */}
         {/* <Sidebar onLogout={handleLogout} isOpen={sidebarOpen} onClose={closeSidebar} /> */}
@@ -95,7 +95,7 @@ const AdminLayout = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
 
           {/* Header/Navbar - Mobile responsive */}
-          <header className="bg-white border-b border-gray-100 px-4 md:px-7 py-4 md:py-5 flex items-center justify-between gap-4">
+          <header className="bg-card border-b border-border px-4 md:px-7 py-4 md:py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-1">
             {/* Hamburger Menu for Mobile */}
             <button
@@ -293,7 +293,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content (Jahan Dashboard, Students, Fees load honge) */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background">
           <div className="p-4 md:p-6">
             <Outlet /> {/* <-- Ye component child routes ko load karega */}
           </div>
