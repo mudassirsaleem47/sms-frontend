@@ -1,565 +1,625 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useCampus } from '../context/CampusContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import StudentModal from '../components/form-popup/StudentModal';
 import StudentDetailsModal from '../components/form-popup/StudentDetailsModal';
+import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
 
-import SearchBar from '../components/SearchBar';
-import { Edit, Trash2, Plus, Eye, LayoutGrid, List as ListIcon, Filter, X, GraduationCap, Users, ChevronRight, ArrowLeft, Check } from 'lucide-react';
+import {
+    Users,
+    ChevronLeft,
+    Search,
+    MoreHorizontal,
+    Plus,
+    Trash2,
+    Eye,
+    Pencil,
+    Copy,
+    Star,
+    LayoutGrid,
+    List as ListIcon
+} from 'lucide-react';
+
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardFooter
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const StudentList = () => {
     const { currentUser } = useAuth();
-    const { selectedCampus } = useCampus();
-    const { showToast } = useToast();
     const navigate = useNavigate();
+    const { setExtraBreadcrumb } = useOutletContext() || {};
     
     // --- State Management ---
+    const [viewMode, setViewMode] = useState('classes'); // 'classes' | 'students'
+    const [viewType, setViewType] = useState('list'); // 'list' | 'grid'
+    const [classesList, setClassesList] = useState([]);
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-    
-    // Navigation State
-    const [viewType, setViewType] = useState('classes'); // 'classes' or 'students'
+
+    // Selected Data
     const [selectedClass, setSelectedClass] = useState(null);
+    const [selectedStudents, setSelectedStudents] = useState([]); // Array of IDs
 
-    // Filter State
+    // Filters & Search
     const [searchQuery, setSearchQuery] = useState("");
-    const [filterClass, setFilterClass] = useState("");
-    const [filterSection, setFilterSection] = useState("");
-    const [classesList, setClassesList] = useState([]);
 
-    // Modal State
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    // Modals
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [currentStudent, setCurrentStudent] = useState(null);
+    const [deleteId, setDeleteId] = useState(null); // Single delete
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false); // Bulk delete confirm
 
-    // Delete Confirmation State
+    // --- Data Fetching ---
+    useEffect(() => {
+        if (currentUser) {
+            fetchInitialData();
+        }
+    }, [currentUser]);
 
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
-
-    // --- 1. Data Fetching ---
-    const fetchData = React.useCallback(async () => {
+    const fetchInitialData = async () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
-
-            setStudents([]);
-            setClassesList([]);
-            
-            const [studentsRes, classesRes] = await Promise.all([
-                axios.get(`${API_BASE}/Students/${schoolId}`),
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`)
+            const [classesRes, studentsRes] = await Promise.all([
+                axios.get(`${API_BASE}/Sclasses/${schoolId}`),
+                axios.get(`${API_BASE}/Students/${schoolId}`)
             ]);
-
-            setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
             setClassesList(Array.isArray(classesRes.data) ? classesRes.data : []);
+            setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
         } catch (err) {
-            showToast("Error loading data", "error");
+            console.error("Error fetching data:", err);
+            toast.error("Failed to load data");
         } finally {
             setLoading(false);
         }
-    }, [currentUser, showToast]);
+    };
 
-    useEffect(() => {
-        if (currentUser) {
-            fetchData();
+    // --- Derived Data ---
+    const filteredStudents = useMemo(() => {
+        if (!selectedClass) return [];
+
+        let filtered = students.filter(s => s.sclassName?._id === selectedClass._id);
+
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(s =>
+                s.name?.toLowerCase().includes(query) ||
+                s.rollNum?.toString().includes(query) ||
+                s.father?.name?.toLowerCase().includes(query)
+            );
         }
-    }, [currentUser, selectedCampus, fetchData]);
+        return filtered;
+    }, [students, selectedClass, searchQuery]);
 
-    // --- 2. Action Handlers ---
+    // --- Handlers ---
 
-    // Add/Edit Submit Logic
+    const handleClassClick = (cls) => {
+        setSelectedClass(cls);
+        setViewMode('students');
+        setSelectedStudents([]); // Reset selection
+        setSearchQuery("");
+        setViewType('list'); // Default to list view
+    };
+
+    // Breadcrumb Effect
+    useEffect(() => {
+        if (setExtraBreadcrumb) {
+            if (viewMode === 'students' && selectedClass) {
+                setExtraBreadcrumb(selectedClass.sclassName);
+            } else {
+                setExtraBreadcrumb(null);
+            }
+        }
+    }, [viewMode, selectedClass]);
+
+    const handleBackToClasses = () => {
+        setViewMode('classes');
+        setSelectedClass(null);
+        setSelectedStudents([]);
+    };
+
+    // Selection Logic
+    const toggleSelectAll = () => {
+        if (selectedStudents.length === filteredStudents.length) {
+            setSelectedStudents([]);
+        } else {
+            setSelectedStudents(filteredStudents.map(s => s._id));
+        }
+    };
+
+    const toggleSelectStudent = (id) => {
+        if (selectedStudents.includes(id)) {
+            setSelectedStudents(prev => prev.filter(sId => sId !== id));
+        } else {
+            setSelectedStudents(prev => [...prev, id]);
+        }
+    };
+
+    // Actions
+    const handleAddStudent = () => {
+        navigate('/admin/admission');
+    };
+
+    const handleEditStudent = (student) => {
+        setCurrentStudent(student);
+        setIsAddModalOpen(true);
+    };
+
+    const handleViewStudent = (student) => {
+        setCurrentStudent(student);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleCopy = (student) => {
+        const copiedData = { ...student, _id: undefined, name: `${student.name} (Copy)`, rollNum: '' };
+        setCurrentStudent(copiedData);
+        setIsAddModalOpen(true);
+        toast.info("Creating copy of student record");
+    };
+
+    const handleFavorite = (student) => {
+        toast.success(`${student.name} marked as favorite`);
+    };
+
     const handleFormSubmit = async (formData) => {
         try {
-            const dataToSend = { ...formData, school: currentUser._id };
-            
+            const payload = { ...formData, school: currentUser._id };
+
             if (currentStudent) {
-                // UPDATE Existing
-                if (!dataToSend.password) {
-                    delete dataToSend.password;
-                }
-                await axios.put(`${API_BASE}/Student/${currentStudent._id}`, dataToSend);
+                // Clean payload for update
+                const { password, ...updateData } = payload;
+                await axios.put(`${API_BASE}/Student/${currentStudent._id}`, updateData);
+                toast.success("Student updated successfully");
             } else {
-                // CREATE New
-                await axios.post(`${API_BASE}/StudentRegister`, dataToSend);
+                await axios.post(`${API_BASE}/StudentRegister`, payload);
+                toast.success("Student registered successfully");
             }
 
-            setIsModalOpen(false);
-            setCurrentStudent(null);
-            fetchData();
-            showToast("Student saved successfully!", "success");
+            setIsAddModalOpen(false);
+            fetchInitialData();
         } catch (err) {
-            showToast("Failed to save student.", "error");
+            console.error(err);
+            toast.error("Operation failed");
         }
     };
 
     // Delete Logic
-    const handleDelete = (id) => {
-        if (selectedDeleteId === id) {
-            confirmDelete();
-        } else {
-            setSelectedDeleteId(id);
-            // Auto-reset after 3 seconds
-            setTimeout(() => {
-                setSelectedDeleteId(prev => prev === id ? null : prev);
-            }, 3000);
-        }
-    };
-
-    const confirmDelete = async () => {
-        if (!selectedDeleteId) return;
+    const handleDeleteSingle = async () => {
+        if (!deleteId) return;
         try {
-            await axios.delete(`${API_BASE}/Student/${selectedDeleteId}`);
-            fetchData();
-            showToast("Student deleted successfully!", "success");
+            await axios.delete(`${API_BASE}/Student/${deleteId}`);
+            toast.success("Student deleted");
+            setStudents(prev => prev.filter(s => s._id !== deleteId));
+            setSelectedStudents(prev => prev.filter(id => id !== deleteId));
         } catch (err) {
-            showToast("Error deleting student", "error");
+            console.error(err);
+            toast.error("Failed to delete");
         }
-        setSelectedDeleteId(null);
+        setDeleteId(null);
     };
 
-    // Edit/Add/View Logic
-    const handleEdit = (student) => {
-        setCurrentStudent(student);
-        setIsModalOpen(true);
+    // Bulk Actions
+    const handleBulkDelete = async () => {
+        try {
+            const deletePromises = selectedStudents.map(id => axios.delete(`${API_BASE}/Student/${id}`));
+            await Promise.all(deletePromises);
+
+            toast.success(`${selectedStudents.length} students deleted`);
+            setStudents(prev => prev.filter(s => !selectedStudents.includes(s._id)));
+            setSelectedStudents([]);
+            setIsBulkDeleteOpen(false);
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to delete some students");
+        }
     };
 
-    const handleView = (student) => {
-        setCurrentStudent(student);
-        setIsDetailsModalOpen(true);
-    };
+    // Helper: Get student count for a class
+    const getCount = (classId) => students.filter(s => s.sclassName?._id === classId).length;
 
-    // Class Selection Handler
-    const handleClassSelect = (classData) => {
-        setSelectedClass(classData);
-        setViewType('students');
-        setFilterClass(classData._id);
-        setSearchQuery("");
-        setFilterSection("");
-    };
-
-    // Back to Classes Handler
-    const handleBackToClasses = () => {
-        setViewType('classes');
-        setSelectedClass(null);
-        setFilterClass("");
-        setFilterSection("");
-        setSearchQuery("");
-    };
-
-    // Get student count for a specific class
-    const getStudentCountForClass = (classId) => {
-        return students.filter(student => student.sclassName?._id === classId).length;
-    };
-
-    // Filter students based on search query and filters
-    const filteredStudents = students.filter((student) => {
-        const query = searchQuery.toLowerCase();
-        
-        // Search Filter
-        const matchesSearch = !searchQuery || (
-            student.name?.toLowerCase().includes(query) ||
-            student.rollNum?.toString().toLowerCase().includes(query) ||
-            student.father?.name?.toLowerCase().includes(query) ||
-            student.sclassName?.sclassName?.toLowerCase().includes(query)
-        );
-
-        // Class Filter (auto-applied when a class is selected)
-        const matchesClass = !filterClass || student.sclassName?._id === filterClass;
-
-        // Section Filter
-        const matchesSection = !filterSection || student.section === filterSection;
-
-        // Campus Filter - only filter if a specific campus is selected
-        const matchesCampus = !selectedCampus || student.campus?._id === selectedCampus._id || student.campus === selectedCampus._id;
-
-        return matchesSearch && matchesClass && matchesSection && matchesCampus;
-    });
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-4 md:p-6 lg:p-8">
+        <div className="flex-1 space-y-4 p-8 pt-6">
             
-            {/* Header Section */}
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <div>
-                        {/* Breadcrumb Navigation */}
-                        {viewType === 'students' && selectedClass && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                                <button
-                                    onClick={handleBackToClasses}
-                                    className="flex items-center gap-1 hover:text-indigo-600 transition-colors"
-                                >
-                                    Classes
-                                </button>
-                                <ChevronRight size={16} />
-                                <span className="text-gray-900 font-semibold">{selectedClass.sclassName}</span>
-                            </div>
-                        )}
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-                            {viewType === 'classes' ? 'Student Management' : `${selectedClass?.sclassName || 'Class'} Students`}
-                        </h1>
-                        <p className="text-sm md:text-base text-gray-600 mt-2">
-                            {viewType === 'classes'
-                                ? 'Select a class to view and manage students'
-                                : `Manage students in ${selectedClass?.sclassName || 'this class'}`
-                            }
-                        </p>
-                    </div>
-
-                    {/* Back to Classes Button */}
-                    {viewType === 'students' && (
-                        <button
-                            onClick={handleBackToClasses}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm md:text-base"
-                        >
-                            <ArrowLeft size={18} />
-                            <span className="hidden sm:inline">Back to Classes</span>
-                            <span className="sm:hidden">Back</span>
-                        </button>
-                    )}
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col gap-1">
+                    <h2 className="text-3xl font-bold tracking-tight">
+                        Student Management
+                    </h2>
+                    <p className="text-muted-foreground">
+                        {viewMode === 'classes'
+                            ? 'Select a class to view and manage students' 
+                            : `Manage students, admissions, and records for ${selectedClass?.sclassName}`}
+                    </p>
                 </div>
 
-
-                {/* Controls Bar - Only show in students view */}
-                {viewType === 'students' && (
-                    <div className="flex flex-col xl:flex-row justify-between items-center gap-4 mb-6">
-
-                        {/* Search & Filters Group */}
-                        <div className="w-full flex flex-col md:flex-row gap-3 items-center flex-1">
-                            {/* Search Bar */}
-                            <div className="w-full md:w-72">
-                                <SearchBar
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search students..."
-                                    className="w-full"
-                                />
-                            </div>
-
-                            {/* Filters */}
-                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                {/* Section Filter */}
-                                <div className="relative">
-                                    <select
-                                        value={filterSection}
-                                        onChange={(e) => setFilterSection(e.target.value)}
-                                        className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-white min-w-[140px]"
-                                    >
-                                        <option value="">All Sections</option>
-                                        {selectedClass?.sections?.map((sec, idx) => (
-                                            <option key={idx} value={sec.sectionName || sec}>
-                                                {sec.sectionName || sec}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                        <Filter size={14} />
-                                    </div>
-                                </div>
-
-                                {(filterSection || searchQuery) && (
-                                    <button
-                                        onClick={() => {
-                                            setFilterSection("");
-                                            setSearchQuery("");
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                                    >
-                                        <X size={14} /> Clear
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* View Toggle */}
-                        <div className="flex bg-white rounded-lg shadow-xs p-1 border border-gray-200 shrink-0">
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-                                title="List View"
-                            >
-                                <ListIcon size={18} className="md:w-5 md:h-5" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-                                title="Grid View"
-                            >
-                                <LayoutGrid size={18} className="md:w-5 md:h-5" />
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Content Section */}
-                <div className="min-h-[400px]">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                                <p className="text-gray-600">Loading...</p>
-                            </div>
-                        </div>
-                    ) : viewType === 'classes' ? (
-                        /* CLASSES GRID VIEW */
-                        classesList.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 px-4 bg-white rounded-xl shadow-sm border border-gray-200">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                    <GraduationCap className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <p className="text-gray-600 text-lg font-500">No classes yet</p>
-                                <p className="text-gray-500 text-sm mt-1">Create classes first to view students</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {classesList.map((classData) => {
-                                    const studentCount = getStudentCountForClass(classData._id);
-                                    return (
-                                        <div
-                                            key={classData._id}
-                                            onClick={() => handleClassSelect(classData)}
-                                            className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-indigo-500 overflow-hidden group"
-                                        >
-                                            {/* Card Header with Gradient */}
-                                            <div className="h-32 bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-                                                <GraduationCap className="w-16 h-16 text-white relative z-10" />
-                                            </div>
-
-                                            {/* Card Content */}
-                                            <div className="p-6">
-                                                <h3 className="text-xl font-bold text-gray-900 mb-2 text-center">
-                                                    {classData.sclassName}
-                                                </h3>
-
-                                                {/* Student Count */}
-                                                <div className="flex items-center justify-center gap-2 text-gray-600 mb-4">
-                                                    <Users size={18} />
-                                                    <span className="text-sm">
-                                                        {studentCount} {studentCount === 1 ? 'Student' : 'Students'}
-                                                    </span>
-                                                </div>
-
-                                                {/* Sections Info */}
-                                                {classData.sections && classData.sections.length > 0 && (
-                                                    <div className="text-center">
-                                                        <p className="text-xs text-gray-500 mb-2">Sections:</p>
-                                                        <div className="flex flex-wrap justify-center gap-2">
-                                                            {classData.sections.slice(0, 3).map((sec, idx) => (
-                                                                <span
-                                                                    key={idx}
-                                                                    className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium"
-                                                                >
-                                                                    {sec.sectionName || sec}
-                                                                </span>
-                                                            ))}
-                                                            {classData.sections.length > 3 && (
-                                                                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                                                    +{classData.sections.length - 3}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* View Button */}
-                                                <button className="w-full mt-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-500 transition-colors font-medium text-sm group-hover:bg-indigo-600 group-hover:text-white">
-                                                    View Students
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                    </div>
-                                )
-                    ) : students.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div 
-                                onClick={() => navigate('/admin/admission')}
-                                className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 cursor-pointer hover:bg-gray-200 transition-colors"
-                            >
-                                <Plus className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <p className="text-gray-600 text-lg font-500">No students yet</p>
-                            <p className="text-gray-500 text-sm mt-1">Go to Admission page to add students</p>
-                        </div>
-                    ) : filteredStudents.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4 bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <Filter className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <p className="text-gray-600 text-lg font-500">No matches found</p>
-                            <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search query</p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* LIST VIEW */}
-                            {viewMode === 'list' && (
-                                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                                                    {/* Add horizontal scroll wrapper for mobile */}
-                                    <div className="overflow-x-auto">
-                                                        <table className="w-full min-w-[800px]">
-                                            <thead>
-                                                <tr className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Admission No</th>
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Student Name</th>
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Roll No.</th>
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Class</th>
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Father Name</th>
-                                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date Of Birth</th>
-                                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {filteredStudents.map((student) => (
-                                                    <tr key={student._id} className="hover:bg-indigo-50 transition duration-150 group">
-                                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                            #{student._id.slice(-6).toUpperCase()}
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center">
-                                                                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3 overflow-hidden border border-indigo-200">
-                                                                    {student.studentPhoto ? (
-                                                                        <img src={`${API_BASE}/${student.studentPhoto}`} alt={student.name} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        student.name.charAt(0)
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-sm font-600 text-gray-900">{student.name}</div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-600">{student.rollNum}</td>
-                                                        <td className="px-6 py-4 text-sm">
-                                                            <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-600">
-                                                                {student.sclassName?.sclassName || 'N/A'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-600">{student.father?.name || 'N/A'}</td>
-                                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                                            {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A'}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-right">
-                                                            <div className="flex justify-end gap-2">
-                                                                <button 
-                                                                    onClick={() => handleView(student)} 
-                                                                    className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition duration-150"
-                                                                    title="View Details"
-                                                                >
-                                                                    <Eye size={16} />
-                                                                </button>
-                                                                <button 
-                                                                    onClick={() => handleEdit(student)} 
-                                                                    className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition duration-150"
-                                                                    title="Edit student"
-                                                                >
-                                                                    <Edit size={16} />
-                                                                </button>
-                                                                <button 
-                                                                    onClick={() => handleDelete(student._id)} 
-                                                                    className={`p-2 rounded-lg transition duration-150 inline-flex items-center justify-center h-9 w-9 ${selectedDeleteId === student._id
-                                                                        ? "bg-red-600 text-white hover:bg-red-700"
-                                                                        : "bg-red-50 text-red-600 hover:bg-red-100"
-                                                                        }`}
-                                                                    title="Delete student"
-                                                                >
-                                                                    {selectedDeleteId === student._id ? <Check size={16} /> : <Trash2 size={16} />}
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* GRID VIEW */}
-                            {viewMode === 'grid' && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                    {filteredStudents.map((student) => (
-                                        <div key={student._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 overflow-hidden group flex flex-col items-center p-6">
-                                            <div className="h-32 w-32 rounded-full border-4 border-indigo-50 bg-white shadow-lg overflow-hidden flex items-center justify-center mb-4">
-                                                {student.studentPhoto ? (
-                                                    <img src={`${API_BASE}/${student.studentPhoto}`} alt={student.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="text-4xl font-bold text-indigo-600">{student.name.charAt(0)}</div>
-                                                )}
-                                            </div>
-                                            <div className="w-full text-center">
-                                                <h3 className="text-lg font-bold text-gray-900 truncate">{student.name}</h3>
-                                                <p className="text-sm text-gray-500 mb-3">Roll No: {student.rollNum}</p>
-                                                
-                                                <div className="flex justify-center gap-2 mb-4">
-                                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-semibold">
-                                                        Class {student.sclassName?.sclassName || 'N/A'}
-                                                    </span>
-                                                </div>
-
-                                                <div className="text-sm text-gray-600 mb-4 bg-gray-50 py-2 rounded-lg">
-                                                    <span className="text-xs text-gray-400 uppercase block mb-1">Father's Name</span>
-                                                    {student.father?.name || 'N/A'}
-                                                </div>
-
-                                                <div className="flex justify-center gap-3 pt-2 border-t border-gray-100">
-                                                    <button 
-                                                        onClick={() => handleView(student)}
-                                                        className="flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium px-3 py-1.5 hover:bg-emerald-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Eye size={16} /> View
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleEdit(student)}
-                                                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Edit size={16} /> Edit
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(student._id)}
-                                                        className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${selectedDeleteId === student._id
-                                                            ? "bg-red-600 text-white hover:bg-red-700"
-                                                            : "text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                            }`}
-                                                    >
-                                                        {selectedDeleteId === student._id ? (
-                                                            <span>Sure?</span>
-                                                        ) : (
-                                                            <>
-                                                                    <Trash2 size={16} /> Delete
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    )}
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleAddStudent} className="bg-primary hover:bg-primary/90">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Student
+                    </Button>
                 </div>
             </div>
 
-            {/* Popup Modal Component (Edit/Add) */}
+            {/* Content Switcher */}
+            <AnimatePresence mode="wait">
+                {viewMode === 'classes' ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4"
+                        key="classes-grid"
+                    >
+                        {loading ? Array.from({ length: 8 }).map((_, i) => (
+                            <Skeleton key={i} className="h-40 w-full rounded-xl" />
+                        )) : classesList.length === 0 ? (
+                            <div className="col-span-full text-center py-20 text-muted-foreground">
+                                No classes found. Create a class first.
+                            </div>
+                        ) : (
+                            classesList.map((cls) => (
+                                <Card
+                                    key={cls._id}
+                                    className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all group overflow-hidden"
+                                    onClick={() => handleClassClick(cls)}
+                                >
+                                    <div className="h-2 w-full bg-gradient-to-r from-blue-500 to-indigo-500 opacity-80 group-hover:opacity-100" />
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="flex justify-between items-center text-xl">
+                                            {cls.sclassName}
+                                            <Badge variant="secondary" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                Class
+                                            </Badge>
+                                        </CardTitle>
+                                        <CardDescription>{cls.sections?.length || 0} Sections</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                                            <Users className="h-4 w-4" />
+                                            <span className="font-medium text-2xl">{getCount(cls._id)}</span>
+                                            <span className="text-sm">Students</span>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="bg-muted/20 py-3 text-xs text-muted-foreground group-hover:bg-primary/5 transition-colors">
+                                        Click to view students
+                                    </CardFooter>
+                                </Card>
+                            ))
+                        )}
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-4 pt-2"
+                        key="student-table"
+                    >
+                        {/* Controls Bar */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background p-1 rounded-lg">
+                            {/* Search & Bulk Actions Group */}
+                            <div className="flex flex-1 items-center gap-2 w-full">
+                                <div className="relative flex-1 max-w-sm">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by name, roll no..."
+                                        className="pl-9"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Bulk Actions */}
+                                    {selectedStudents.length > 0 && (
+                                        <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-md animate-in fade-in slide-in-from-right-5 border">
+                                            <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">
+                                                {selectedStudents.length} Selected
+                                            </span>
+                                            <div className="h-4 w-[1px] bg-border mx-2" />
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => setIsBulkDeleteOpen(true)}
+                                                className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* View Switcher */}
+                                <div className="flex items-center bg-muted/50 p-1 rounded-lg border">
+                                    <Button
+                                        variant={viewType === 'list' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setViewType('list')}
+                                        className="h-8 w-8"
+                                        title="List View"
+                                    >
+                                        <ListIcon className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant={viewType === 'grid' ? 'secondary' : 'ghost'}
+                                        size="icon"
+                                        onClick={() => setViewType('grid')}
+                                        className="h-8 w-8"
+                                        title="Grid View"
+                                    >
+                                        <LayoutGrid className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Students Content */}
+                            {viewType === 'list' ? (
+                                <div className="rounded-md border bg-card shadow-sm">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                                <TableHead className="w-[50px] pl-4">
+                                                    <Checkbox
+                                                        checked={filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length}
+                                                        onCheckedChange={toggleSelectAll}
+                                                        aria-label="Select all"
+                                                    />
+                                                </TableHead>
+                                                <TableHead>Student Details</TableHead>
+                                                <TableHead>Roll No</TableHead>
+                                                <TableHead className="hidden md:table-cell">Gender</TableHead>
+                                                <TableHead className="hidden lg:table-cell">Parent Contact</TableHead>
+                                                <TableHead className="text-right pr-6">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredStudents.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                                        No students found in this class.
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                    filteredStudents.map((student) => (
+                                                        <TableRow
+                                                            key={student._id}
+                                                            className={`group transition-colors ${selectedStudents.includes(student._id) ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
+                                                        >
+                                                            <TableCell className="pl-4">
+                                                                <Checkbox
+                                                                    checked={selectedStudents.includes(student._id)}
+                                                                    onCheckedChange={() => toggleSelectStudent(student._id)}
+                                                                    aria-label={`Select ${student.name}`}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <div className="flex items-center gap-3">
+                                                                    <Avatar className="h-9 w-9 border">
+                                                                        <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} />
+                                                                        <AvatarFallback className="bg-primary/10 text-primary">{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-medium">{student.name}</span>
+                                                                        <span className="text-xs text-muted-foreground">{student.email || 'No email'}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline" className="font-mono">{student.rollNum}</Badge>
+                                                            </TableCell>
+                                                            <TableCell className="hidden md:table-cell">
+                                                                {student.gender}
+                                                            </TableCell>
+                                                            <TableCell className="hidden lg:table-cell">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm font-medium">{student.father?.name}</span>
+                                                                    <span className="text-xs text-muted-foreground">{student.father?.phone}</span>
+                                                                </div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right pr-6">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                            <span className="sr-only">Open menu</span>
+                                                                            <MoreHorizontal className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                        <DropdownMenuItem onClick={() => handleEditStudent(student)}>
+                                                                            <Pencil className="mr-2 h-4 w-4" /> View / Edit
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => handleCopy(student)}>
+                                                                            <Copy className="mr-2 h-4 w-4" /> Duplicate
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => handleFavorite(student)}>
+                                                                            <Star className="mr-2 h-4 w-4" /> Mark Favorite
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteId(student._id)}>
+                                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                                        {filteredStudents.length === 0 ? (
+                                            <div className="col-span-full h-32 flex items-center justify-center text-muted-foreground border rounded-lg border-dashed">
+                                                No students found.
+                                            </div>
+                                        ) : (
+                                            filteredStudents.map((student) => (
+                                                <Card
+                                                    key={student._id}
+                                                    className={`overflow-hidden hover:shadow-xl transition-all duration-300 group relative border-muted/60 ${selectedStudents.includes(student._id) ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/30'}`}
+                                                >
+                                                {/* Selection Overlay/Checkbox */}
+                                                <div className="absolute top-3 left-3 z-20">
+                                                    <Checkbox
+                                                        checked={selectedStudents.includes(student._id)}
+                                                        onCheckedChange={() => toggleSelectStudent(student._id)}
+                                                        className={`transition-all data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground ${selectedStudents.includes(student._id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} bg-background/80 backdrop-blur-sm border-muted-foreground/40`}
+                                                    />
+                                                </div>
+
+                                                {/* Card Header / Banner */}
+                                                <div className="h-28 bg-gradient-to-br from-primary/10 via-primary/5 to-background relative">
+                                                    <div className="absolute top-3 right-3">
+                                                        <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm hover:bg-background/90 shadow-sm text-xs font-medium">
+                                                            Active
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+
+                                                {/* Content */}
+                                                <CardContent className="pt-0 relative flex flex-col items-center pb-0">
+                                                    {/* Avatar */}
+                                                    <div className="relative -mt-12 mb-3 group-hover:scale-105 transition-transform duration-300">
+                                                        <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                                                            <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} className="object-cover" />
+                                                            <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+                                                                {student.name.substring(0, 2).toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-background ${student.status === 'Active' || !student.status ? 'bg-green-500' : 'bg-gray-400'}`} />
+                                                    </div>
+
+                                                    {/* Student Info */}
+                                                    <div className="text-center w-full px-1 space-y-1 mb-6">
+                                                        <h3 className="font-bold text-lg leading-tight truncate px-2" title={student.name}>
+                                                            {student.name}
+                                                        </h3>
+                                                        <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                                                            Roll No: {student.rollNum}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Details Grid */}
+                                                    <div className="w-full grid grid-cols-2 gap-y-2 gap-x-4 text-sm border-t py-4 px-2">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Father</span>
+                                                            <span className="font-medium truncate text-foreground/90" title={student.father?.name || 'N/A'}>
+                                                                {student.father?.name || 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col gap-0.5 text-right">
+                                                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Phone</span>
+                                                            <span className="font-medium truncate text-foreground/90" title={student.father?.phone || 'N/A'}>
+                                                                {student.father?.phone || 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </CardContent>
+
+                                                {/* Actions Footer */}
+                                                <CardFooter className="p-0 border-t bg-muted/40 grid grid-cols-3 divide-x divide-border/60">
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="h-11 rounded-none w-full hover:bg-background hover:text-primary transition-colors group/btn"
+                                                        onClick={() => handleViewStudent(student)}
+                                                        title="View Details"
+                                                    >
+                                                        <Eye className="h-4 w-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="h-11 rounded-none w-full hover:bg-background hover:text-blue-600 transition-colors group/btn"
+                                                        onClick={() => handleEditStudent(student)}
+                                                        title="Edit Student"
+                                                    >
+                                                        <Pencil className="h-4 w-4 text-muted-foreground group-hover/btn:text-blue-600 transition-colors" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="h-11 rounded-none w-full hover:bg-background hover:text-destructive transition-colors group/btn"
+                                                        onClick={() => setDeleteId(student._id)}
+                                                        title="Delete Student"
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-muted-foreground group-hover/btn:text-destructive transition-colors" />
+                                                    </Button>
+                                                </CardFooter>
+                                            </Card>
+                                        ))
+                                        )}
+                                </div>
+                            )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Modals */}
             <StudentModal 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleFormSubmit}
                 initialData={currentStudent}
+                classesList={classesList}
             />
 
-            {/* Student Details Modal (View) */}
             <StudentDetailsModal 
-                isOpen={isDetailsModalOpen}
-                onClose={() => setIsDetailsModalOpen(false)}
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
                 student={currentStudent}
             />
 
+            {/* Single Delete Alert */}
+            <ConfirmDeleteModal
+                isOpen={!!deleteId}
+                onClose={() => setDeleteId(null)}
+                onConfirm={handleDeleteSingle}
+                title="Delete Student?"
+                description="This action cannot be undone. This will permanently delete the student account."
+            />
+
+            {/* Bulk Delete Alert */}
+            <ConfirmDeleteModal
+                isOpen={isBulkDeleteOpen}
+                onClose={() => setIsBulkDeleteOpen(false)}
+                onConfirm={handleBulkDelete}
+                title={`Delete ${selectedStudents.length} Students?`}
+                description={`Are you sure you want to delete these ${selectedStudents.length} students? This action cannot be undone.`}
+                confirmText="Delete All Selected"
+            />
 
         </div>
     );

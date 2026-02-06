@@ -1,0 +1,6 @@
+{
+  "wsPort": 12021,
+  "wsHost": "localhost",
+  "wsProtocol": "ws",
+  "logging": false
+}

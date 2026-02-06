@@ -1,192 +1,262 @@
 import React from 'react';
-import { X, User, BookOpen, Users, Bus, Calendar, Phone, Mail, MapPin, Ruler, Activity } from 'lucide-react';
-import { useModalAnimation } from '../../hooks/useModalAnimation';
+import {
+    X, User, BookOpen, Users, Bus, Calendar, Phone, Mail,
+    MapPin, Ruler, Activity, School
+} from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 const StudentDetailsModal = ({ isOpen, onClose, student }) => {
-    const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, onClose);
-
-    if (!isVisible || !student) return null;
+    if (!student) return null;
 
     const InfoItem = ({ icon: Icon, label, value }) => (
-        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-indigo-100 transition-colors">
-            <div className="p-2 bg-white text-indigo-600 rounded-md shadow-sm">
-                <Icon size={16} />
+        <div className="flex items-start gap-3">
+            <div className="mt-0.5 p-1.5 bg-muted rounded-md text-muted-foreground">
+                <Icon size={14} />
             </div>
             <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</p>
-                <p className="text-sm font-medium text-gray-900 mt-0.5">{value || 'N/A'}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+                <p className="text-sm font-medium text-foreground mt-0.5">{value || 'N/A'}</p>
             </div>
-        </div>
-    );
-
-    const SectionHeader = ({ icon: Icon, title, colorClass = "text-gray-800" }) => (
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-            <Icon size={18} className={colorClass} />
-            <h3 className={`text-md font-bold ${colorClass}`}>{title}</h3>
         </div>
     );
 
     return (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-            <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                
-                {/* Header */}
-                <div className="bg-linear-to-r from-indigo-600 to-violet-600 px-6 py-4 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full border-2 border-white/30 overflow-hidden bg-white/10 backdrop-blur-md">
-                            {student.studentPhoto ? (
-                                <img src={`${import.meta.env.VITE_API_URL}/${student.studentPhoto}`} alt={student.name} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
-                                    {student.name?.charAt(0)}
-                                </div>
-                            )}
-                        </div>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+                <div className="bg-primary px-6 py-6 flex flex-col md:flex-row gap-6 md:items-center relative shrink-0">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="absolute right-4 top-4 text-primary-foreground/70 hover:text-white hover:bg-primary-foreground/10"
+                    >
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                    </Button>
+
+                    <div className="h-24 w-24 rounded-full border-4 border-white/20 overflow-hidden bg-white/10 shrink-0 shadow-xl">
+                        {student.studentPhoto ? (
+                            <img src={`${import.meta.env.VITE_API_URL}/${student.studentPhoto}`} alt={student.name} className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-white/90 font-bold text-3xl">
+                                {student.name?.charAt(0)}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="space-y-2 text-white">
                         <div>
-                            <h2 className="text-xl font-bold text-white">{student.name}</h2>
-                            <p className="text-indigo-100 text-sm flex items-center gap-2">
-                                <span className="bg-white/20 px-2 py-0.5 rounded text-xs">Roll: {student.rollNum}</span>
-                                <span className="bg-white/20 px-2 py-0.5 rounded text-xs">Class: {student.sclassName?.sclassName}</span>
-                            </p>
+                            <h2 className="text-2xl font-bold tracking-tight">{student.name}</h2>
+                            <p className="text-primary-foreground/80 font-medium">Student Profile</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
+                                Class {student.sclassName?.sclassName}
+                            </Badge>
+                            <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
+                                Roll No. {student.rollNum}
+                            </Badge>
+                            <Badge variant={student.status === 'Active' ? 'success' : 'destructive'} className="border-0">
+                                {student.status || 'Active'}
+                            </Badge>
                         </div>
                     </div>
-                    <button onClick={handleClose} className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-                        <X size={24} />
-                    </button>
                 </div>
 
-                {/* Content - Scrollable */}
-                <div className="overflow-y-auto p-6 space-y-8 custom-scrollbar">
-                    
-                    {/* Personal & Academic Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        
-                        {/* Personal Information */}
-                        <div>
-                            <SectionHeader icon={User} title="Personal Information" colorClass="text-indigo-600" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <InfoItem icon={User} label="Full Name" value={`${student.firstName || ''} ${student.lastName || ''}`} />
-                                <InfoItem icon={Users} label="Gender" value={student.gender} />
-                                <InfoItem icon={Calendar} label="Date of Birth" value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : ''} />
-                                <InfoItem icon={Activity} label="Blood Group" value={student.bloodGroup} />
-                                <InfoItem icon={Users} label="Category" value={student.category} />
-                                <InfoItem icon={BookOpen} label="Religion/Caste" value={`${student.religion || ''} ${student.caste ? `(${student.caste})` : ''}`} />
-                            </div>
+                <ScrollArea className="flex-1 shrink min-h-0 bg-muted/5">
+                    <div className="p-6 space-y-6">
+                        {/* Personal & Academic Info Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Personal Information */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-indigo-600" />
+                                        <CardTitle className="text-base">Personal Information</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <InfoItem icon={User} label="Full Name" value={`${student.firstName || ''} ${student.lastName || ''}`} />
+                                    <InfoItem icon={Users} label="Gender" value={student.gender} />
+                                    <InfoItem icon={Calendar} label="Date of Birth" value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : ''} />
+                                    <InfoItem icon={Activity} label="Blood Group" value={student.bloodGroup} />
+                                    <InfoItem icon={Users} label="Category" value={student.category} />
+                                    <InfoItem icon={BookOpen} label="Religion/Caste" value={`${student.religion || ''} ${student.caste ? `(${student.caste})` : ''}`} />
+                                </CardContent>
+                            </Card>
+
+                            {/* Contact & Physical Info */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Phone className="h-4 w-4 text-emerald-600" />
+                                        <CardTitle className="text-base">Contact & Physical</CardTitle>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <InfoItem icon={Phone} label="Mobile" value={student.mobileNumber} />
+                                    <InfoItem icon={Mail} label="Email" value={student.email} />
+                                    <InfoItem icon={Ruler} label="Height / Weight" value={student.height || student.weight ? `${student.height || '-'} cm / ${student.weight || '-'} kg` : ''} />
+                                    <InfoItem icon={MapPin} label="House" value={student.house} />
+                                    <InfoItem icon={Calendar} label="Admission Date" value={student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : ''} />
+                                    <InfoItem icon={School} label="Previous School" value={student.previousSchool || 'N/A'} />
+                                </CardContent>
+                            </Card>
                         </div>
 
-                        {/* Contact & Physical Info */}
-                        <div>
-                            <SectionHeader icon={Phone} title="Contact & Physical" colorClass="text-emerald-600" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <InfoItem icon={Phone} label="Mobile" value={student.mobileNumber} />
-                                <InfoItem icon={Mail} label="Email" value={student.email} />
-                                <InfoItem icon={Ruler} label="Height" value={student.height ? `${student.height} cm` : ''} />
-                                <InfoItem icon={Activity} label="Weight" value={student.weight ? `${student.weight} kg` : ''} />
-                                <InfoItem icon={MapPin} label="House" value={student.house} />
-                                <InfoItem icon={Calendar} label="Admission Date" value={student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : ''} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Parents & Transport/Siblings Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        
-                        {/* Parents Information Column */}
-                        <div>
-                            <SectionHeader icon={Users} title="Parent/Guardian Details" colorClass="text-purple-600" />
-                            <div className="space-y-4">
-                                {/* Father */}
-                                {student.father?.name && (
-                                    <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
-                                        <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2">
-                                            <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs">F</span> Father
-                                        </h4>
-                                        <div className="space-y-2">
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Name</span> {student.father.name}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Phone</span> {student.father.phone || 'N/A'}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Occupation</span> {student.father.occupation || 'N/A'}</p>
+                        {/* Parents & Transport/Siblings Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Parents Information Column */}
+                            <div className="space-y-6">
+                                <Card className="h-full">
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-purple-600" />
+                                            <CardTitle className="text-base">Parent/Guardian Details</CardTitle>
                                         </div>
-                                    </div>
-                                )}
-                                
-                                {/* Mother */}
-                                {student.mother?.name && (
-                                    <div className="bg-pink-50/50 rounded-xl p-4 border border-pink-100">
-                                        <h4 className="font-bold text-pink-800 mb-3 flex items-center gap-2">
-                                            <span className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center text-xs">M</span> Mother
-                                        </h4>
-                                        <div className="space-y-2">
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Name</span> {student.mother.name}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Phone</span> {student.mother.phone || 'N/A'}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Occupation</span> {student.mother.occupation || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Guardian */}
-                                {student.guardian?.name && (
-                                    <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100">
-                                        <h4 className="font-bold text-purple-800 mb-3 flex items-center gap-2">
-                                            <span className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-xs">G</span> Guardian
-                                        </h4>
-                                        <div className="space-y-2">
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Name</span> {student.guardian.name}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Relation</span> {student.guardian.relation || 'N/A'}</p>
-                                            <p className="text-sm"><span className="text-gray-500 text-xs uppercase block">Phone</span> {student.guardian.phone || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Transport & Siblings Column */}
-                        <div className="space-y-8">
-                            {/* Transport */}
-                            {student.transport && (
-                                <div>
-                                    <SectionHeader icon={Bus} title="Transport Details" colorClass="text-orange-600" />
-                                    <div className="bg-orange-50/30 rounded-xl p-4 border border-orange-100 grid grid-cols-2 gap-4">
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase">Route</p>
-                                            <p className="font-medium text-gray-900">{student.transport.route || 'N/A'}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase">Pickup Point</p>
-                                            <p className="font-medium text-gray-900">{student.transport.pickupPoint || 'N/A'}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Siblings */}
-                            {student.siblings && student.siblings.length > 0 && (
-                                <div>
-                                    <SectionHeader icon={Users} title="Siblings" colorClass="text-cyan-600" />
-                                    <div className="space-y-2">
-                                        {student.siblings.map((sib, idx) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 bg-cyan-50/30 rounded-lg border border-cyan-100">
-                                                <span className="font-medium text-gray-800">{sib.name}</span>
-                                                <span className="text-xs bg-white px-2 py-1 rounded border border-cyan-100 text-cyan-700">
-                                                    Class {sib.class} | Roll {sib.rollNum}
-                                                </span>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        {/* Father */}
+                                        {student.father?.name && (
+                                            <div className="space-y-3">
+                                                <h4 className="text-sm font-semibold flex items-center gap-2 text-blue-700">
+                                                    <span className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold">F</span>
+                                                    Father
+                                                </h4>
+                                                <div className="ml-7 grid grid-cols-2 gap-y-2">
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Name</p>
+                                                        <p className="text-sm font-medium">{student.father.name}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Phone</p>
+                                                        <p className="text-sm font-medium">{student.father.phone || 'N/A'}</p>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Occupation</p>
+                                                        <p className="text-sm font-medium">{student.father.occupation || 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                                <Separator />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                        )}
+
+                                        {/* Mother */}
+                                        {student.mother?.name && (
+                                            <div className="space-y-3">
+                                                <h4 className="text-sm font-semibold flex items-center gap-2 text-pink-700">
+                                                    <span className="h-5 w-5 rounded-full bg-pink-100 flex items-center justify-center text-[10px] font-bold">M</span>
+                                                    Mother
+                                                </h4>
+                                                <div className="ml-7 grid grid-cols-2 gap-y-2">
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Name</p>
+                                                        <p className="text-sm font-medium">{student.mother.name}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Phone</p>
+                                                        <p className="text-sm font-medium">{student.mother.phone || 'N/A'}</p>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Occupation</p>
+                                                        <p className="text-sm font-medium">{student.mother.occupation || 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                                {student.guardian && <Separator />}
+                                            </div>
+                                        )}
+
+                                        {/* Guardian */}
+                                        {student.guardian?.name && (
+                                            <div className="space-y-3">
+                                                <h4 className="text-sm font-semibold flex items-center gap-2 text-amber-700">
+                                                    <span className="h-5 w-5 rounded-full bg-amber-100 flex items-center justify-center text-[10px] font-bold">G</span>
+                                                    Guardian
+                                                </h4>
+                                                <div className="ml-7 grid grid-cols-2 gap-y-2">
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Name</p>
+                                                        <p className="text-sm font-medium">{student.guardian.name}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-muted-foreground uppercase">Relation</p>
+                                                        <p className="text-sm font-medium">{student.guardian.relation || 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Transport & Siblings Column */}
+                            <div className="space-y-6">
+                                {/* Transport */}
+                                {student.transport && (
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Bus className="h-4 w-4 text-orange-600" />
+                                                <CardTitle className="text-base">Transport Details</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-muted-foreground uppercase">Route</p>
+                                                <p className="font-medium">{student.transport.route || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground uppercase">Pickup Point</p>
+                                                <p className="font-medium">{student.transport.pickupPoint || 'N/A'}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Siblings */}
+                                {student.siblings && student.siblings.length > 0 && (
+                                    <Card>
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Users className="h-4 w-4 text-cyan-600" />
+                                                <CardTitle className="text-base">Siblings</CardTitle>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-3">
+                                            {student.siblings.map((sib, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border">
+                                                    <span className="font-medium text-sm">{sib.name}</span>
+                                                    <Badge variant="outline" className="text-xs font-normal">
+                                                        Class {sib.class} | Roll {sib.rollNum}
+                                                    </Badge>
+                                                </div>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
                         </div>
                     </div>
+                </ScrollArea>
 
+                <div className="p-4 border-t bg-muted/20 flex justify-end shrink-0">
+                    <Button variant="outline" onClick={onClose}>
+                        Close Details
+                    </Button>
                 </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end shrink-0">
-                    <button onClick={handleClose} className="px-6 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 

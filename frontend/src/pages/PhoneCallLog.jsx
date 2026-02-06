@@ -1,17 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import PhoneCallModal from '../components/form-popup/PhoneCallModal';
 
-import SearchBar from '../components/SearchBar';
-import { Edit, Trash2, Plus, Eye, PhoneIncoming, PhoneOutgoing, Check } from 'lucide-react';
+// Icons
+import {
+    Edit,
+    Trash2,
+    Plus,
+    Eye,
+    PhoneIncoming,
+    PhoneOutgoing,
+    Search,
+    Phone,
+    Calendar,
+    Filter,
+    MoreHorizontal
+} from 'lucide-react';
+
+// Shadcn Components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const PhoneCallLog = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
     // --- State Management ---
     const [phoneCalls, setPhoneCalls] = useState([]);
@@ -20,29 +71,28 @@ const PhoneCallLog = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentCall, setCurrentCall] = useState(null);
-
-    // Delete Confirmation State
-
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
-
-    // Search State
-    const [searchQuery, setSearchQuery] = useState("");
-
-    // View Mode State
     const [viewMode, setViewMode] = useState(false);
+
+    // Delete State
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+    // Filter/Search State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [typeFilter, setTypeFilter] = useState("all");
 
     // --- 1. Data Fetching ---
     const fetchData = async () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
-
             setPhoneCalls([]);
             
             const response = await axios.get(`${API_BASE}/PhoneCalls/${schoolId}`);
             setPhoneCalls(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
-            showToast("Error loading phone calls", "error");
+            console.error(err);
+            toast.error("Error loading phone calls");
         } finally {
             setLoading(false);
         }
@@ -54,52 +104,47 @@ const PhoneCallLog = () => {
 
     // --- 2. Action Handlers ---
 
-    // Add/Edit Submit Logic
     const handleFormSubmit = async (formData) => {
         try {
             const dataToSend = { ...formData, school: currentUser._id };
             
             if (currentCall) {
-                // UPDATE Existing
+                // UPDATE
                 await axios.put(`${API_BASE}/PhoneCall/${currentCall._id}`, dataToSend);
+                toast.success("Phone call updated successfully");
             } else {
-                // CREATE New
+                // CREATE
                 await axios.post(`${API_BASE}/PhoneCallCreate`, dataToSend);
+                toast.success("Phone call recorded successfully");
             }
 
-            // Close modal and refresh data
             setIsModalOpen(false);
             setCurrentCall(null);
             fetchData();
-            showToast("Phone call saved successfully!", "success");
         } catch (err) {
-            showToast("Failed to save phone call.", "error");
-        }
-    };
-
-    // Delete Logic - Toggle Confirmation
-    const handleDelete = (id) => {
-        if (selectedDeleteId === id) {
-            confirmDelete();
-        } else {
-            setSelectedDeleteId(id);
-            setTimeout(() => {
-                setSelectedDeleteId(prev => prev === id ? null : prev);
-            }, 3000);
+            console.error(err);
+            toast.error("Failed to save phone call");
         }
     };
 
     // Actual Delete Function
     const confirmDelete = async () => {
-        if (!selectedDeleteId) return;
+        if (!itemToDelete) return;
         try {
-            await axios.delete(`${API_BASE}/PhoneCall/${selectedDeleteId}`);
+            await axios.delete(`${API_BASE}/PhoneCall/${itemToDelete}`);
             fetchData();
-            showToast("Phone call deleted successfully!", "success");
+            toast.success("Phone call deleted");
         } catch (err) {
-            showToast("Error deleting phone call", "error");
+            console.error(err);
+            toast.error("Error deleting phone call");
         }
-        setSelectedDeleteId(null);
+        setItemToDelete(null);
+        setIsDeleteOpen(false);
+    };
+
+    const handleDeleteClick = (id) => {
+        setItemToDelete(id);
+        setIsDeleteOpen(true);
     };
 
     // View Button Click Logic
@@ -123,161 +168,153 @@ const PhoneCallLog = () => {
         setIsModalOpen(true);
     };
 
-    // Filter phone calls based on search query
+    // Filter phone calls based on search & filter
     const filteredCalls = phoneCalls.filter((call) => {
-        if (!searchQuery) return true;
-        const query = searchQuery.toLowerCase();
-        return (
-            call.callerName?.toLowerCase().includes(query) ||
-            call.phone?.toLowerCase().includes(query) ||
-            call.purpose?.toLowerCase().includes(query) ||
-            call.callType?.toLowerCase().includes(query)
-        );
+        const matchesSearch =
+            !searchQuery ||
+            call.callerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            call.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            call.purpose?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesType = typeFilter === 'all' || call.callType === typeFilter;
+
+        return matchesSearch && matchesType;
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            
-            {/* Header Section */}
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-900">Phone Call Log</h1>
-                        <p className="text-gray-600 mt-2">Track and manage all phone calls</p>
-                    </div>
-                    <button onClick={handleAdd} className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition duration-200 font-600">
-                        <Plus className="w-5 h-5 mr-2" /> Add Call
-                    </button>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Phone Call Log</h2>
+                    <p className="text-muted-foreground">
+                        Track and manage incoming and outgoing phone calls.
+                    </p>
                 </div>
+                <Button onClick={handleAdd} className="ml-auto">
+                    <Plus className="mr-2 h-4 w-4" /> Add Call
+                </Button>
+            </div>
 
-                {/* Search Bar */}
-                <div className="mb-6">
-                    <SearchBar 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by caller name, phone, purpose, or call type..."
-                        className="max-w-md"
-                    />
-                </div>
-
-                {/* Table Section */}
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                    {loading ? (
-                        <div className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                                <p className="text-gray-600">Loading phone calls...</p>
+            <Card>
+                <CardHeader className="pb-3">
+                    <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                        <CardTitle className="text-lg font-medium">Recorded Calls</CardTitle>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="relative">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search calls..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-8 w-full sm:w-[250px]"
+                                />
                             </div>
+                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                <SelectTrigger className="w-full sm:w-[150px]">
+                                    <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <SelectValue placeholder="Call Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="Incoming">Incoming</SelectItem>
+                                    <SelectItem value="Outgoing">Outgoing</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    ) : phoneCalls.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4">
-                            <div onClick={handleAdd} className="w-16 h-16 cursor-pointer bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <Plus className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <p className="text-gray-600 text-lg font-500">No phone calls yet</p>
-                            <p className="text-gray-500 text-sm mt-1">Click "Add Call" to record your first phone call</p>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="flex h-32 items-center justify-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
                         </div>
                     ) : filteredCalls.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 px-4">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <p className="text-gray-600 text-lg font-500">No calls found</p>
-                            <p className="text-gray-500 text-sm mt-1">No phone calls match your search criteria</p>
+                            <div className="text-center py-10">
+                                <Phone className="mx-auto h-12 w-12 text-muted-foreground/20" />
+                                <h3 className="mt-4 text-lg font-semibold text-muted-foreground">No calls found</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {searchQuery ? "Try adjusting your search filters." : "Start by adding a new phone call."}
+                                </p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Caller Name</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Phone</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Type</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date & Time</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Purpose</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Follow-up</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Caller Name</TableHead>
+                                                <TableHead>Phone</TableHead>
+                                                <TableHead>Type</TableHead>
+                                                <TableHead>Date & Time</TableHead>
+                                                <TableHead className="hidden md:table-cell">Purpose</TableHead>
+                                                <TableHead className="hidden md:table-cell">Duration</TableHead>
+                                                <TableHead>Follow-up</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
                                     {filteredCalls.map((call) => (
-                                        <tr key={call._id} className="hover:bg-indigo-50 transition duration-150">
-                                            <td className="px-6 py-4 text-sm font-600 text-gray-900">{call.callerName}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{call.phone}</td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-600 ${
-                                                    call.callType === 'Incoming' 
-                                                        ? 'bg-green-100 text-green-700' 
-                                                        : 'bg-blue-100 text-blue-700'
-                                                }`}>
-                                                    {call.callType === 'Incoming' ? (
-                                                        <PhoneIncoming className="w-3.5 h-3.5" />
-                                                    ) : (
-                                                        <PhoneOutgoing className="w-3.5 h-3.5" />
-                                                    )}
+                                        <TableRow key={call._id}>
+                                            <TableCell className="font-medium">{call.callerName}</TableCell>
+                                            <TableCell>{call.phone}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={call.callType === 'Incoming' ? "success" : "secondary"}
+                                                    className={`gap-1 ${call.callType === 'Incoming' ? 'bg-green-100 text-green-700 hover:bg-green-200 border-green-200' : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200'}`}
+                                                >
+                                                    {call.callType === 'Incoming' ? <PhoneIncoming className="h-3 w-3" /> : <PhoneOutgoing className="h-3 w-3" />}
                                                     {call.callType}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                <div>{new Date(call.callDate).toLocaleDateString()}</div>
-                                                <div className="text-xs text-gray-500">{call.callTime}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                <div className="max-w-xs truncate">{call.purpose || '-'}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{call.callDuration || '-'}</td>
-                                            <td className="px-6 py-4 text-sm">
-                                                {call.followUpRequired ? (
-                                                    <span className="inline-block px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-600">
-                                                        Required
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-3">
-                                                    <button 
-                                                        onClick={() => handleView(call)} 
-                                                        className="inline-flex items-center justify-center w-9 h-9 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition duration-150"
-                                                        title="View details"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleEdit(call)} 
-                                                        className="inline-flex items-center justify-center w-9 h-9 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition duration-150"
-                                                        title="Edit call"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(call._id)} 
-                                                        className={`inline-flex items-center justify-center h-9 w-9 rounded-lg transition duration-150 ${selectedDeleteId === call._id
-                                                            ? "bg-red-600 text-white hover:bg-red-700"
-                                                            : "bg-red-100 text-red-600 hover:bg-red-200"
-                                                            }`}
-                                                        title="Delete call"
-                                                    >
-                                                        {selectedDeleteId === call._id ? (
-                                                            <Check className="w-4 h-4" />
-                                                        ) : (
-                                                                <Trash2 className="w-4 h-4" />
-                                                        )}
-                                                    </button>
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm">{new Date(call.callDate).toLocaleDateString()}</span>
+                                                    <span className="text-xs text-muted-foreground">{call.callTime}</span>
                                                 </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell max-w-[200px] truncate" title={call.purpose}>
+                                                {call.purpose || '-'}
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell">{call.callDuration || '-'}</TableCell>
+                                            <TableCell>
+                                                {call.followUpRequired ? (
+                                                    <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50">
+                                                        Required
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground text-sm">-</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => handleView(call)}>
+                                                            <Eye className="mr-2 h-4 w-4" /> View Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleEdit(call)}>
+                                                            <Edit className="mr-2 h-4 w-4" /> Edit Record
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onClick={() => handleDeleteClick(call._id)} className="text-red-600 focus:text-red-600">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Delete Record
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
+                                        </TableBody>
+                                    </Table>
                         </div>
                     )}
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Popup Modal Component */}
             <PhoneCallModal 
@@ -288,7 +325,22 @@ const PhoneCallLog = () => {
                 viewMode={viewMode}
             />
 
-
+            {/* Delete Alert Dialog */}
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Call Record?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the call record for
+                            <span className="font-semibold text-foreground"> {phoneCalls.find(c => c._id === itemToDelete)?.callerName}</span>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setItemToDelete(null); setIsDeleteOpen(false); }}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

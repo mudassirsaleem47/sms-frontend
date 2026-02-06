@@ -20,14 +20,17 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    IconUser,
-    IconUsers,
-    IconCalendar,
-    IconClock,
-    IconFileText
-} from '@tabler/icons-react';
+    User,
+    Users,
+    Clock,
+    FileText,
+    Calendar,
+    Phone,
+    CreditCard
+} from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -56,6 +59,7 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
     const [staffList, setStaffList] = useState([]);
     const [classesList, setClassesList] = useState([]);
     const [studentsList, setStudentsList] = useState([]);
+    const [loading, setLoading] = useState(false);
     
     // Fetch staff, classes when modal opens
     useEffect(() => {
@@ -103,6 +107,14 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
     // When initialData changes (Edit mode)
     useEffect(() => {
         if (initialData) {
+            // Safe date handling
+            let dateStr = new Date().toISOString().split('T')[0];
+            try {
+                if (initialData.date) {
+                    dateStr = new Date(initialData.date).toISOString().split('T')[0];
+                }
+            } catch (e) { }
+
             const formattedData = {
                 purpose: initialData.purpose || '',
                 meetingWith: initialData.meetingWith || 'Staff',
@@ -114,7 +126,7 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                 phone: initialData.phone || '',
                 idCard: initialData.idCard || '',
                 numberOfPerson: initialData.numberOfPerson || 1,
-                date: initialData.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0],
+                date: dateStr,
                 inTime: initialData.inTime || '',
                 outTime: initialData.outTime || '',
                 note: initialData.note || '',
@@ -142,19 +154,16 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
             });
         }
     }, [initialData, isOpen]);
-    
-    // Updated handleChange to work with regular inputs
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Custom handler for Shadcn Select components
     const handleSelectChange = (name, value) => {
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
 
-            // Logic handled here instead of handleChange
             if (name === 'meetingWith') {
                 if (value === 'Staff') {
                     return { ...newData, class: '', section: '', student: '' };
@@ -166,15 +175,17 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        setLoading(true);
+        await onSubmit(formData);
+        setLoading(false);
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
-                <DialogHeader className="p-6 pb-2">
+                <DialogHeader className="p-6 pb-2 border-b">
                     <DialogTitle>
                         {viewMode ? 'View Visitor Details' : (initialData ? 'Edit Visitor' : 'Add Visitor')}
                     </DialogTitle>
@@ -185,53 +196,80 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                     </DialogDescription>
                 </DialogHeader>
 
-                <ScrollArea className="flex-1 p-6 pt-2">
+                <ScrollArea className="flex-1 p-6">
                     {viewMode ? (
                         /* VIEW MODE */
                         <div className="grid gap-6">
                             {/* Visitor Info */}
-                            <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
-                                <h4 className="flex items-center gap-2 font-semibold text-primary">
-                                    <IconUser size={18} /> Visitor Information
+                            <div className="space-y-4">
+                                <h4 className="flex items-center gap-2 font-semibold text-primary text-sm uppercase tracking-wide">
+                                    <User className="h-4 w-4" /> Visitor Information
                                 </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div><span className="text-muted-foreground">Name:</span> <span className="font-medium">{formData.visitorName}</span></div>
-                                    <div><span className="text-muted-foreground">Purpose:</span> <span className="font-medium">{formData.purpose}</span></div>
-                                    <div><span className="text-muted-foreground">Phone:</span> <span className="font-medium">{formData.phone || '-'}</span></div>
-                                    <div><span className="text-muted-foreground">ID Card:</span> <span className="font-medium">{formData.idCard || '-'}</span></div>
-                                    <div><span className="text-muted-foreground">Persons:</span> <span className="font-medium">{formData.numberOfPerson}</span></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg bg-muted/50 p-4 border">
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Name</span>
+                                        <div className="font-medium text-lg">{formData.visitorName}</div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Purpose</span>
+                                        <div className="font-medium">{formData.purpose}</div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Phone</span>
+                                        <div className="font-medium flex items-center gap-2">
+                                            <Phone className="h-3 w-3 text-muted-foreground" />
+                                            {formData.phone || '-'}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">ID Card</span>
+                                        <div className="font-medium flex items-center gap-2">
+                                            <CreditCard className="h-3 w-3 text-muted-foreground" />
+                                            {formData.idCard || '-'}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Persons</span>
+                                        <div className="font-medium">{formData.numberOfPerson}</div>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Meeting Info */}
-                            <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
-                                <h4 className="flex items-center gap-2 font-semibold text-primary">
-                                    <IconUsers size={18} /> Meeting Details
+                            <div className="space-y-4">
+                                <h4 className="flex items-center gap-2 font-semibold text-primary text-sm uppercase tracking-wide">
+                                    <Users className="h-4 w-4" /> Meeting Details
                                 </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div><span className="text-muted-foreground">Meeting With:</span> <Badge>{formData.meetingWith}</Badge></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg bg-muted/50 p-4 border">
+                                    <div className="space-y-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Meeting With</span>
+                                        <div><Badge variant="secondary">{formData.meetingWith}</Badge></div>
+                                    </div>
                                     {formData.meetingWith === 'Staff' && (
-                                        <div>
-                                            <span className="text-muted-foreground">Staff Member:</span>
-                                            <span className="font-medium ml-2">
+                                        <div className="space-y-1">
+                                            <span className="text-xs text-muted-foreground uppercase">Staff Member</span>
+                                            <div className="font-medium">
                                                 {staffList.find(s => s._id === formData.staff)?.name || '-'}
-                                            </span>
+                                            </div>
                                         </div>
                                     )}
                                     {formData.meetingWith === 'Student' && (
                                         <>
-                                            <div>
-                                                <span className="text-muted-foreground">Class:</span>
-                                                <span className="font-medium ml-2">
+                                            <div className="space-y-1">
+                                                <span className="text-xs text-muted-foreground uppercase">Class</span>
+                                                <div className="font-medium">
                                                     {classesList.find(c => c._id === formData.class)?.sclassName || '-'}
-                                                </span>
+                                                </div>
                                             </div>
-                                            <div><span className="text-muted-foreground">Section:</span> <span className="font-medium ml-2">{formData.section || '-'}</span></div>
-                                            <div>
-                                                <span className="text-muted-foreground">Student:</span>
-                                                <span className="font-medium ml-2">
+                                            <div className="space-y-1">
+                                                <span className="text-xs text-muted-foreground uppercase">Section</span>
+                                                <div className="font-medium">{formData.section || '-'}</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-xs text-muted-foreground uppercase">Student</span>
+                                                <div className="font-medium">
                                                     {studentsList.find(s => s._id === formData.student)?.name || '-'}
-                                                </span>
+                                                </div>
                                             </div>
                                         </>
                                     )}
@@ -240,22 +278,33 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
 
                             {/* Schedule & Notes */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
-                                    <h4 className="flex items-center gap-2 font-semibold text-primary">
-                                        <IconClock size={18} /> Schedule
+                                <div className="space-y-4">
+                                    <h4 className="flex items-center gap-2 font-semibold text-primary text-sm uppercase tracking-wide">
+                                        <Clock className="h-4 w-4" /> Schedule
                                     </h4>
-                                    <div className="space-y-2 text-sm">
-                                        <div><span className="text-muted-foreground">Date:</span> <span className="font-medium">{new Date(formData.date).toLocaleDateString()}</span></div>
-                                        <div><span className="text-muted-foreground">In Time:</span> <span className="font-medium">{formData.inTime}</span></div>
-                                        <div><span className="text-muted-foreground">Out Time:</span> <span className="font-medium">{formData.outTime || '-'}</span></div>
+                                    <div className="space-y-3 rounded-lg bg-muted/50 p-4 border text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Date:</span>
+                                            <span className="font-medium">{new Date(formData.date).toLocaleDateString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">In Time:</span>
+                                            <span className="font-medium">{formData.inTime}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Out Time:</span>
+                                            <span className="font-medium">{formData.outTime || '-'}</span>
+                                        </div>
                                     </div>
                                 </div>
                                 {formData.note && (
-                                    <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
-                                        <h4 className="flex items-center gap-2 font-semibold text-primary">
-                                            <IconFileText size={18} /> Notes
+                                    <div className="space-y-4">
+                                        <h4 className="flex items-center gap-2 font-semibold text-primary text-sm uppercase tracking-wide">
+                                            <FileText className="h-4 w-4" /> Notes
                                         </h4>
-                                        <p className="text-sm">{formData.note}</p>
+                                        <div className="rounded-lg bg-muted/50 p-4 border text-sm italic">
+                                            "{formData.note}"
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -267,22 +316,22 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                                 {/* Row 1 */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Purpose *</Label>
+                                        <Label>Purpose <span className="text-destructive">*</span></Label>
                                         <Input 
                                             name="purpose" 
-                                        value={formData.purpose} 
-                                        onChange={handleChange} 
+                                            value={formData.purpose}
+                                            onChange={handleChange} 
                                             placeholder="Reason for visit" 
                                             required 
-                                    />
-                                </div>
+                                        />
+                                    </div>
 
                                     <div className="space-y-2">
-                                        <Label>Meeting With *</Label>
+                                        <Label>Meeting With <span className="text-destructive">*</span></Label>
                                         <Select 
-                                        value={formData.meetingWith} 
+                                            value={formData.meetingWith} 
                                             onValueChange={(val) => handleSelectChange('meetingWith', val)}
-                                    >
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select type" />
                                             </SelectTrigger>
@@ -291,192 +340,193 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                                                 <SelectItem value="Student">Student</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                </div>
+                                    </div>
 
-                                {formData.meetingWith === 'Staff' && (
+                                    {formData.meetingWith === 'Staff' && (
                                         <div className="space-y-2">
-                                            <Label>Staff Member *</Label>
+                                            <Label>Staff Member <span className="text-destructive">*</span></Label>
                                             <Select 
-                                            value={formData.staff} 
+                                                value={formData.staff} 
                                                 onValueChange={(val) => handleSelectChange('staff', val)}
-                                        >
+                                            >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select staff" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {staffList.map((staff) => (
-                                                    <SelectItem key={staff._id} value={staff._id}>{staff.name}</SelectItem>
-                                                ))}
+                                                        <SelectItem key={staff._id} value={staff._id}>{staff.name}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
 
-                                {formData.meetingWith === 'Student' && (
+                                    {formData.meetingWith === 'Student' && (
                                         <div className="space-y-2">
-                                            <Label>Class *</Label>
+                                            <Label>Class <span className="text-destructive">*</span></Label>
                                             <Select 
-                                            value={formData.class} 
+                                                value={formData.class} 
                                                 onValueChange={(val) => handleSelectChange('class', val)}
-                                        >
+                                            >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select class" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {classesList.map((cls) => (
-                                                    <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
-                                                ))}
+                                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
-                                    </div>
-                                )}
-                            </div>
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Row 2 - Student Specific */}
-                            {formData.meetingWith === 'Student' && (
+                                {formData.meetingWith === 'Student' && (
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Section *</Label>
+                                            <Label>Section <span className="text-destructive">*</span></Label>
                                             <Input 
                                                 name="section" 
-                                            value={formData.section} 
-                                            onChange={handleChange} 
+                                                value={formData.section}
+                                                onChange={handleChange} 
                                                 placeholder="Section" 
                                                 required 
-                                        />
-                                    </div>
+                                            />
+                                        </div>
                                         <div className="space-y-2">
-                                            <Label>Student *</Label>
+                                            <Label>Student <span className="text-destructive">*</span></Label>
                                             <Select 
-                                            value={formData.student} 
+                                                value={formData.student} 
                                                 onValueChange={(val) => handleSelectChange('student', val)}
-                                        >
+                                            >
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select student" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {studentsList.map((student) => (
-                                                    <SelectItem key={student._id} value={student._id}>{student.name}</SelectItem>
-                                                ))}
+                                                        <SelectItem key={student._id} value={student._id}>{student.name}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
-                                    </div>
+                                        </div>
                                         <div className="space-y-2">
-                                            <Label>Visitor Name *</Label>
+                                            <Label>Visitor Name <span className="text-destructive">*</span></Label>
                                             <Input 
                                                 name="visitorName" 
-                                            value={formData.visitorName} 
-                                            onChange={handleChange} 
+                                                value={formData.visitorName}
+                                                onChange={handleChange} 
                                                 placeholder="Visitor Name" 
                                                 required 
-                                        />
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
                                 {/* Row 3 */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {formData.meetingWith === 'Staff' && (
+                                    {formData.meetingWith === 'Staff' && (
                                         <div className="space-y-2">
-                                            <Label>Visitor Name *</Label>
+                                            <Label>Visitor Name <span className="text-destructive">*</span></Label>
                                             <Input 
                                                 name="visitorName" 
-                                            value={formData.visitorName} 
-                                            onChange={handleChange} 
+                                                value={formData.visitorName}
+                                                onChange={handleChange} 
                                                 placeholder="Visitor Name" 
                                                 required 
-                                        />
-                                    </div>
-                                )}
+                                            />
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <Label>Phone</Label>
                                         <Input 
                                             name="phone" 
-                                        value={formData.phone} 
-                                        onChange={handleChange} 
+                                            value={formData.phone}
+                                            onChange={handleChange} 
                                             placeholder="Phone Number"
                                             type="tel"
-                                    />
-                                </div>
+                                        />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label>ID Card</Label>
                                         <Input 
                                             name="idCard" 
-                                        value={formData.idCard} 
-                                        onChange={handleChange} 
+                                            value={formData.idCard}
+                                            onChange={handleChange} 
                                             placeholder="ID Card Number" 
-                                    />
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
                                 {/* Row 4 */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <Label>Number of Persons</Label>
                                         <Input 
-                                        name="numberOfPerson" 
+                                            name="numberOfPerson" 
                                             type="number" 
-                                        min="1"
-                                        value={formData.numberOfPerson} 
+                                            min="1"
+                                            value={formData.numberOfPerson} 
                                             onChange={handleChange} 
-                                    />
-                                </div>
+                                        />
+                                    </div>
                                     <div className="space-y-2">
-                                        <Label>Date *</Label>
+                                        <Label>Date <span className="text-destructive">*</span></Label>
                                         <Input 
-                                        name="date" 
+                                            name="date" 
                                             type="date" 
-                                        value={formData.date} 
-                                        onChange={handleChange} 
+                                            value={formData.date}
+                                            onChange={handleChange} 
                                             required
-                                    />
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
                                 {/* Row 5 */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>In Time *</Label>
+                                        <Label>In Time <span className="text-destructive">*</span></Label>
                                         <Input 
-                                        name="inTime" 
+                                            name="inTime" 
                                             type="time" 
-                                        value={formData.inTime} 
-                                        onChange={handleChange} 
+                                            value={formData.inTime}
+                                            onChange={handleChange} 
                                             required
-                                    />
-                                </div>
+                                        />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label>Out Time</Label>
                                         <Input 
-                                        name="outTime" 
+                                            name="outTime" 
                                             type="time" 
-                                        value={formData.outTime} 
+                                            value={formData.outTime} 
                                             onChange={handleChange} 
-                                    />
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
                                 {/* Row 6 */}
                                 <div className="space-y-2">
                                     <Label>Note</Label>
                                     <Textarea 
                                         name="note" 
-                                    value={formData.note} 
-                                    onChange={handleChange} 
-                                    placeholder="Enter any additional notes..."
-                                    className="resize-none"
-                                />
-                            </div>
-                        </form>
+                                        value={formData.note}
+                                        onChange={handleChange}
+                                        placeholder="Enter any additional notes..."
+                                        className="resize-none"
+                                    />
+                                </div>
+                            </form>
                     )}
                 </ScrollArea>
 
-                <DialogFooter className="p-6 border-t bg-gray-50/50">
-                    <Button variant="outline" onClick={onClose}>
+                <DialogFooter className="p-6 border-t bg-muted/40 gap-2 sm:gap-0">
+                    <Button variant="outline" onClick={onClose} disabled={loading}>
                         Close
                     </Button>
                     {!viewMode && (
-                        <Button type="submit" form="visitor-form">
+                        <Button type="submit" form="visitor-form" disabled={loading}>
+                            {loading && <Clock className="mr-2 h-4 w-4 animate-spin" />}
                             {initialData ? 'Update Visitor' : 'Save Visitor'}
                         </Button>
                     )}
@@ -485,12 +535,5 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
         </Dialog>
     );
 };
-
-// Simple Badge component for View Mode
-const Badge = ({ children }) => (
-    <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 bg-gray-100 text-gray-900">
-        {children}
-    </span>
-);
 
 export default VisitorModal;

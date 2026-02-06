@@ -16,26 +16,10 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
-import {
-  IconSearch,
   IconUsers,
   IconSchool,
   IconBook,
-  IconCalendar,
-  IconCurrencyDollar,
-  IconFileText,
-  IconSettings,
   IconChartBar,
-  IconUserPlus,
-  IconClipboardList
 } from "@tabler/icons-react";
 
 
@@ -44,6 +28,7 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [extraBreadcrumb, setExtraBreadcrumb] = useState(null);
 
   // Keyboard shortcut for Ctrl+K
   useEffect(() => {
@@ -115,7 +100,7 @@ const AdminLayout = () => {
       <AppSidebar />
       <SidebarInset>
         {/* Header with Breadcrumb */}
-        <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+        <header className="flex h-16 shrink-0 sticky top-0 z-50 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -134,7 +119,7 @@ const AdminLayout = () => {
                   {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.href}>
                       <BreadcrumbItem>
-                        {crumb.isLast ? (
+                        {crumb.isLast && !extraBreadcrumb ? (
                           <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
                         ) : (
                           <BreadcrumbLink asChild>
@@ -142,23 +127,24 @@ const AdminLayout = () => {
                           </BreadcrumbLink>
                         )}
                       </BreadcrumbItem>
-                      {!crumb.isLast && <BreadcrumbSeparator />}
+                      {(!crumb.isLast || extraBreadcrumb) && <BreadcrumbSeparator />}
                     </React.Fragment>
                   ))}
+                  {extraBreadcrumb && (
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{extraBreadcrumb}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  )}
                 </>
               )}
             </BreadcrumbList>
           </Breadcrumb>
-
-
-          {/* Search Bar Trigger */}
-        
         </header>
 
 
         {/* Main Content */}
         <div className="flex flex-1 flex-col gap-6 p-4">
-          <Outlet />
+          <Outlet context={{ setExtraBreadcrumb }} />
         </div>
       </SidebarInset>
     </SidebarProvider>

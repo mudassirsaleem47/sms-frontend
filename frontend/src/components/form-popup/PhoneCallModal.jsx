@@ -1,11 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { useModalAnimation } from '../../hooks/useModalAnimation';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import {
+    Phone,
+    PhoneIncoming,
+    PhoneOutgoing,
+    Calendar,
+    Clock,
+    FileText,
+    AlertCircle,
+    User,
+    Check
+} from 'lucide-react';
 
 const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode = false }) => {
-    const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, onClose);
 
+    // Form state
     const [formData, setFormData] = useState({
         callerName: '',
         phone: '',
@@ -39,8 +63,8 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                 callerName: '',
                 phone: '',
                 callType: 'Incoming',
-                callDate: '',
-                callTime: '',
+                callDate: new Date().toISOString().split('T')[0],
+                callTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
                 purpose: '',
                 callDuration: '',
                 followUpRequired: false,
@@ -48,9 +72,7 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                 notes: ''
             });
         }
-    }, [initialData]);
-
-    if (!isVisible) return null;
+    }, [initialData, isOpen]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -60,330 +82,262 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
         }));
     };
 
+    // Specific handler for Checkbox component
+    const handleCheckboxChange = (checked) => {
+        setFormData(prev => ({ ...prev, followUpRequired: checked }));
+    };
+
+    // Specific handler for RadioGroup
+    const handleRadioChange = (value) => {
+        setFormData(prev => ({ ...prev, callType: value }));
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit(formData);
     };
 
-    return createPortal(
-        <div className={`fixed inset-0 z-[9999] overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-            <div className="flex min-h-full items-center justify-center p-4">
-                <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                
-                {/* Header */}
-                <div className="p-7 rounded-t-2xl flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                            {viewMode ? 'View Phone Call Details' : (initialData ? 'Edit Phone Call' : 'Add Phone Call')}
-                        </h2>
-                        <p className="text-gray-600 text-sm mt-2">
-                            {viewMode ? 'Read-only view of phone call information' : (initialData ? 'Update the phone call details below' : 'Fill in the details to record a new phone call')}
-                        </p>
-                    </div>
-                    <button 
-                        onClick={handleClose} 
-                        className="text-red-600 bg-gray-50 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition duration-150 flex-shrink-0"
-                    >
-                        <X size={24} />
-                    </button>
-                </div>
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle>
+                        {viewMode ? 'View Phone Call Details' : (initialData ? 'Edit Phone Call' : 'Add Phone Call')}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {viewMode
+                            ? 'Details of the selected phone call record.'
+                            : 'Enter the details of the phone call below.'}
+                    </DialogDescription>
+                </DialogHeader>
 
-                {/* Content - Conditional Rendering */}
-                {viewMode ? (
-                    /* VIEW MODE - Card-based Display */
-                    <div className="p-6 md:p-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Call Information Card */}
-                            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6 border border-indigo-100">
-                                <h3 className="text-lg font-bold text-indigo-900 mb-4 flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                    </svg>
-                                    Call Information
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ScrollArea className="flex-1 p-6 pt-2">
+                    {viewMode ? (
+                        /* VIEW MODE */
+                        <div className="grid gap-6">
+
+                            {/* Call Information */}
+                            <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
+                                <h4 className="flex items-center gap-2 font-semibold text-primary">
+                                    <Phone size={18} /> Call Information
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div><span className="text-muted-foreground">Caller Name:</span> <span className="font-medium ml-1">{formData.callerName}</span></div>
+                                    <div><span className="text-muted-foreground">Phone Number:</span> <span className="font-medium ml-1">{formData.phone}</span></div>
                                     <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Caller Name</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.callerName || '-'}</p>
+                                        <span className="text-muted-foreground">Call Type:</span>
+                                        <Badge variant={formData.callType === 'Incoming' ? "success" : "default"} className="ml-2 gap-1">
+                                            {formData.callType === 'Incoming' ? <PhoneIncoming size={12} /> : <PhoneOutgoing size={12} />}
+                                            {formData.callType}
+                                        </Badge>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Phone Number</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.phone || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Call Type</p>
-                                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-600 ${
-                                            formData.callType === 'Incoming' 
-                                                ? 'bg-green-200 text-green-800' 
-                                                : 'bg-blue-200 text-blue-800'
-                                        }`}>
-                                            {formData.callType === 'Incoming' ? '📞 Incoming' : '📱 Outgoing'}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Duration</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.callDuration || '-'}</p>
-                                    </div>
+                                    <div><span className="text-muted-foreground">Duration:</span> <span className="font-medium ml-1">{formData.callDuration || '-'}</span></div>
                                 </div>
                             </div>
 
-                            {/* Call Schedule Card */}
-                            <div className="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-6 border border-green-100">
-                                <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    Call Schedule
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Date</p>
-                                        <p className="text-base font-600 text-gray-900">
-                                            {formData.callDate ? new Date(formData.callDate).toLocaleDateString() : '-'}
-                                        </p>
+                            {/* Schedule & Purpose */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
+                                    <h4 className="flex items-center gap-2 font-semibold text-primary">
+                                        <Clock size={18} /> Time & Date
+                                    </h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div><span className="text-muted-foreground">Date:</span> <span className="font-medium ml-1">{new Date(formData.callDate).toLocaleDateString()}</span></div>
+                                        <div><span className="text-muted-foreground">Time:</span> <span className="font-medium ml-1">{formData.callTime}</span></div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Time</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.callTime || '-'}</p>
-                                    </div>
+                                </div>
+                                <div className="space-y-4 rounded-lg border p-4 bg-muted/40">
+                                    <h4 className="flex items-center gap-2 font-semibold text-primary">
+                                        <FileText size={18} /> Purpose
+                                    </h4>
+                                    <p className="text-sm">{formData.purpose || 'No purpose recorded.'}</p>
                                 </div>
                             </div>
 
-                            {/* Purpose Card */}
-                            {formData.purpose && (
-                                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-100">
-                                    <h3 className="text-lg font-bold text-purple-900 mb-3 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                        Purpose
-                                    </h3>
-                                    <p className="text-base text-gray-700 whitespace-pre-wrap">{formData.purpose}</p>
-                                </div>
-                            )}
-
-                            {/* Follow-up Card */}
-                            {formData.followUpRequired && (
-                                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-6 border border-amber-100">
-                                    <h3 className="text-lg font-bold text-amber-900 mb-3 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Follow-up Required
-                                    </h3>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Follow-up Date</p>
-                                        <p className="text-base font-600 text-gray-900">
-                                            {formData.followUpDate ? new Date(formData.followUpDate).toLocaleDateString() : '-'}
-                                        </p>
+                            {/* Follow-up & Notes */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {formData.followUpRequired && (
+                                    <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                        <h4 className="flex items-center gap-2 font-semibold text-amber-800">
+                                            <AlertCircle size={18} /> Follow-up Required
+                                        </h4>
+                                        <div className="text-sm text-amber-900">
+                                            <span className="font-medium">Date:</span> {new Date(formData.followUpDate).toLocaleDateString()}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-
-                            {/* Notes Card */}
-                            {formData.notes && (
-                                <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-6 border border-gray-100 lg:col-span-2">
-                                    <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                        </svg>
-                                        Notes
-                                    </h3>
-                                    <p className="text-base text-gray-700 whitespace-pre-wrap">{formData.notes}</p>
-                                </div>
-                            )}
+                                )}
+                                {formData.notes && (
+                                    <div className={`space-y-4 rounded-lg border p-4 bg-muted/40 ${!formData.followUpRequired ? 'col-span-2' : ''}`}>
+                                        <h4 className="flex items-center gap-2 font-semibold text-primary">
+                                            <FileText size={18} /> Additional Notes
+                                        </h4>
+                                        <p className="text-sm">{formData.notes}</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        {/* Close Button */}
-                        <div className="flex justify-end mt-8 pt-6 border-t border-gray-200">
-                            <button 
-                                type="button" 
-                                onClick={handleClose} 
-                                className="cursor-pointer px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    /* EDIT/ADD MODE - Form */
-                    <form onSubmit={handleSubmit} className="p-6 md:p-8">
-                        <div className="space-y-5">
+                    ) : (
+                            /* EDIT/ADD FORM */
+                            <form id="phonecall-form" onSubmit={handleSubmit} className="grid gap-5 py-4">
                             
-                            {/* Row 1: Caller Name & Phone */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Caller Name *</label>
-                                    <input
-                                        type="text"
-                                        name="callerName"
-                                        value={formData.callerName}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Enter caller name"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                {/* Row 1 */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="callerName">Caller Name *</Label>
+                                        <Input
+                                            id="callerName"
+                                            name="callerName"
+                                            value={formData.callerName}
+                                            onChange={handleChange} 
+                                            placeholder="Enter caller name" 
+                                            required 
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Phone Number *</label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Enter phone number"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    <div className="space-y-2">
+                                        <Label htmlFor="phone">Phone Number *</Label>
+                                        <Input
+                                            id="phone"
+                                            name="phone" 
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={handleChange} 
+                                            placeholder="Enter phone number" 
+                                            required 
                                     />
                                 </div>
                             </div>
 
-                            {/* Row 2: Call Type - Radio Buttons */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-3">Call Type *</label>
-                                <div className="flex gap-6">
-                                    <label className="flex items-center cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="callType"
-                                            value="Incoming"
-                                            checked={formData.callType === 'Incoming'}
-                                            onChange={handleChange}
-                                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span className="ml-2 text-gray-700">📞 Incoming</span>
-                                    </label>
-                                    <label className="flex items-center cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="callType"
-                                            value="Outgoing"
-                                            checked={formData.callType === 'Outgoing'}
-                                            onChange={handleChange}
-                                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span className="ml-2 text-gray-700">📱 Outgoing</span>
-                                    </label>
-                                </div>
+                                {/* Row 2: Call Type */}
+                                <div className="space-y-3">
+                                    <Label>Call Type *</Label>
+                                    <RadioGroup
+                                        value={formData.callType}
+                                        onValueChange={handleRadioChange}
+                                        className="flex gap-6"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Incoming" id="incoming" />
+                                            <Label htmlFor="incoming" className="cursor-pointer flex items-center gap-1.5 font-normal">
+                                                <PhoneIncoming size={16} className="text-green-600" /> Incoming
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Outgoing" id="outgoing" />
+                                            <Label htmlFor="outgoing" className="cursor-pointer flex items-center gap-1.5 font-normal">
+                                                <PhoneOutgoing size={16} className="text-blue-600" /> Outgoing
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
                             </div>
 
-                            {/* Row 3: Date, Time & Duration */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Call Date *</label>
-                                    <input
-                                        type="date"
-                                        name="callDate"
-                                        value={formData.callDate}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                {/* Row 3: Date, Time, Duration */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="callDate">Call Date *</Label>
+                                        <Input
+                                            id="callDate"
+                                            name="callDate" 
+                                            type="date" 
+                                            value={formData.callDate}
+                                            onChange={handleChange}
+                                            required 
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Call Time *</label>
-                                    <input
-                                        type="time"
-                                        name="callTime"
-                                        value={formData.callTime}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    <div className="space-y-2">
+                                        <Label htmlFor="callTime">Call Time *</Label>
+                                        <Input
+                                            id="callTime"
+                                            name="callTime" 
+                                            type="time" 
+                                            value={formData.callTime}
+                                            onChange={handleChange}
+                                            required 
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Duration</label>
-                                    <input
-                                        type="text"
-                                        name="callDuration"
-                                        value={formData.callDuration}
-                                        onChange={handleChange}
-                                        placeholder="e.g., 5 mins"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    <div className="space-y-2">
+                                        <Label htmlFor="callDuration">Duration</Label>
+                                        <Input
+                                            id="callDuration"
+                                            name="callDuration"
+                                            value={formData.callDuration}
+                                            onChange={handleChange} 
+                                            placeholder="e.g. 5 mins" 
                                     />
                                 </div>
                             </div>
 
                             {/* Row 4: Purpose */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">Purpose</label>
-                                <textarea
-                                    name="purpose"
-                                    value={formData.purpose}
-                                    onChange={handleChange}
-                                    rows="2"
+                                <div className="space-y-2">
+                                    <Label htmlFor="purpose">Purpose</Label>
+                                    <Textarea
+                                        id="purpose"
+                                        name="purpose"
+                                        value={formData.purpose}
+                                        onChange={handleChange} 
                                     placeholder="Enter purpose of call"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+                                        className="resize-none"
+                                        rows={2}
                                 />
                             </div>
 
-                            {/* Row 5: Follow-up Required */}
-                            <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    name="followUpRequired"
-                                    checked={formData.followUpRequired}
-                                    onChange={handleChange}
-                                    className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
-                                />
-                                <label className="text-sm font-600 text-gray-700 cursor-pointer">
-                                    Follow-up Required
-                                </label>
-                            </div>
+                                {/* Row 5: Follow-up */}
+                                <div className="flex flex-col space-y-4 rounded-lg border p-4 bg-muted/20">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="followUpRequired"
+                                            checked={formData.followUpRequired}
+                                            onCheckedChange={handleCheckboxChange}
+                                        />
+                                        <Label htmlFor="followUpRequired" className="font-medium cursor-pointer">
+                                            Follow-up Required
+                                        </Label>
+                                    </div>
 
-                            {/* Row 6: Follow-up Date (Conditional) */}
-                            {formData.followUpRequired && (
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Follow-up Date</label>
-                                    <input
-                                        type="date"
-                                        name="followUpDate"
-                                        value={formData.followUpDate}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    />
+                                    {formData.followUpRequired && (
+                                        <div className="pl-6 animate-fade-in-down">
+                                            <Label htmlFor="followUpDate" className="mb-1.5 block">Follow-up Date</Label>
+                                            <Input
+                                                id="followUpDate"
+                                                name="followUpDate" 
+                                                type="date" 
+                                                value={formData.followUpDate}
+                                                onChange={handleChange}
+                                                className="w-full md:w-1/2"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                            )}
 
-                            {/* Row 7: Notes */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">Additional Notes</label>
-                                <textarea
-                                    name="notes"
-                                    value={formData.notes}
-                                    onChange={handleChange}
-                                    rows="3"
+                                {/* Row 6: Notes */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="notes">Additional Notes</Label>
+                                    <Textarea
+                                        id="notes"
+                                        name="notes"
+                                        value={formData.notes}
+                                        onChange={handleChange} 
                                     placeholder="Any additional notes..."
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+                                        className="resize-none"
+                                        rows={3}
                                 />
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Buttons */}
-                        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                            <button 
-                                type="button" 
-                                onClick={handleClose} 
-                                className="cursor-pointer px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit" 
-                                className="cursor-pointer px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-600 transition duration-150 shadow-lg hover:shadow-xl"
-                            >
-                                {initialData ? 'Update Call' : 'Save'}
-                            </button>
-                        </div>
-                    </form>
-                )}
-            </div>
-            </div>
-        </div>,
-        document.body
+                        </form>
+                    )}
+                </ScrollArea>
+
+                <DialogFooter className="p-6 border-t bg-gray-50/50">
+                    <Button variant="outline" onClick={onClose}>
+                        Close
+                    </Button>
+                    {!viewMode && (
+                        <Button type="submit" form="phonecall-form">
+                            {initialData ? 'Update Call' : 'Save Call'}
+                        </Button>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 

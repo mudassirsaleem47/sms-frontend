@@ -1,15 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
-import { Trash2, Plus, X, Search, BookOpen, Clock, Hash } from 'lucide-react';
+import { toast } from 'sonner';
+import { Trash2, Plus, BookOpen, Clock, Hash, Search, Filter } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+    CardFooter
+} from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const SubjectManagement = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
     // State
     const [subjects, setSubjects] = useState([]);
@@ -18,15 +44,14 @@ const SubjectManagement = () => {
     const [selectedClassId, setSelectedClassId] = useState("all");
     
     // Add Subject Form State
-    const [showPopup, setShowPopup] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         subName: "",
         subCode: "",
         sessions: "",
         sclass: ""
     });
-
-    const { isVisible, isClosing, handleClose } = useModalAnimation(showPopup, () => setShowPopup(false));
 
     // Fetch Classes
     useEffect(() => {
@@ -73,6 +98,7 @@ const SubjectManagement = () => {
     // Handle Add Subject
     const handleAddSubject = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
             // Backend expects subjects array
             const payload = {
@@ -86,185 +112,181 @@ const SubjectManagement = () => {
             };
 
             await axios.post(`${API_BASE}/SubjectCreate`, payload);
-            showToast("Subject added successfully!", "success");
+            toast.success("Subject added successfully!");
             setFormData({ subName: "", subCode: "", sessions: "", sclass: "" });
-            handleClose();
+            setShowAddModal(false);
             fetchSubjects();
         } catch (err) {
-            showToast(err.response?.data?.message || "Error adding subject", "error");
+            toast.error(err.response?.data?.message || "Error adding subject");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     // Handle Delete
     const handleDelete = async (id) => {
+        // Simple window confirm for now, can upgrade to AlertDialog later if consistently needed
         if (window.confirm("Are you sure you want to delete this subject?")) {
             try {
                 await axios.delete(`${API_BASE}/Subject/${id}`);
-                showToast("Subject deleted successfully", "success");
+                toast.success("Subject deleted successfully");
                 fetchSubjects();
             } catch (err) {
-                showToast("Error deleting subject", "error");
+                toast.error("Error deleting subject");
             }
         }
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Subject Management</h1>
-                    <p className="text-gray-600 mt-2">Manage subjects and curriculum</p>
+                    <h2 className="text-3xl font-bold tracking-tight">Subject Management</h2>
+                    <p className="text-muted-foreground mt-1">Manage subjects and curriculum</p>
                 </div>
-                <button onClick={() => setShowPopup(true)} className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition duration-200 font-600">
-                    <Plus className="w-5 h-5 mr-2" /> Add Subject
-                </button>
+                <Button onClick={() => setShowAddModal(true)} size="lg">
+                    <Plus className="mr-2 h-4 w-4" /> Add Subject
+                </Button>
             </div>
 
             {/* Filter */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex items-center gap-4">
-                <span className="text-gray-700 font-semibold">Filter by Class:</span>
-                <select 
-                    value={selectedClassId}
-                    onChange={(e) => setSelectedClassId(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                    <option value="all">All Classes</option>
-                    {classes.map(cls => (
-                        <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
-                    ))}
-                </select>
+            <div className="flex items-center gap-2 max-w-sm">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                    <SelectTrigger className="w-[180px] bg-background">
+                        <SelectValue placeholder="Filter by Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Classes</SelectItem>
+                        {classes.map(cls => (
+                            <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Skeleton key={i} className="h-[180px] w-full rounded-xl" />
+                    ))}
                 </div>
             ) : subjects.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-900">No Subjects Found</h3>
-                    <p className="text-gray-500 mt-1">Start by adding subjects to your classes.</p>
+                    <div className="flex flex-col items-center justify-center py-16 border rounded-xl bg-muted/20 border-dashed text-center">
+                        <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-medium">No Subjects Found</h3>
+                        <p className="text-muted-foreground mt-2 max-w-xs mx-auto">
+                            {selectedClassId !== "all" ? "This class has no subjects assigned yet." : "Start by adding subjects to your classes."}
+                        </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {subjects.map((sub) => (
-                        <div key={sub._id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100 overflow-hidden group">
-                            <div className="p-5">
+                        <Card key={sub._id} className="group hover:shadow-md transition-all duration-200 overflow-hidden border-t-4 border-t-indigo-500">
+                            <CardHeader className="pb-2">
                                 <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1">{sub.subName}</h3>
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                            {sub.sclass?.sclassName || "No Class"}
-                                        </span>
-                                    </div>
-                                    <button 
+                                    <Badge variant="outline" className="mb-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200">
+                                        {sub.sclass?.sclassName || "No Class"}
+                                    </Badge>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 -mt-1 -mr-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                                         onClick={() => handleDelete(sub._id)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100"
                                     >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                
-                                <div className="mt-4 space-y-2">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Hash className="w-4 h-4 mr-2 text-gray-400" />
-                                        <span>Code: <span className="font-mono text-gray-800">{sub.subCode}</span></span>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                                        <span>Sessions: {sub.sessions}</span>
-                                    </div>
+                                <CardTitle className="text-lg font-bold">{sub.subName}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pb-4">
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                    <Hash className="w-4 h-4 mr-2" />
+                                    <span>Code: <span className="font-mono text-foreground font-medium">{sub.subCode}</span></span>
                                 </div>
-                            </div>
-                            <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                        </div>
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                    <Clock className="w-4 h-4 mr-2" />
+                                    <span>Sessions: {sub.sessions}/week</span>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             )}
 
             {/* Add Subject Modal */}
-            {isVisible && (
-                <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-                    <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-md relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-2xl font-bold text-gray-900">Add New Subject</h2>
-                            <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                <X className="w-6 h-6 text-gray-500" />
-                            </button>
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Subject</DialogTitle>
+                        <DialogDescription>
+                            Add a new subject to a specific class.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleAddSubject} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="subName">Subject Name <span className="text-destructive">*</span></Label>
+                            <Input
+                                id="subName"
+                                placeholder="e.g. Mathematics"
+                                value={formData.subName}
+                                onChange={(e) => setFormData({ ...formData, subName: e.target.value })}
+                                required
+                            />
                         </div>
-                        
-                        <form onSubmit={handleAddSubject} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name *</label>
-                                <input
-                                    type="text"
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="subCode">Subject Code <span className="text-destructive">*</span></Label>
+                                <Input
+                                    id="subCode"
+                                    placeholder="e.g. MATH101"
+                                    value={formData.subCode}
+                                    onChange={(e) => setFormData({ ...formData, subCode: e.target.value })}
                                     required
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                    placeholder="e.g., Mathematics"
-                                    value={formData.subName}
-                                    onChange={(e) => setFormData({...formData, subName: e.target.value})}
                                 />
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                        placeholder="e.g., MATH101"
-                                        value={formData.subCode}
-                                        onChange={(e) => setFormData({...formData, subCode: e.target.value})}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Sessions/Week *</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                        placeholder="e.g., 5"
-                                        value={formData.sessions}
-                                        onChange={(e) => setFormData({...formData, sessions: e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Class *</label>
-                                <select
+                            <div className="space-y-2">
+                                <Label htmlFor="sessions">Sessions/Week <span className="text-destructive">*</span></Label>
+                                <Input
+                                    id="sessions"
+                                    type="number"
+                                    placeholder="e.g. 5"
+                                    value={formData.sessions}
+                                    onChange={(e) => setFormData({ ...formData, sessions: e.target.value })}
                                     required
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-                                    value={formData.sclass}
-                                    onChange={(e) => setFormData({...formData, sclass: e.target.value})}
-                                >
-                                    <option value="">Select a Class</option>
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="class">Select Class <span className="text-destructive">*</span></Label>
+                            <Select
+                                value={formData.sclass} 
+                                onValueChange={(val) => setFormData({ ...formData, sclass: val })}
+                                required
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Class" />
+                                </SelectTrigger>
+                                <SelectContent>
                                     {classes.map(cls => (
-                                        <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
+                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
                                     ))}
-                                </select>
-                            </div>
-                            
-                            <div className="pt-4 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleClose}
-                                    className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-5 py-2.5 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium shadow-md hover:shadow-lg transition-all"
-                                >
-                                    Add Subject
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? "Adding..." : "Add Subject"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

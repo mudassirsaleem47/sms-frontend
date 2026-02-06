@@ -5,6 +5,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,18 +22,20 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-    IconUser,
-    IconPhone,
-    IconMail,
-    IconMapPin,
-    IconCalendar,
-    IconSchool,
-    IconUserPlus,
-    IconNotes,
-    IconLock,
-    IconInfoCircle,
-    IconUsers,
-} from '@tabler/icons-react';
+    User,
+    Phone,
+    Mail,
+    MapPin,
+    Calendar as CalendarIcon,
+    School,
+    Users,
+    FileText,
+    Lock,
+    Info,
+    GraduationCap,
+    CheckCircle2,
+    CalendarDays
+} from 'lucide-react';
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -41,7 +44,6 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Field, FieldLabel } from "@/components/ui/field";
 
 const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, teachersList, viewMode = false }) => {
     const [formData, setFormData] = useState({
@@ -62,7 +64,7 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
         if (initialData) {
             const formattedData = {
                 ...initialData,
-                date: initialData.date ? initialData.date.split('T')[0] : '',
+                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '',
                 class: initialData.class?._id || '',
                 assigned: initialData.assigned?._id || ''
             };
@@ -102,140 +104,164 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
     if (viewMode) {
         return (
             <Dialog open={isOpen} onOpenChange={onClose}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl">Enquiry Details</DialogTitle>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+                    <DialogHeader className="p-6 pb-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-primary">
+                            <User className="w-6 h-6" />
+                            Enquiry Details
+                        </DialogTitle>
                         <DialogDescription>
-                            Complete information about this admission enquiry
+                            Complete information about the admission enquiry for <span className="font-semibold text-foreground">{formData.name}</span>.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                        {/* Student Information Card */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <IconUser className="w-4 h-4" />
-                                    Student Information
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Full Name</Label>
-                                    <p className="text-sm font-medium">{formData.name || '-'}</p>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Phone</Label>
-                                    <p className="text-sm font-medium flex items-center gap-2">
-                                        <IconPhone className="w-3 h-3" />
-                                        {formData.phone || '-'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Email</Label>
-                                    <p className="text-sm font-medium flex items-center gap-2">
-                                        <IconMail className="w-3 h-3" />
-                                        {formData.email || '-'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Address</Label>
-                                    <p className="text-sm font-medium flex items-center gap-2">
-                                        <IconMapPin className="w-3 h-3" />
-                                        {formData.address || '-'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Number of Children</Label>
-                                    <p className="text-sm font-medium">{formData.noOfChild || '-'}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Admission Details Card */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <IconSchool className="w-4 h-4" />
-                                    Admission Details
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Class</Label>
-                                    <div className="mt-1">
-                                        <Badge variant="secondary">
-                                            {classesList.find(c => c._id === formData.class)?.sclassName || '-'}
-                                        </Badge>
+                    <div className="p-6 pt-2 space-y-6">
+                        <div className="grid gap-6 md:grid-cols-2">
+                            {/* Student Information Card */}
+                            <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                                <CardHeader className="pb-3 bg-muted/10">
+                                    <CardTitle className="text-base flex items-center gap-2 text-blue-700">
+                                        <User className="w-4 h-4" />
+                                        Applicant Information
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4 pt-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Full Name</Label>
+                                            <p className="font-medium text-base">{formData.name || '-'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Children</Label>
+                                            <p className="font-medium flex items-center gap-1">
+                                                <Users className="w-3 h-3 text-muted-foreground" />
+                                                {formData.noOfChild}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Assigned Teacher</Label>
-                                    <p className="text-sm font-medium">
-                                        {teachersList.find(t => t._id === formData.assigned)?.name || 'Unassigned'}
-                                    </p>
-                                </div>
-                                <div>
-                                    <Label className="text-xs text-muted-foreground">Enquiry Date</Label>
-                                    <p className="text-sm font-medium flex items-center gap-2">
-                                        <IconCalendar className="w-3 h-3" />
-                                        {formData.date ? new Date(formData.date).toLocaleDateString() : '-'}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
 
-                        {/* Description */}
-                        {formData.description && (
-                            <Card className="md:col-span-2">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <IconNotes className="w-4 h-4" />
-                                        Description
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm whitespace-pre-wrap">{formData.description}</p>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Contact Details</Label>
+                                        <div className="grid gap-2">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Phone className="w-3.5 h-3.5 text-blue-500" />
+                                                {formData.phone || '-'}
+                                            </div>
+                                            {formData.email && (
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                                    {formData.email}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Address</Label>
+                                        <div className="flex items-start gap-2 text-sm">
+                                            <MapPin className="w-3.5 h-3.5 text-blue-500 mt-0.5" />
+                                            {formData.address || 'No address provided'}
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
-                        )}
 
-                        {/* Admin Note */}
-                        {formData.note && (
-                            <Card className="border-amber-200 bg-amber-50/50">
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <IconLock className="w-4 h-4" />
-                                        Admin Note
+                            {/* Admission Details Card */}
+                            <Card className="border-l-4 border-l-green-500 shadow-sm">
+                                <CardHeader className="pb-3 bg-muted/10">
+                                    <CardTitle className="text-base flex items-center gap-2 text-green-700">
+                                        <School className="w-4 h-4" />
+                                        Admission Status
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm whitespace-pre-wrap">{formData.note}</p>
+                                <CardContent className="space-y-4 pt-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Interested Class</Label>
+                                            <div>
+                                                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200">
+                                                    <GraduationCap className="mr-1 h-3 w-3" />
+                                                    {classesList.find(c => c._id === formData.class)?.sclassName || '-'}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Enquiry Date</Label>
+                                            <div className="flex items-center gap-2 text-sm font-medium">
+                                                <CalendarIcon className="w-3.5 h-3.5 text-green-600" />
+                                                {formData.date ? new Date(formData.date).toLocaleDateString() : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Assigned Counselor</Label>
+                                        {formData.assigned ? (
+                                            <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md border border-green-100">
+                                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                                <span className="text-sm font-medium text-green-800">
+                                                    {teachersList.find(t => t._id === formData.assigned)?.name}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-md border border-amber-100">
+                                                <Info className="w-4 h-4 text-amber-600" />
+                                                <span className="text-sm font-medium text-amber-800">Unassigned</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
-                        )}
 
-                        {/* Reference */}
-                        {formData.reference && (
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-base flex items-center gap-2">
-                                        <IconInfoCircle className="w-4 h-4" />
-                                        Reference
+                            {/* Description */}
+                            <Card className="md:col-span-2 border-l-4 border-l-gray-400 shadow-sm">
+                                <CardHeader className="pb-3 bg-muted/10">
+                                    <CardTitle className="text-base flex items-center gap-2 text-gray-700">
+                                        <FileText className="w-4 h-4" />
+                                        Description & Notes
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm whitespace-pre-wrap">{formData.reference}</p>
+                                <CardContent className="space-y-4 pt-4">
+                                    {formData.description ? (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Description</Label>
+                                            <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-3 rounded-md border">
+                                                {formData.description}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">No description provided.</p>
+                                    )}
+
+                                    {formData.note && (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                                                <Lock className="w-3 h-3" /> Admin Private Note
+                                            </Label>
+                                            <p className="text-sm text-gray-800 whitespace-pre-wrap bg-amber-50 p-3 rounded-md border border-amber-200 shadow-sm">
+                                                {formData.note}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {formData.reference && (
+                                        <div className="space-y-1">
+                                            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Reference Source</Label>
+                                            <p className="text-sm text-gray-700">
+                                                <span className="font-semibold">Source:</span> {formData.reference}
+                                            </p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
-                        )}
+                        </div>
                     </div>
 
-                    <div className="flex justify-end pt-4">
-                        <Button variant="secondary" onClick={onClose}>
-                            Close
+                    <DialogFooter className="p-6 pt-2 bg-gray-50/50">
+                        <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+                            Close Details
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         );
@@ -244,70 +270,77 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
     // Form Mode Render
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl">
-                        {initialData ? 'Edit Enquiry' : 'Add New Enquiry'}
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+                <DialogHeader className="p-6 pb-4 border-b">
+                    <DialogTitle className="text-2xl font-bold">
+                        {initialData ? 'Edit Enquiry' : 'New Admission Enquiry'}
                     </DialogTitle>
                     <DialogDescription>
-                        {initialData ? 'Update the enquiry details below' : 'Fill in the details to create a new enquiry'}
+                        {initialData ? 'Update the details for this enquiry record.' : 'Enter details for a new student admission enquiry.'}
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Personal Information Section */}
                     <div className="space-y-4">
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                            <User className="w-4 h-4" /> Personal Information
+                        </h3>
+
                         {/* Row 1: Name, Phone, Email */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Field>
-                                <FieldLabel htmlFor="name">Full Name *</FieldLabel>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="name"
                                     name="name"
-                                    placeholder="Enter student name"
+                                    placeholder="Student Name"
                                     value={formData.name}
                                     onChange={handleChange}
                                     required
+                                    className="focus-visible:ring-blue-500"
                                 />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="phone">Phone *</FieldLabel>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="phone"
                                     name="phone"
-                                    placeholder="Enter phone number"
+                                    placeholder="Primary Contact"
                                     value={formData.phone}
                                     onChange={handleChange}
                                     required
+                                    className="focus-visible:ring-blue-500"
                                 />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="email">Email</FieldLabel>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
                                 <Input
                                     id="email"
                                     name="email"
                                     type="email"
-                                    placeholder="Enter email address"
+                                    placeholder="Email Address"
                                     value={formData.email}
                                     onChange={handleChange}
+                                    className="focus-visible:ring-blue-500"
                                 />
-                            </Field>
+                            </div>
                         </div>
 
                         {/* Row 2: Date, Class, Teacher, Children */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Field>
-                                <FieldLabel htmlFor="date">Date *</FieldLabel>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant={"outline"}
                                             className={cn(
-                                                "w-full justify-start text-left font-normal h-8 px-2.5",
+                                                "w-full justify-start text-left font-normal",
                                                 !formData.date && "text-muted-foreground"
                                             )}
                                         >
-                                            <IconCalendar className="mr-2 h-4 w-4" />
+                                            <CalendarDays className="mr-2 h-4 w-4" />
                                             {formData.date ? format(new Date(formData.date), "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
@@ -320,16 +353,16 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
                                         />
                                     </PopoverContent>
                                 </Popover>
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="class">Select Class *</FieldLabel>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="class">Interested Class <span className="text-destructive">*</span></Label>
                                 <Select
                                     value={formData.class}
                                     onValueChange={(value) => handleSelectChange('class', value)}
                                     required
                                 >
                                     <SelectTrigger id="class">
-                                        <SelectValue placeholder="Choose a class" />
+                                        <SelectValue placeholder="Select Class" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
@@ -341,15 +374,15 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="assigned">Assign Teacher</FieldLabel>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="assigned">Assign To</Label>
                                 <Select
                                     value={formData.assigned}
                                     onValueChange={(value) => handleSelectChange('assigned', value)}
                                 >
                                     <SelectTrigger id="assigned">
-                                        <SelectValue placeholder="Select teacher" />
+                                        <SelectValue placeholder="Select Staff" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
@@ -361,88 +394,90 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="noOfChild">Number of Children</FieldLabel>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="noOfChild">No. of Children</Label>
                                 <Input
                                     id="noOfChild"
                                     name="noOfChild"
                                     type="number"
                                     min="1"
-                                    placeholder="Enter number"
                                     value={formData.noOfChild}
                                     onChange={handleChange}
                                 />
-                            </Field>
+                            </div>
                         </div>
 
                         {/* Row 3: Address (Full Width) */}
-                        <div className="space-y-4">
-                            <Field>
-                                <FieldLabel htmlFor="address">Address</FieldLabel>
-                                <Textarea
-                                    id="address"
-                                    name="address"
-                                    placeholder="Enter address"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                    rows={3}
-                                />
-                            </Field>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Textarea
+                                id="address"
+                                name="address"
+                                placeholder="Full residential address"
+                                value={formData.address}
+                                onChange={handleChange}
+                                rows={2}
+                                className="resize-none focus-visible:ring-blue-500"
+                            />
                         </div>
                     </div>
 
                     <div className="space-y-4">
-                        {/* Other Full Width Fields */}
-                        <div className="space-y-4">
-                            <Field>
-                                <FieldLabel htmlFor="description">Description</FieldLabel>
+                        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider border-b pb-2 flex items-center gap-2 mt-6">
+                            <FileText className="w-4 h-4" /> Additional Details
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Requirement / Description</Label>
                                 <Textarea
                                     id="description"
                                     name="description"
-                                    placeholder="Enter enquiry description"
+                                    placeholder="Enter specific requirements or details..."
                                     value={formData.description}
                                     onChange={handleChange}
-                                    rows={3}
+                                    rows={4}
+                                    className="resize-none focus-visible:ring-blue-500"
                                 />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="note" className="flex items-center gap-2">
-                                    Admin Note (Private)
-                                </FieldLabel>
-                                <Textarea
-                                    id="note"
-                                    name="note"
-                                    placeholder="Add internal notes (only visible to admins)"
-                                    value={formData.note}
-                                    onChange={handleChange}
-                                    rows={2}
-                                    className="border-amber-200 bg-amber-50/50"
-                                />
-                            </Field>
-                            <Field>
-                                <FieldLabel htmlFor="reference">Reference (Optional)</FieldLabel>
-                                <Textarea
-                                    id="reference"
-                                    name="reference"
-                                    placeholder="How did they know about us?"
-                                    value={formData.reference}
-                                    onChange={handleChange}
-                                    rows={2}
-                                />
-                            </Field>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="note" className="flex items-center gap-2 text-amber-700">
+                                        <Lock className="w-3 h-3" /> Admin Note (Private)
+                                    </Label>
+                                    <Textarea
+                                        id="note"
+                                        name="note"
+                                        placeholder="Internal notes (hidden from printed reports)"
+                                        value={formData.note}
+                                        onChange={handleChange}
+                                        rows={2}
+                                        className="resize-none border-amber-200 bg-amber-50 focus-visible:ring-amber-500"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="reference">Reference / Source</Label>
+                                    <Input
+                                        id="reference"
+                                        name="reference"
+                                        placeholder="e.g. Website, Friend, Advertisement"
+                                        value={formData.reference}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t">
+                    <DialogFooter className="pt-4 border-t">
                         <Button type="button" variant="outline" onClick={onClose}>
                             Cancel
                         </Button>
-                        <Button type="submit">
+                        <Button type="submit" className="bg-primary hover:bg-primary/90">
                             {initialData ? 'Update Enquiry' : 'Save Enquiry'}
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>

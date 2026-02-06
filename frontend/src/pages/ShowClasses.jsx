@@ -1,31 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
+import { toast } from 'sonner';
+import { Trash2, Plus, X, GraduationCap, GripVertical } from 'lucide-react';
 
-import { Trash2, Plus, X, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardContent,
+    CardFooter
+} from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const ShowClasses = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
     // --- State Management ---
     const [sclasses, setSclasses] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     
     // Add Class Modal State
     const [sclassName, setSclassName] = useState(""); 
     const [classIncharge, setClassIncharge] = useState("");
-    const [showPopup, setShowPopup] = useState(false);
-    const { isVisible, isClosing, handleClose } = useModalAnimation(showPopup, () => setShowPopup(false));
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Delete Confirmation State
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
+    const [deleteConfig, setDeleteConfig] = useState({ open: false, type: null, id: null, subId: null });
 
     // --- 1. Fetch Classes ---
     const fetchClasses = async () => {
@@ -34,7 +69,6 @@ const ShowClasses = () => {
         setLoading(true);
         try {
             const result = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
-            
             if (Array.isArray(result.data)) {
                 setSclasses(result.data);
             } else {
@@ -45,7 +79,7 @@ const ShowClasses = () => {
             if (err.response && err.response.status === 404) {
                 setSclasses([]);
             } else {
-                setError("Error fetching classes");
+                toast.error("Error fetching classes");
             }
         } finally {
             setLoading(false);
@@ -74,6 +108,7 @@ const ShowClasses = () => {
     // --- 2. Add Class ---
     const addClass = async (e) => {
         e.preventDefault();
+        setIsSubmitting(true);
         
         try {
             const data = {
@@ -86,232 +121,216 @@ const ShowClasses = () => {
             
             setSclassName("");
             setClassIncharge("");
-            setShowPopup(false);
+            setShowAddModal(false);
             fetchClasses();
-            showToast("Class added successfully!", "success");
+            toast.success("Class added successfully!");
         } catch (err) {
-            showToast("Error adding class: " + (err.response?.data?.message || "Server Error"), "error");
+            toast.error(err.response?.data?.message || "Error adding class");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    // --- 3. Delete Class ---
-    const handleDeleteClass = (id) => {
-        const key = `class-${id}`;
-        if (selectedDeleteId === key) {
-            confirmDelete('class', id);
-        } else {
-            setSelectedDeleteId(key);
-            setTimeout(() => setSelectedDeleteId(prev => prev === key ? null : prev), 3000);
-        }
+    // --- 3. Delete Class/Section Config ---
+    const handleDeleteRequest = (type, id, subId = null) => {
+        setDeleteConfig({ open: true, type, id, subId });
     };
 
-    // --- 4. Delete Section ---
-    const handleDeleteSection = (classId, sectionId) => {
-        const key = `section-${classId}-${sectionId}`;
-        if (selectedDeleteId === key) {
-            confirmDelete('section', classId, sectionId);
-        } else {
-            setSelectedDeleteId(key);
-            setTimeout(() => setSelectedDeleteId(prev => prev === key ? null : prev), 3000);
-        }
-    };
-
-    // Confirm Delete
-    const confirmDelete = async (type, id, subId) => {
+    const confirmDelete = async () => {
+        const { type, id, subId } = deleteConfig;
         try {
             if (type === 'class') {
                 await axios.delete(`${API_BASE}/Sclass/${id}`);
-                showToast("Class deleted successfully!", "success");
+                toast.success("Class deleted successfully!");
             } else if (type === 'section') {
                 await axios.delete(`${API_BASE}/Sclass/${id}/Section/${subId}`);
-                showToast("Section deleted successfully!", "success");
+                toast.success("Section deleted successfully!");
             }
             fetchClasses();
         } catch (err) {
-            showToast(`Error deleting ${type}`, "error");
+            toast.error(`Error deleting ${type}`);
         }
-        setSelectedDeleteId(null);
+        setDeleteConfig({ open: false, type: null, id: null, subId: null });
     };
 
-    // --- 5. Add Section ---
-    const handleAddSection = async (classId, sectionName) => {
+    // --- 4. Add Section ---
+    const handleAddSection = async (classId, sectionName, form) => {
         if (!sectionName) return;
         try {
             await axios.put(`${API_BASE}/Sclass/${classId}/Section`, { sectionName });
             fetchClasses();
-            showToast("Section added successfully!", "success");
+            toast.success("Section added successfully!");
+            form.reset();
         } catch (err) {
-            showToast("Failed to add section", "error");
+            toast.error("Failed to add section");
         }
     };
 
     return (
-       <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-900">Manage Classes</h1>
-                        <p className="text-gray-600 mt-2">Create and manage your school classes</p>
-                    </div>
-                    <button onClick={() => setShowPopup(true)} className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition duration-200 font-600">
-                        <Plus className="w-5 h-5 mr-2" /> Add Class
-                    </button>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Manage Classes</h2>
+                    <p className="text-muted-foreground mt-1">Create and manage your school classes and sections</p>
                 </div>
+                <Button onClick={() => setShowAddModal(true)} size="lg">
+                    <Plus className="mr-2 h-4 w-4" /> Add Class
+                </Button>
+            </div>
 
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                            <p className="text-gray-600">Loading classes...</p>
-                        </div>
-                    </div>
-                ) : sclasses.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 bg-white rounded-xl border border-gray-200">
-                        <div onClick={() => setShowPopup(true)} className="w-16 h-16 cursor-pointer bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <Plus className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-600 text-lg font-600">No classes yet</p>
-                        <p className="text-gray-500 text-sm mt-1">Click "Add Class" to create your first class</p>
-                    </div>
-                ) : (
+            {loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {sclasses.map((item) => (
-                        <div key={item._id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition duration-200 flex flex-col justify-between">
-                            
-                            {/* Class Name & Delete */}
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">{item.sclassName}</h3>
-                                    <p className="text-xs text-gray-500 mt-1">ID: {item._id.slice(-4)}</p>
-                                    {item.classIncharge && (
-                                        <p className="text-xs text-emerald-600 mt-1 font-500">📚 Incharge: {item.classIncharge.name}</p>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={() => handleDeleteClass(item._id)}
-                                    className={`p-2 rounded-lg transition duration-150 inline-flex items-center justify-center h-9 w-9 ${selectedDeleteId === `class-${item._id}`
-                                        ? "bg-red-600 text-white hover:bg-red-700"
-                                        : "text-gray-400 hover:text-red-600 hover:bg-red-50"
-                                        }`}
-                                >
-                                    {selectedDeleteId === `class-${item._id}` ? <Check className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
-                                </button>
-                            </div>
-
-                            {/* Sections List */}
-                            <div className="mb-4">
-                                <p className="text-sm font-semibold text-gray-700 mb-2">Sections:</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {item.sections && item.sections.length > 0 ? (
-                                        item.sections.map((sec) => (
-                                            <span key={sec._id} className="px-2.5 py-1.5 text-sm bg-indigo-50 text-indigo-700 rounded-md font-500 flex items-center gap-1">
-                                                {sec.sectionName}
-                                                <button
-                                                    onClick={() => handleDeleteSection(item._id, sec._id)}
-                                                    className={`ml-2 transition-colors duration-150 flex items-center ${selectedDeleteId === `section-${item._id}-${sec._id}`
-                                                        ? "text-red-600 font-bold bg-white rounded px-1"
-                                                        : "text-red-500 hover:text-red-700"
-                                                        }`}
-                                                >
-                                                    {selectedDeleteId === `section-${item._id}-${sec._id}` ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                                                </button>
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <span className="text-xs text-gray-400 italic">No sections</span>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Add Section Input */}
-                            <div className="mt-auto pt-4 border-t border-gray-200">
-                                <form 
-                                    onSubmit={(e) => {
-                                        e.preventDefault();
-                                        handleAddSection(item._id, e.target.section.value);
-                                        e.target.section.value = "";
-                                    }} 
-                                    className="flex gap-2"
-                                >
-                                    <input 
-                                        name="section" 
-                                        type="text" 
-                                        placeholder="+ Add Section (e.g. A)" 
-                                        className="flex-1 p-2 text-sm border border-gray-200 rounded"
-                                        required
-                                    />
-                                    <button type="submit" className="px-3 py-1 bg-[#685dd8] text-white text-sm rounded hover:bg-[#5e50cc]">
-                                        Add
-                                    </button>
-                                </form>
-                            </div>
-
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="space-y-4">
+                            <Skeleton className="h-[200px] w-full rounded-xl" />
                         </div>
                     ))}
                 </div>
-                )}
-            </div>
-
-            {/* Add Class Modal */}
-            {isVisible && (
-                <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-                    <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-md relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                        
-                        {/* Header */}
-                        <div className="p-7 rounded-t-2xl flex justify-between items-center">
-                            <div>
-                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Add New Class</h2>
-                                <p className="text-gray-600 text-sm mt-1">Create a new class for your school</p>
-                            </div>
-                            <button 
-                                onClick={handleClose} 
-                                className="text-gray-400 hover:text-gray-600 p-2 rounded-lg transition duration-150"
-                            >
-                                <X size={24} />
-                            </button>
-                        </div>
-
-                        {/* Form */}
-                        <form onSubmit={addClass} className="p-6 md:p-8">
-                            <div className="mb-6">
-                                <label className="block text-sm font-600 text-gray-700 mb-2">Class Name *</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="e.g. Class 10, Grade 9, Pre-K" 
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    value={sclassName}
-                                    onChange={(e) => setSclassName(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            <div className="mb-6">
-                                <label className="block text-sm font-600 text-gray-700 mb-2">Class Incharge (Optional)</label>
-                                <select
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    value={classIncharge}
-                                    onChange={(e) => setClassIncharge(e.target.value)}
-                                >
-                                    <option value="">-- Select Teacher --</option>
-                                    {teachers.map((teacher) => (
-                                        <option key={teacher._id} value={teacher._id}>
-                                            {teacher.name} ({teacher.subject})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            
-                            {/* Buttons */}
-                            <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                                <button type="button" onClick={handleClose} className="px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150">Cancel</button>
-                                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-600 transition duration-150 shadow-lg hover:shadow-xl">Add Class</button>
-                            </div>
-                        </form>
+            ) : sclasses.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 border rounded-xl bg-muted/20 border-dashed">
+                        <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-medium">No classes found</h3>
+                        <p className="text-muted-foreground mt-2">Get started by creating your first class.</p>
+                        <Button onClick={() => setShowAddModal(true)} variant="outline" className="mt-6">
+                            <Plus className="mr-2 h-4 w-4" /> Create Class
+                        </Button>
                     </div>
+                ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {sclasses.map((item) => (
+                        <Card key={item._id} className="flex flex-col hover:shadow-md transition-all duration-200">
+                            <CardHeader className="pb-2">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <CardTitle className="text-xl font-bold text-primary">{item.sclassName}</CardTitle>
+                                        <CardDescription className="text-xs pt-1">ID: {item._id.slice(-4)}</CardDescription>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={() => handleDeleteRequest('class', item._id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                {item.classIncharge && (
+                                    <Badge variant="secondary" className="w-fit mt-2 font-normal">
+                                        Incharge: {item.classIncharge.name}
+                                    </Badge>
+                                )}
+                            </CardHeader>
+
+                            <CardContent className="flex-1 py-4">
+                                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">Sections</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {item.sections && item.sections.length > 0 ? (
+                                        item.sections.map((sec) => (
+                                            <Badge key={sec._id} variant="outline" className="pl-2 pr-1 py-1 flex items-center gap-1 group">
+                                                {sec.sectionName}
+                                                <div
+                                                    className="w-4 h-4 rounded-full flex items-center justify-center cursor-pointer hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => handleDeleteRequest('section', item._id, sec._id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </div>
+                                            </Badge>
+                                        ))
+                                    ) : (
+                                            <span className="text-sm text-muted-foreground italic">No sections added</span>
+                                    )}
+                                </div>
+                            </CardContent>
+
+                            <CardFooter className="pt-2 border-t bg-muted/20">
+                                <form 
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        handleAddSection(item._id, e.target.section.value, e.target);
+                                    }} 
+                                    className="flex w-full items-center gap-2"
+                                >
+                                    <Input 
+                                        name="section" 
+                                        placeholder="Add Section"
+                                        className="h-8 text-sm bg-background"
+                                        autoComplete="off"
+                                    />
+                                    <Button type="submit" size="sm" className="h-8 px-3">
+                                        <Plus className="h-3 w-3" />
+                                    </Button>
+                                </form>
+                            </CardFooter>
+                        </Card>
+                    ))}
                 </div>
             )}
 
+            {/* Add Class Modal */}
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Class</DialogTitle>
+                        <DialogDescription>
+                            Create a new class for your school. You can add sections later.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={addClass} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sclassName">Class Name <span className="text-destructive">*</span></Label>
+                            <Input
+                                id="sclassName"
+                                placeholder="e.g. Class 10, Grade 9"
+                                value={sclassName}
+                                onChange={(e) => setSclassName(e.target.value)}
+                                required
+                            />
+                        </div>
 
+                        <div className="space-y-2">
+                            <Label htmlFor="incharge">Class Incharge (Optional)</Label>
+                            <Select value={classIncharge} onValueChange={setClassIncharge}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Teacher" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teachers.map((teacher) => (
+                                        <SelectItem key={teacher._id} value={teacher._id}>
+                                            {teacher.name} ({teacher.subject})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? "Adding..." : "Add Class"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Request Alert Dialog */}
+            <AlertDialog open={deleteConfig.open} onOpenChange={(open) => !open && setDeleteConfig({ ...deleteConfig, open: false })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the
+                            {deleteConfig.type === 'class' ? ' class and all its sections/students' : ' section'}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import EnquiryModal from '../components/form-popup/EnquiryModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,36 +23,40 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-    Empty,
-    EmptyHeader,
-    EmptyTitle,
-    EmptyDescription,
-    EmptyContent,
-    EmptyMedia,
-} from '@/components/ui/empty';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
-    IconEdit,
-    IconTrash,
-    IconPlus,
-    IconEye,
-    IconCheck,
-    IconSearch,
-    IconUserPlus,
-    IconUsers,
-    IconPhone,
-    IconCalendar,
-    IconSchool,
-    IconLoader2,
-    IconDots,
-    IconCopy,
-    IconStar,
-} from '@tabler/icons-react';
+    Plus,
+    Search,
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    Copy,
+    Star,
+    Phone,
+    Calendar,
+    Users,
+    UserPlus,
+    School,
+    GraduationCap,
+    CheckCircle2,
+    Clock,
+    User,
+    Mail,
+    MapPin
+} from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const AdmissionEnquiry = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
     // --- State Management ---
     const [enquiries, setEnquiries] = useState([]);
@@ -63,15 +67,13 @@ const AdmissionEnquiry = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentEnquiry, setCurrentEnquiry] = useState(null);
+    const [viewMode, setViewMode] = useState(false);
     
     // Delete Confirmation State
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
+    const [deleteItem, setDeleteItem] = useState(null);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
-
-    // View Mode State
-    const [viewMode, setViewMode] = useState(false);
 
     // --- 1. Data Fetching ---
     const fetchData = async () => {
@@ -79,10 +81,6 @@ const AdmissionEnquiry = () => {
             setLoading(true);
             const schoolId = currentUser._id;
 
-            setEnquiries([]);
-            setClassesList([]);
-            setTeachersList([]);
-            
             const [enqRes, classRes, teachRes] = await Promise.all([
                 axios.get(`${API_BASE}/EnquiryList/${schoolId}`),
                 axios.get(`${API_BASE}/Sclasses/${schoolId}`),
@@ -93,7 +91,8 @@ const AdmissionEnquiry = () => {
             setClassesList(classRes.data);
             setTeachersList(teachRes.data);
         } catch (err) {
-            showToast("Error loading data", "error");
+            console.error(err);
+            toast.error("Error loading data");
         } finally {
             setLoading(false);
         }
@@ -110,51 +109,46 @@ const AdmissionEnquiry = () => {
         try {
             const dataToSend = { ...formData, school: currentUser._id };
             
-            if (currentEnquiry) {
+            // Check if it's an update (has _id) or a new creation (no _id or it's a copy)
+            // Note: Copies have undefined _id, so they fall into the 'else' block
+            if (currentEnquiry && currentEnquiry._id) {
                 await axios.put(`${API_BASE}/EnquiryUpdate/${currentEnquiry._id}`, dataToSend);
+                toast.success("Enquiry updated successfully!");
             } else {
                 await axios.post(`${API_BASE}/EnquiryCreate`, dataToSend);
+                toast.success("Enquiry created successfully!");
             }
 
             setIsModalOpen(false);
             setCurrentEnquiry(null);
             fetchData();
-            showToast("Enquiry saved successfully!", "success");
         } catch (err) {
-            showToast("Failed to save enquiry.", "error");
+            console.error(err);
+            toast.error("Failed to save enquiry.");
         }
     };
 
     // Delete Logic
-    const handleDelete = (id) => {
-        if (selectedDeleteId === id) {
-            confirmDelete();
-        } else {
-            setSelectedDeleteId(id);
-            setTimeout(() => setSelectedDeleteId(prev => prev === id ? null : prev), 3000);
-        }
-    };
-
     const confirmDelete = async () => {
-        if (!selectedDeleteId) return;
+        if (!deleteItem) return;
         try {
-            await axios.delete(`${API_BASE}/EnquiryDelete/${selectedDeleteId}`);
+            await axios.delete(`${API_BASE}/EnquiryDelete/${deleteItem._id}`);
             fetchData();
-            showToast("Enquiry deleted successfully!", "success");
+            toast.success("Enquiry deleted successfully!");
         } catch (err) {
-            showToast("Error deleting enquiry", "error");
+            console.error(err);
+            toast.error("Error deleting enquiry");
         }
-        setSelectedDeleteId(null);
+        setDeleteItem(null);
     };
 
-    // View Button Click Logic
+    // View/Edit/Add/Copy Actions
     const handleView = (enquiry) => {
         setCurrentEnquiry(enquiry);
         setViewMode(true);
         setIsModalOpen(true);
     };
 
-    // Edit/Add Logic
     const handleEdit = (enquiry) => {
         setCurrentEnquiry(enquiry);
         setViewMode(false);
@@ -167,26 +161,26 @@ const AdmissionEnquiry = () => {
         setIsModalOpen(true);
     };
 
-    // Copy Enquiry Logic
     const handleCopy = (enquiry) => {
+        // Create a copy object.
+        // Important: _id must be removed/undefined so the form treats it as new.
         const copiedData = {
             ...enquiry,
-            _id: undefined,
-            name: enquiry.name + ' (Copy)'
+            _id: undefined, 
+            name: `${enquiry.name} (Copy)`
         };
         setCurrentEnquiry(copiedData);
         setViewMode(false);
         setIsModalOpen(true);
-        showToast("Creating copy of enquiry", "info");
+        toast.info("Creating copy of enquiry");
     };
 
-    // Favorite Toggle Logic (placeholder - you can add state management for favorites)
     const handleFavorite = (enquiry) => {
-        showToast(`${enquiry.name} marked as favorite!`, "success");
-        // TODO: Implement favorite persistence logic
+        toast.success(`${enquiry.name} marked as favorite!`);
+        // Placeholder for favorite logic
     };
 
-    // Filter enquiries based on search query
+    // Filter enquiries
     const filteredEnquiries = enquiries.filter((enquiry) => {
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
@@ -198,19 +192,23 @@ const AdmissionEnquiry = () => {
         );
     });
 
+    // Counts for cards
+    const totalEnquiries = enquiries.length;
+    const assignedEnquiries = enquiries.filter(e => e.assigned).length;
+    const pendingEnquiries = enquiries.filter(e => !e.assigned).length;
+
     return (
-        <div className="p-6 space-y-6">
-            {/* Header Section */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            {/* Header */}
+            <div className="flex items-center justify-between space-y-2">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Admission Enquiries</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Manage and track all incoming admission enquiries
+                    <h2 className="text-3xl font-bold tracking-tight text-primary/90">Admission Enquiries</h2>
+                    <p className="text-muted-foreground">
+                        Manage and track incoming admission requests and student follow-ups.
                     </p>
                 </div>
-                <Button onClick={handleAdd} className="gap-2">
-                    <IconPlus className="w-4 h-4" />
-                    Add Enquiry
+                <Button onClick={handleAdd}>
+                    <Plus className="h-4 w-4" /> Add Enquiry
                 </Button>
             </div>
 
@@ -218,41 +216,43 @@ const AdmissionEnquiry = () => {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Enquiries</CardTitle>
-                        <IconUsers className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-blue-600">Total Enquiries</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-blue-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{enquiries.length}</div>
+                        <div className="text-2xl font-bold text-gray-800">{totalEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Total admission enquiries
+                            Total registered enquiries
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Assigned</CardTitle>
-                        <IconUserPlus className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-green-600">Assigned</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {enquiries.filter(e => e.assigned).length}
-                        </div>
+                        <div className="text-2xl font-bold text-gray-800">{assignedEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            Assigned to teachers
+                            Handled by teachers/staff
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                        <IconPhone className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-amber-600">Pending</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <Clock className="h-4 w-4 text-amber-600" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {enquiries.filter(e => !e.assigned).length}
-                        </div>
+                        <div className="text-2xl font-bold text-gray-800">{pendingEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Awaiting assignment
                         </p>
@@ -260,141 +260,137 @@ const AdmissionEnquiry = () => {
                 </Card>
             </div>
 
-            {/* Search and Table Card */}
-            <Card>
+            {/* Main Content */}
+            <Card className="border shadow-sm">
                 <CardHeader>
-                    <CardTitle>Enquiries List</CardTitle>
-                    <CardDescription>
-                        View and manage all admission enquiries
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {/* Search Bar */}
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="relative flex-1 max-w-sm">
-                            <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                        <div>
+                            <CardTitle>Enquiries List</CardTitle>
+                            <CardDescription>
+                                A list of all admission enquiries including their details and status.
+                            </CardDescription>
+                        </div>
+                        <div className="relative w-full md:w-[300px]">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Search by name, phone, class..."
+                                placeholder="Search enquiries..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9"
+                                className="pl-8"
                             />
                         </div>
                     </div>
-
-                    {/* Table */}
+                </CardHeader>
+                <CardContent>
                     {loading ? (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyMedia variant="icon">
-                                    <IconLoader2 className="animate-spin" />
-                                </EmptyMedia>
-                                <EmptyTitle>Loading enquiries...</EmptyTitle>
-                                <EmptyDescription>Please wait while we fetch the data</EmptyDescription>
-                            </EmptyHeader>
-                        </Empty>
-                    ) : enquiries.length === 0 ? (
-                            <Empty>
-                                <EmptyHeader>
-                                    <EmptyMedia variant="icon">
-                                        <IconUsers />
-                                    </EmptyMedia>
-                                    <EmptyTitle>No enquiries yet</EmptyTitle>
-                                    <EmptyDescription>
-                                        Get started by adding your first enquiry
-                                    </EmptyDescription>
-                                </EmptyHeader>
-                                <EmptyContent>
-                                    <Button onClick={handleAdd} className="gap-2">
-                                        <IconPlus className="w-4 h-4" />
-                                        Add Enquiry
-                                    </Button>
-                                </EmptyContent>
-                            </Empty>
+                        <div className="flex h-32 items-center justify-center text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                <span>Loading data...</span>
+                            </div>
+                        </div>
                     ) : filteredEnquiries.length === 0 ? (
-                                <Empty>
-                                    <EmptyHeader>
-                                        <EmptyMedia variant="icon">
-                                            <IconSearch />
-                                        </EmptyMedia>
-                                        <EmptyTitle>No results found</EmptyTitle>
-                                        <EmptyDescription>
-                                            No enquiries match your search criteria
-                                        </EmptyDescription>
-                                    </EmptyHeader>
-                                </Empty>
+                            <div className="flex flex-col items-center justify-center h-48 text-center bg-muted/10 rounded-lg border border-dashed">
+                                <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
+                                    <Users className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <h3 className="text-lg font-medium">No results found</h3>
+                                <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                                    No enquiries match your search criteria. Try adjusting filters or add a new enquiry.
+                                </p>
+                            </div>
                     ) : (
-                                    <div className="rounded-md border">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Name</TableHead>
-                                                    <TableHead>Phone</TableHead>
-                                                    <TableHead>Class</TableHead>
-                                                    <TableHead>Assigned To</TableHead>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead className="text-right">Actions</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow>
+                                                <TableHead>Applicant Name</TableHead>
+                                                <TableHead>Contact Info</TableHead>
+                                                <TableHead>Class Interest</TableHead>
+                                                <TableHead>Status / Assigned</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
                                     {filteredEnquiries.map((item) => (
-                                        <TableRow key={item._id}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableRow key={item._id} className="hover:bg-muted/5 transition-colors">
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <IconPhone className="w-3 h-3 text-muted-foreground" />
-                                                    {item.phone}
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-foreground">{item.name}</span>
+                                                    {item.noOfChild > 1 && (
+                                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                            <Users className="h-3 w-3" /> {item.noOfChild} Children
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="default" className="gap-1">
-                                                    <IconSchool className="w-3 h-3" />
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center text-sm">
+                                                        <Phone className="mr-2 h-3 w-3 text-muted-foreground" />
+                                                        {item.phone}
+                                                    </div>
+                                                    {item.email && (
+                                                        <div className="flex items-center text-xs text-muted-foreground">
+                                                            <Mail className="mr-2 h-3 w-3" />
+                                                            {item.email}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100">
+                                                    <GraduationCap className="mr-1 h-3 w-3" />
                                                     {item.class?.sclassName || 'N/A'}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
                                                 {item.assigned?.name ? (
-                                                    <Badge variant="outline" className="gap-1">
-                                                        <IconUserPlus className="w-3 h-3" />
-                                                        {item.assigned.name}
-                                                    </Badge>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                                                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                                                            Assigned
+                                                        </Badge>
+                                                        <span className="text-xs text-muted-foreground">to {item.assigned.name}</span>
+                                                    </div>
                                                 ) : (
-                                                        <span className="text-xs text-muted-foreground">Unassigned</span>
+                                                        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                                                            <Clock className="mr-1 h-3 w-3" />
+                                                            Pending
+                                                        </Badge>
                                                 )}
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <IconCalendar className="w-3 h-3" />
+                                                <div className="flex items-center text-sm text-muted-foreground">
+                                                    <Calendar className="mr-2 h-3 w-3" />
                                                     {new Date(item.date).toLocaleDateString()}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon">
-                                                            <IconDots className="h-4 w-4" />
-                                                            <span className="sr-only">Actions</span>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                                            <IconEdit className="mr-2 h-4 w-4" />
-                                                            Edit
+                                                        <DropdownMenuItem onClick={() => handleView(item)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            View / Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleCopy(item)}>
-                                                            <IconCopy className="mr-2 h-4 w-4" />
-                                                            Make a copy
+                                                            <Copy className="mr-2 h-4 w-4" />
+                                                            Duplicate
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleFavorite(item)}>
-                                                            <IconStar className="mr-2 h-4 w-4" />
-                                                            Favorite
+                                                            <Star className="mr-2 h-4 w-4" />
+                                                            Mark Favorite
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() => handleDelete(item._id)}
-                                                            className="text-destructive focus:text-destructive"
-                                                        >
-                                                            <IconTrash className="mr-2 h-4 w-4" />
+                                                        <DropdownMenuItem onClick={() => setDeleteItem(item)} className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -402,14 +398,34 @@ const AdmissionEnquiry = () => {
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                            </TableBody>
-                                        </Table>
+                                        </TableBody>
+                                    </Table>
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            {/* Popup Modal Component */}
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the enquiry for
+                            <span className="font-medium text-foreground"> {deleteItem?.name} </span>
+                            and remove it from the system.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Form Modal */}
             <EnquiryModal 
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}

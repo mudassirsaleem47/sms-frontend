@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import axios from 'axios';
 import { 
   Users, 
@@ -11,14 +11,25 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  GraduationCap
 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from 'date-fns';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const TeacherDashboard = () => {
   const { currentUser } = useAuth();
-  const { showToast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +60,7 @@ const TeacherDashboard = () => {
       const schoolId = currentUser.school?._id || currentUser.school;
 
       if (!schoolId) {
-        showToast('School information not found. Please login again.', 'error');
+        toast.error('School information not found.');
         setLoading(false);
         return;
       }
@@ -91,155 +102,175 @@ const TeacherDashboard = () => {
       setStats({
         totalStudents: teacherStudents.length,
         totalClasses: currentUser.assignedClasses?.length || 0,
-        avgAttendance: 0, // Will be calculated from attendance data if available
-        avgPerformance: 0 // Will be calculated from exam results if available
+        avgAttendance: 0,
+        avgPerformance: 0 
       });
 
       setLoading(false);
     } catch (error) {
-      showToast(error.response?.data?.message || 'Error fetching dashboard data', 'error');
+      toast.error('Error fetching dashboard data');
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="flex-1 space-y-6 p-8 pt-6">
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <h2 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Welcome back, {currentUser?.name?.split(' ')[0] || 'Teacher'}. Here's what's happening today.
           </p>
         </div>
-      </div>
-
-      {/* Hero Card - Total Students */}
-      <div className="bg-linear-to-br from-emerald-600 to-emerald-700 rounded-2xl p-8 mb-6 text-white shadow-xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-emerald-100 text-sm mb-2">Total Students</p>
-            <h2 className="text-5xl font-bold mb-2">{stats.totalStudents}</h2>
-            <p className="text-emerald-100 text-sm">Under your classes</p>
-          </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-lg border text-sm font-medium">
+          <Clock className="w-4 h-4 text-primary" />
+          <span>{format(currentTime, 'EEEE, MMM do, h:mm a')}</span>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {/* Classes Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-blue-600" />
+      {loading ? (
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
+            <Skeleton className="h-32 rounded-xl" />
             </div>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.totalClasses}</h3>
-          <p className="text-gray-500 text-sm">Assigned Classes</p>
         </div>
+      ) : (
+        <>
+          {/* Hero / Overview */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="bg-gradient-to-br from-emerald-600 to-teal-600 text-white border-0 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-medium text-emerald-50">Total Students</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold">{stats.totalStudents}</div>
+                <p className="text-xs text-emerald-100/70 mt-1">Under your supervision</p>
+              </CardContent>
+            </Card>
 
-        {/* Students per Class Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">
-            {stats.totalClasses > 0 ? Math.round(stats.totalStudents / stats.totalClasses) : 0}
-          </h3>
-          <p className="text-gray-500 text-sm">Avg Students/Class</p>
-        </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Assigned Classes</CardTitle>
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalClasses}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Active classes</p>
+                </CardContent>
+              </Card>
 
-        {/* Subject Card */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-1">{currentUser?.subject || 'N/A'}</h3>
-          <p className="text-gray-500 text-sm">Your Subject</p>
-        </div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Assigned Classes */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900">Your Assigned Classes</h3>
-          </div>
-          <div className="p-6">
-            {currentUser?.assignedClasses && currentUser.assignedClasses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentUser.assignedClasses.map((cls, index) => {
-                  const classStudents = students.filter(s => s.sclassName?._id === cls._id);
-                  return (
-                    <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-emerald-300 hover:shadow-md transition">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-                          <BookOpen className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900">{cls.sclassName}</h4>
-                          <p className="text-xs text-gray-500">{currentUser?.subject || 'Subject'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-3">
-                        <Users className="w-4 h-4" />
-                        <span>{classStudents.length} Students</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No classes assigned yet</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Today's Exam Schedule */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Today's Exams</h3>
-          <div className="space-y-4">
-            {examSchedules.length > 0 ? (
-              examSchedules.map((schedule, index) => (
-                <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                  <div className="flex flex-col items-center justify-center bg-emerald-100 rounded-lg px-3 py-2">
-                    <Clock className="w-4 h-4 text-emerald-600 mb-1" />
-                    <span className="text-xs font-medium text-emerald-700">
-                      {new Date(schedule.examDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Avg Class Size</CardTitle>
+                  <Users className="h-4 w-4 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.totalClasses > 0 ? Math.round(stats.totalStudents / stats.totalClasses) : 0}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 text-sm">{schedule.subject}</p>
-                    <p className="text-xs text-gray-500">{schedule.class?.sclassName}</p>
-                    <p className="text-xs text-gray-400 mt-1">Total Marks: {schedule.totalMarks}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Students per class</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Subject</CardTitle>
+                  <GraduationCap className="h-4 w-4 text-orange-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold truncate text-base pt-1" title={currentUser?.subject}>
+                    {currentUser?.subject || 'N/A'}
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">No exams scheduled for today</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                  <p className="text-xs text-muted-foreground mt-1">Primary subject</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Assigned Classes List */}
+              <Card className="col-span-2 md:col-span-2">
+                <CardHeader>
+                  <CardTitle>My Classes</CardTitle>
+                  <CardDescription>Overview of classes you are teaching.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {currentUser?.assignedClasses && currentUser.assignedClasses.length > 0 ? (
+                      currentUser.assignedClasses.map((cls, index) => {
+                        const classStudents = students.filter(s => s.sclassName?._id === cls._id);
+                        return (
+                                      <div key={index} className="flex flex-col p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <div className="p-2 bg-blue-50 text-blue-600 rounded-md">
+                                            <BookOpen className="w-4 h-4" />
+                                          </div>
+                                          <span className="font-semibold text-lg">{cls.sclassName}</span>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground mt-auto pt-2 border-t flex justify-between">
+                                          <span>Students</span>
+                                          <Badge variant="secondary">{classStudents.length}</Badge>
+                                        </div>
+                                      </div>
+                                  )
+                                })
+                    ) : (
+                      <div className="col-span-full flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                        <BookOpen className="h-10 w-10 mb-2 opacity-20" />
+                        <p>No classes assigned yet.</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Today's Schedule / Exams */}
+              <Card className="col-span-2 lg:col-span-1">
+                <CardHeader>
+                  <CardTitle>Today's Exams</CardTitle>
+                  <CardDescription>Scheduled assessments for today</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {examSchedules.length > 0 ? (
+                      examSchedules.map((schedule, index) => (
+                                  <div key={index} className="flex items-start gap-4 p-3 rounded-lg border bg-muted/20">
+                                    <div className="flex flex-col items-center justify-center bg-background border rounded-md h-12 w-12 shrink-0">
+                                      <span className="text-xs font-bold text-muted-foreground uppercase">
+                                        {format(new Date(schedule.examDate), 'MMM')}
+                                      </span>
+                                      <span className="text-lg font-bold">
+                                        {format(new Date(schedule.examDate), 'dd')}
+                                      </span>
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                      <p className="text-sm font-medium leading-none">{schedule.subject}</p>
+                                      <div className="flex items-center text-xs text-muted-foreground gap-2">
+                                        <Badge variant="outline" className="text-[10px] h-4 px-1">{schedule.class?.sclassName}</Badge>
+                                        <span className="flex items-center">
+                                          <Clock className="mr-1 h-3 w-3" />
+                                          {format(new Date(schedule.examDate), 'h:mm a')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
+                        <Calendar className="h-8 w-8 mb-2 opacity-20" />
+                        <p className="text-sm">No exams scheduled for today</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+        </>
+      )}
     </div>
   );
 };

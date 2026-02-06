@@ -1,32 +1,39 @@
 import React from 'react';
 import StudentAdmissionForm from '../components/forms/StudentAdmissionForm';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, GraduationCap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const StudentAdmission = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 py-10 px-4 sm:px-6 lg:px-8">
-            <div className="">
-                <button 
-                    onClick={() => navigate(-1)} 
-                    className="flex items-center text-gray-500 hover:text-indigo-600 transition-colors mb-6 group font-medium"
-                >
-                    <ChevronLeft size={20} className="mr-1 group-hover:-translate-x-1 transition-transform" />
-                    Back to Dashboard
-                </button>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            {/* Header */}
+            <div className="flex flex-col gap-4">
 
-                <div className="mb-10 text-center">
-                    <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl mb-3">
-                        Student Admission
-                    </h1>
-                    <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        Complete the form below to admit a new student. Please ensure all required fields are filled correctly.
-                    </p>
+
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <GraduationCap className="h-8 w-8 text-primary" />
+                            </div>
+                            Student Admission
+                        </h2>
+                        <p className="text-muted-foreground mt-2 max-w-2xl">
+                            Complete the admission form below to register a new student. Ensure all required documents and details are accurate.
+                        </p>
+                    </div>
                 </div>
-                
-                <StudentAdmissionForm onSuccess={() => navigate('/admin/students')} />
+            </div>
+
+            {/* Form Container */}
+            <div className="grid gap-6">
+                <StudentAdmissionForm
+                    onSuccess={() => navigate('/admin/students')}
+                    onCancel={() => navigate(-1)}
+                />
             </div>
         </div>
     );

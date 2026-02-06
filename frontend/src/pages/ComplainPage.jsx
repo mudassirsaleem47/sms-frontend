@@ -1,25 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Eye, Pencil, Trash2, AlertCircle, Check } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import ComplainModal from '../components/form-popup/ComplainModal';
+import {
+    Search,
+    Plus,
+    Eye,
+    Pencil,
+    Trash2,
+    AlertCircle,
+    Check,
+    MoreHorizontal
+} from 'lucide-react';
 
+// Shadcn Components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const ComplainPage = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
+    // --- State Management ---
     const [complains, setComplains] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedComplain, setSelectedComplain] = useState(null);
     const [viewMode, setViewMode] = useState(false);
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
 
+    // Delete State
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+    // --- 1. Data Fetching ---
     useEffect(() => {
         if (currentUser) {
             fetchComplains();
@@ -30,14 +77,16 @@ const ComplainPage = () => {
         try {
             setLoading(true);
             const res = await axios.get(`${API_BASE}/Complains/${currentUser._id}`);
-            setComplains(res.data);
+            setComplains(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
-            showToast('Error fetching complains', 'error');
+            console.error(error);
+            toast.error('Error fetching complains');
         } finally {
             setLoading(false);
         }
     };
 
+    // --- 2. Action Handlers ---
     const handleAdd = () => {
         setSelectedComplain(null);
         setViewMode(false);
@@ -56,25 +105,23 @@ const ComplainPage = () => {
         setIsModalOpen(true);
     };
 
-    const handleDelete = (id) => {
-        if (selectedDeleteId === id) {
-            confirmDelete();
-        } else {
-            setSelectedDeleteId(id);
-            setTimeout(() => setSelectedDeleteId(prev => prev === id ? null : prev), 3000);
-        }
+    const handleDeleteClick = (id) => {
+        setItemToDelete(id);
+        setIsDeleteOpen(true);
     };
 
     const confirmDelete = async () => {
-        if (!selectedDeleteId) return;
+        if (!itemToDelete) return;
         try {
-            await axios.delete(`${API_BASE}/Complain/${selectedDeleteId}`);
-            showToast('Complain deleted successfully', 'success');
+            await axios.delete(`${API_BASE}/Complain/${itemToDelete}`);
+            toast.success('Complain deleted successfully');
             fetchComplains();
         } catch (error) {
-            showToast('Error deleting complain', 'error');
+            console.error(error);
+            toast.error('Error deleting complain');
         }
-        setSelectedDeleteId(null);
+        setItemToDelete(null);
+        setIsDeleteOpen(false);
     };
 
     const handleSubmit = async (formData) => {
@@ -84,11 +131,13 @@ const ComplainPage = () => {
             
             Object.keys(formData).forEach(key => {
                 if (formData[key] !== null && formData[key] !== undefined) {
-                    // Skip document if it's not a File object (empty string or path from DB)
-                    if (key === 'document' && !(formData[key] instanceof File)) {
-                        return;
+                    if (key === 'document') {
+                        if (formData[key] instanceof File) {
+                            formDataToSend.append(key, formData[key]);
+                        } 
+                    } else {
+                        formDataToSend.append(key, formData[key]);
                     }
-                    formDataToSend.append(key, formData[key]);
                 }
             });
             
@@ -98,17 +147,17 @@ const ComplainPage = () => {
 
             if (selectedComplain) {
                 await axios.put(`${API_BASE}/Complain/${selectedComplain._id}`, formDataToSend, config);
-                showToast('Complain updated successfully', 'success');
+                toast.success('Complain updated successfully');
             } else {
                 await axios.post(`${API_BASE}/ComplainCreate`, formDataToSend, config);
-                showToast('Complain added successfully', 'success');
+                toast.success('Complain added successfully');
             }
             
             setIsModalOpen(false);
             fetchComplains();
         } catch (error) {
             console.error(error);
-            showToast('Error saving complain', 'error');
+            toast.error('Error saving complain');
         }
     };
 
@@ -119,126 +168,113 @@ const ComplainPage = () => {
     );
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Complain</h1>
-                    <p className="text-gray-600 mt-1">Manage and track all complaints</p>
+                    <h2 className="text-3xl font-bold tracking-tight">Complain</h2>
+                    <p className="text-muted-foreground">
+                        Manage and track all complaints from students and staff.
+                    </p>
                 </div>
-                <button
-                    onClick={handleAdd}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition shadow-lg hover:shadow-xl font-600"
-                >
-                    <Plus className="w-5 h-5" />
-                    Add Complain
-                </button>
+                <Button onClick={handleAdd}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Complain
+                </Button>
             </div>
 
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                    type="text"
-                    placeholder="Search by name, description, or assigned..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
-            </div>
-
-            {/* Table */}
-            {loading ? (
-                <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                </div>
-            ) : filteredComplains.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">No complains found</p>
-                    <p className="text-gray-500 text-sm mt-2">Add your first complain to get started</p>
-                </div>
-            ) : (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Complain By</th>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Description</th>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Assigned</th>
-                                    <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredComplains.map((complain) => (
-                                    <tr key={complain._id} className="hover:bg-gray-50 transition">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-600 text-gray-900">{complain.complainBy}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                            {complain.phone || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                            {new Date(complain.date).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-gray-700 line-clamp-2 max-w-xs">
-                                                {complain.description}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {complain.assigned ? (
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-600">
-                                                    {complain.assigned}
-                                                </span>
-                                            ) : (
-                                                <span className="text-gray-400">-</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleView(complain)}
-                                                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
-                                                    title="View"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleEdit(complain)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                                    title="Edit"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(complain._id)}
-                                                    className={`p-2 rounded-lg transition overflow-hidden ${selectedDeleteId === complain._id
-                                                        ? "bg-red-600 text-white hover:bg-red-700"
-                                                        : "text-red-600 hover:bg-red-50"
-                                                        }`}
-                                                    title="Delete"
-                                                >
-                                                    {selectedDeleteId === complain._id ? (
-                                                        <Check className="w-4 h-4" />
-                                                    ) : (
-                                                            <Trash2 className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            <Card>
+                <CardHeader className="pb-3">
+                    <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                        <CardTitle className="text-lg font-medium">Complaint List</CardTitle>
+                        <div className="relative w-full md:w-[300px]">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by name, description..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-8"
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="flex h-32 items-center justify-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                        </div>
+                    ) : filteredComplains.length === 0 ? (
+                            <div className="text-center py-10">
+                                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/20" />
+                                <h3 className="mt-4 text-lg font-semibold text-muted-foreground">No complaints found</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {searchTerm ? "Try adjusting your search terms." : "Start by adding a new complaint."}
+                                </p>
+                            </div>
+                        ) : (
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Complain By</TableHead>
+                                                <TableHead>Phone</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="max-w-[300px]">Description</TableHead>
+                                                <TableHead>Assigned</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredComplains.map((complain) => (
+                                                <TableRow key={complain._id}>
+                                                    <TableCell className="font-medium">{complain.complainBy}</TableCell>
+                                                    <TableCell>{complain.phone || '-'}</TableCell>
+                                                    <TableCell>
+                                                        {new Date(complain.date).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell className="max-w-[300px]">
+                                                        <p className="truncate text-muted-foreground" title={complain.description}>
+                                                            {complain.description}
+                                                        </p>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {complain.assigned ? (
+                                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 border-blue-200">
+                                                                {complain.assigned}
+                                                            </Badge>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-sm">-</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                    <span className="sr-only">Open menu</span>
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => handleView(complain)}>
+                                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleEdit(complain)}>
+                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit Record
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => handleDeleteClick(complain._id)} className="text-red-600 focus:text-red-600">
+                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Record
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
-            {/* Modals */}
             <ComplainModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -247,7 +283,21 @@ const ComplainPage = () => {
                 viewMode={viewMode}
             />
 
-
+            {/* Delete Alert Dialog */}
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Complaint?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the complaint record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setItemToDelete(null); setIsDeleteOpen(false); }}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

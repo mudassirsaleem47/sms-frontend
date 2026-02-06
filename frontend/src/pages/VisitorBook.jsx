@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from "sonner";
 import VisitorModal from "../components/form-popup/VisitorModal";
 import {
     Table,
@@ -13,16 +13,30 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-    IconSearch,
-    IconPlus,
-    IconEye,
-    IconEdit,
-    IconTrash,
-    IconLoader,
-    IconAlertTriangle
-} from "@tabler/icons-react";
+    Search,
+    Plus,
+    Eye,
+    Edit,
+    Pencil,
+    Copy,
+    Star,
+    Trash2,
+    Loader2,
+    MoreHorizontal,
+    Calendar,
+    Phone,
+    CreditCard,
+    User
+} from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     Dialog,
     DialogContent,
@@ -31,12 +45,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const VisitorBook = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
 
     const [visitors, setVisitors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -65,7 +80,7 @@ const VisitorBook = () => {
             setVisitors(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error(err);
-            showToast("Error loading visitors", "error");
+            toast.error("Error loading visitors");
         } finally {
             setLoading(false);
         }
@@ -89,6 +104,18 @@ const VisitorBook = () => {
         setIsModalOpen(true);
     };
 
+    const handleCopy = (visitor) => {
+        const copiedData = { ...visitor, _id: undefined, visitorName: `${visitor.visitorName} (Copy)` };
+        setSelectedVisitor(copiedData);
+        setModalMode("add");
+        setIsModalOpen(true);
+        toast.info("Creating copy of visitor record");
+    };
+
+    const handleFavorite = (visitor) => {
+        toast.success(`${visitor.visitorName} marked as favorite`);
+    };
+
     const confirmDelete = (id) => {
         setDeleteId(id);
         setIsDeleteOpen(true);
@@ -98,41 +125,41 @@ const VisitorBook = () => {
         if (!deleteId) return;
 
         try {
-            // Optimistic update
+            const oldVisitors = [...visitors];
             setVisitors((prev) => prev.filter((v) => v._id !== deleteId));
             setIsDeleteOpen(false);
 
-            await axios.delete(`${API_BASE}/Visitors/${deleteId}`);
-            showToast("Visitor record deleted", "success");
+            await axios.delete(`${API_BASE}/Visitor/${deleteId}`);
+            toast.success("Visitor record deleted");
         } catch (err) {
             console.error(err);
-            showToast("Failed to delete record", "error");
-            fetchData(); // Revert on error
+            toast.error("Failed to delete record");
+            fetchData(); 
         }
     };
 
     const handleFormSubmit = async (formData) => {
         try {
+            const payload = { ...formData, adminID: currentUser._id, school: currentUser._id };
+
             if (modalMode === "add") {
-                const payload = { ...formData, adminID: currentUser._id };
-                const res = await axios.post(`${API_BASE}/VisitorsCreate`, payload);
+                const res = await axios.post(`${API_BASE}/VisitorCreate`, payload);
                 setVisitors((prev) => [res.data, ...prev]);
-                showToast("Visitor added successfully", "success");
+                toast.success("Visitor added successfully");
             } else if (modalMode === "edit" && selectedVisitor) {
-                const payload = { ...formData, adminID: currentUser._id };
-                await axios.put(`${API_BASE}/Visitors/${selectedVisitor._id}`, payload);
+                await axios.put(`${API_BASE}/Visitor/${selectedVisitor._id}`, payload);
 
                 setVisitors((prev) =>
                     prev.map((v) =>
                         v._id === selectedVisitor._id ? { ...v, ...formData } : v
                     )
                 );
-                showToast("Visitor updated successfully", "success");
+                toast.success("Visitor updated successfully");
             }
             setIsModalOpen(false);
         } catch (err) {
             console.error(err);
-            showToast("Operation failed", "error");
+            toast.error(err.response?.data?.message || "Operation failed");
         }
     };
 
@@ -151,123 +178,179 @@ const VisitorBook = () => {
     });
 
     return (
-        <div className="space-y-6 pt-2">
-            <Card className="border-none shadow-sm bg-card/50 backdrop-blur-2xl">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 space-y-4 sm:space-y-0">
-                    <div>
-                        <CardTitle className="text-2xl font-bold tracking-tight text-foreground">Visitor Book</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">Manage visitor records and history</p>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            {/* Header */}
+            <div className="flex items-center justify-between space-y-2">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight text-primary/90">Visitor Book</h2>
+                    <p className="text-muted-foreground">
+                        Manage visitor records and history.
+                    </p>
+                </div>
+                <Button onClick={handleAdd} className="bg-primary hover:bg-primary/90 shadow-sm">
+                    <Plus className="mr-2 h-4 w-4" /> Add Visitor
+                </Button>
+            </div>
+
+            {/* Main Content */}
+            <Card className="border shadow-sm">
+                <CardHeader>
+                    <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                        <div>
+                            <CardTitle>Visitors List</CardTitle>
+                            <CardDescription>
+                                A list of all visitors including their details and status.
+                            </CardDescription>
+                        </div>
+                        <div className="relative w-full md:w-[300px]">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search by name, purpose..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-8"
+                            />
+                        </div>
                     </div>
-                    <Button onClick={handleAdd}>
-                        <IconPlus className="w-4 h-4" />
-                        Add Visitor
-                    </Button>
                 </CardHeader>
                 <CardContent>
-                    {/* Search */}
-                    <div className="relative mb-6">
-                        <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
-                            placeholder="Search by name, purpose, phone..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 bg-background border-border focus:border-indigo-500 transition-colors"
-                        />
-                    </div>
-
-                    {/* Table */}
-                    <div className="rounded-lg border bg-card overflow-hidden shadow-sm">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="font-semibold text-muted-foreground">Visitor Name</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Purpose</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Meeting With</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Phone</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Date</TableHead>
-                                    <TableHead className="font-semibold text-muted-foreground">Time</TableHead>
-                                    <TableHead className="text-right font-semibold text-muted-foreground">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
-                                            <span className="flex items-center justify-center gap-2 text-muted-foreground">
-                                                <IconLoader className="animate-spin w-4 h-4" /> Loading visitors...
-                                            </span>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredVisitors.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                                                No visitors found.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                            filteredVisitors.map((visitor) => (
-                                                <TableRow key={visitor._id} className="hover:bg-muted/50 transition-colors">
-                                                    <TableCell className="font-medium text-foreground">
-                                                        {visitor.visitorName}
-                                                    </TableCell>
-                                                    <TableCell className="text-muted-foreground max-w-[150px] truncate" title={visitor.purpose}>
-                                                        {visitor.purpose}
+                    {loading ? (
+                        <div className="flex h-32 items-center justify-center text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Loading visitors...</span>
+                            </div>
+                        </div>
+                    ) : filteredVisitors.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-48 text-center bg-muted/10 rounded-lg border border-dashed">
+                            <div className="h-12 w-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
+                                <User className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-lg font-medium">No results found</h3>
+                            <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                                No visitors match your search criteria. Try adjusting filters or add a new visitor.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="rounded-md border">
+                            <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow>
+                                                <TableHead>Visitor Name</TableHead>
+                                                <TableHead>Contact Info</TableHead>
+                                                <TableHead>Meeting With</TableHead>
+                                                <TableHead>Status / Time</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredVisitors.map((visitor) => (
+                                                <TableRow key={visitor._id} className="hover:bg-muted/5 transition-colors">
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-9 w-9 border">
+                                                                <AvatarFallback className="bg-primary/10 text-primary">
+                                                                    {visitor.visitorName?.substring(0, 2).toUpperCase()}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium text-foreground">{visitor.visitorName}</span>
+                                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                                    {visitor.numberOfPerson > 1 ? (
+                                                                        <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                                                                            {visitor.numberOfPerson} People
+                                                                        </Badge>
+                                                                    ) : (
+                                                                        <span className="flex items-center gap-1">
+                                                                            <CreditCard className="h-3 w-3" /> {visitor.idCard || 'No ID'}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-sm font-medium text-foreground">
-                                                                {visitor.meetingWith === 'Staff' 
-                                                                  ? visitor.staff?.name
-                                                                  : visitor.student?.name}
-                                                          </span>
-                                                          <span className="text-xs text-muted-foreground">{visitor.meetingWith}</span>
-                                                      </div>
-                                                  </TableCell>
-                                                  <TableCell className="text-muted-foreground">{visitor.phone || '-'}</TableCell>
-                                                  <TableCell className="text-muted-foreground">
-                                                      {visitor.date ? new Date(visitor.date).toLocaleDateString() : '-'}
-                                                  </TableCell>
-                                                  <TableCell className="text-muted-foreground text-sm">
-                                                      <div className="flex items-center gap-1"><span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider w-8">In</span> <span className="text-foreground">{visitor.inTime}</span></div>
-                                                      {visitor.outTime && <div className="flex items-center gap-1 mt-1"><span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider w-8">Out</span> <span className="text-foreground">{visitor.outTime}</span></div>}
-                                                  </TableCell>
-                                                  <TableCell className="text-right">
-                                                      <div className="flex items-center justify-end gap-1">
-                                                          <Button
-                                                              variant="ghost"
-                                                              size="icon"
-                                                              onClick={() => handleView(visitor)}
-                                                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                                                              title="View"
-                                                          >
-                                                              <IconEye className="w-4 h-4" />
-                                                          </Button>
-                                                          <Button
-                                                              variant="ghost"
-                                                              size="icon"
-                                                              onClick={() => handleEdit(visitor)}
-                                                              className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                                              title="Edit"
-                                                          >
-                                                              <IconEdit className="w-4 h-4" />
-                                                          </Button>
-                                                          <Button
-                                                              variant="ghost"
-                                                              size="icon"
-                                                              onClick={() => confirmDelete(visitor._id)}
-                                                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                                              title="Delete"
-                                                          >
-                                                              <IconTrash className="w-4 h-4" />
-                                                          </Button>
-                                                      </div>
-                                                  </TableCell>
-                                              </TableRow>
-                                          ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                                                        <div className="space-y-1">
+                                                            {visitor.phone && (
+                                                                <div className="flex items-center text-sm">
+                                                                    <Phone className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                                                    {visitor.phone}
+                                                                </div>
+                                                            )}
+                                                            <div className="text-xs text-muted-foreground truncate max-w-[150px] italic" title={visitor.purpose}>
+                                                                "{visitor.purpose}"
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span className="text-sm font-medium">
+                                                                {visitor.meetingWith === 'Staff'
+                                                                    ? visitor.staff?.name
+                                                                    : visitor.student?.name}
+                                                            </span>
+                                                            <Badge variant="outline" className="w-fit text-[10px] h-4 px-1 text-muted-foreground">
+                                                                {visitor.meetingWith}
+                                                            </Badge>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="space-y-1.5">
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 font-medium">IN</Badge>
+                                                                <span className="text-xs font-medium text-foreground">{visitor.inTime}</span>
+                                                            </div>
+                                                            {visitor.outTime ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5 font-medium">OUT</Badge>
+                                                                    <span className="text-xs font-medium text-muted-foreground">{visitor.outTime}</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center gap-2 opacity-50">
+                                                                    <Badge variant="outline" className="text-[10px] px-1.5">OUT</Badge>
+                                                                    <span className="text-xs text-muted-foreground">--:--</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center text-sm text-muted-foreground">
+                                                            <Calendar className="mr-2 h-3.5 w-3.5" />
+                                                            {visitor.date ? new Date(visitor.date).toLocaleDateString() : '-'}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                    <span className="sr-only">Open menu</span>
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => handleEdit(visitor)}>
+                                                                    <Pencil className="mr-2 h-4 w-4" /> View / Edit
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleCopy(visitor)}>
+                                                                    <Copy className="mr-2 h-4 w-4" /> Duplicate
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleFavorite(visitor)}>
+                                                                    <Star className="mr-2 h-4 w-4" /> Mark Favorite
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onClick={() => confirmDelete(visitor._id)} className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Record
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -282,27 +365,17 @@ const VisitorBook = () => {
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent>
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
-                            <IconAlertTriangle className="w-5 h-5" />
-                            Confirm Deletion
-                        </DialogTitle>
+                        <DialogTitle>Delete Visitor Record?</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this visitor record? This action cannot be undone.
+                            This action cannot be undone. This will permanently delete the visitor record for
+                            <span className="font-semibold text-foreground"> {visitors.find(v => v._id === deleteId)?.visitorName}</span>.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            Delete Record
-                        </Button>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleDelete}>Delete</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

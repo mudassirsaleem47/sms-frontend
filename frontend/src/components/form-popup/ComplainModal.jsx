@@ -1,12 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { useModalAnimation } from '../../hooks/useModalAnimation';
+import { X, Upload, FileText, Download, Eye, Trash2 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode = false }) => {
-    const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, onClose);
-    const [showFullImage, setShowFullImage] = useState(false);
-
+    // Form state
     const [formData, setFormData] = useState({
         complainBy: '',
         phone: '',
@@ -17,6 +29,10 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
         note: '',
         document: ''
     });
+
+    const [showFullImage, setShowFullImage] = useState(false);
+    const fileInputRef = useRef(null);
+    const API_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
         if (initialData) {
@@ -31,6 +47,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                 document: initialData.document || ''
             });
         } else {
+            // Reset form when opening for "Add"
             setFormData({
                 complainBy: '',
                 phone: '',
@@ -42,11 +59,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                 document: ''
             });
         }
-    }, [initialData]);
-
-    const fileInputRef = useRef(null);
-
-    if (!isVisible) return null;
+    }, [initialData, isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -77,274 +90,245 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
         onSubmit(formData);
     };
 
-    return createPortal(
-        <div className={`fixed inset-0 z-9999 overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-            <div className="flex min-h-full items-center justify-center p-4">
-                <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-6xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                
-                {/* Header */}
-                <div className="p-6 rounded-t-2xl flex justify-between items-start gap-4 border-b border-gray-100">
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            {viewMode ? 'View Complain Details' : (initialData ? 'Edit Complain' : 'Add Complain')}
-                        </h2>
-                        <p className="text-gray-600 text-sm mt-1">
-                            {viewMode ? 'Read-only view of complain information' : (initialData ? 'Update the complain details below' : 'Fill in the details to record a new complain')}
-                        </p>
-                    </div>
-                    <button 
-                        onClick={handleClose} 
-                        className="text-red-600 bg-gray-50 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition duration-150 shrink-0"
-                    >
-                        <X size={24} />
-                    </button>
+    // Helper to check if document is an image
+    const isImage = (doc) => {
+        if (!doc) return false;
+        if (doc instanceof File) {
+            return doc.type.startsWith('image/');
+        }
+        return /\.(jpg|jpeg|png|gif|webp)$/i.test(doc);
+    };
+
+    // Helper to get document URL
+    const getDocUrl = (doc) => {
+        if (!doc) return '';
+        if (doc instanceof File) return URL.createObjectURL(doc);
+        return doc.startsWith('http') ? doc : `${API_URL}/${doc}`;
+    };
+
+    // Custom File Display Component
+    const FileDisplay = ({ doc }) => {
+        if (!doc) return null;
+        const isImg = isImage(doc);
+        const url = getDocUrl(doc);
+        const name = doc instanceof File ? doc.name : (typeof doc === 'string' ? doc.split(/[\\/]/).pop() : 'Document');
+
+        return (
+            <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                <div className="h-10 w-10 flex items-center justify-center rounded bg-muted">
+                    {isImg ? <Eye className="h-5 w-5 text-muted-foreground" /> : <FileText className="h-5 w-5 text-muted-foreground" />}
                 </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{name}</p>
+                    {isImg && (
+                        <button 
+                            type="button"
+                            onClick={() => setShowFullImage(true)}
+                            className="text-xs text-primary hover:underline"
+                        >
+                            View Image
+                        </button>
+                    )}
+                </div>
+                {!viewMode && (
+                    <Button variant="ghost" size="icon" onClick={handleRemoveFile}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                )}
+                {viewMode && !isImg && (
+                    <Button variant="ghost" size="icon" asChild>
+                        <a href={url} target="_blank" rel="noopener noreferrer" download>
+                            <Download className="h-4 w-4" />
+                        </a>
+                    </Button>
+                )}
+            </div>
+        );
+    };
 
-                {/* Content */}
-                {viewMode ? (
-                    /* VIEW MODE */
-                    <div className="p-6 md:p-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Complain Information */}
-                            <div className="bg-linear-to-r from-red-50 to-pink-50 rounded-lg p-6 border border-red-100">
-                                <h3 className="text-lg font-bold text-red-900 mb-4 flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                    Complain Information
-                                </h3>
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Complain By</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.complainBy || '-'}</p>
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[700px] p-0 max-h-[90vh] flex flex-col gap-0">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle>{viewMode ? 'Complain Details' : (initialData ? 'Edit Complain' : 'Add New Complain')}</DialogTitle>
+                    <DialogDescription>
+                        {viewMode
+                            ? 'Review the details of the complaint below.'
+                            : 'Fill out the form below to log a new complaint.'}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <ScrollArea className="flex-1 px-6 max-h-[calc(90vh-140px)]">
+                    <div className="pb-6">
+                        {viewMode ? (
+                            <div className="space-y-6">
+                                {/* Basic Info */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <Label className="text-muted-foreground text-xs uppercase">Complain By</Label>
+                                        <div className="font-medium text-base">{formData.complainBy}</div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Phone</p>
-                                        <p className="text-base font-600 text-gray-900">{formData.phone || '-'}</p>
+                                    <div className="space-y-1">
+                                        <Label className="text-muted-foreground text-xs uppercase">Date</Label>
+                                        <div className="font-medium text-base">{new Date(formData.date).toLocaleDateString()}</div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs font-600 text-gray-500 uppercase mb-1">Date</p>
-                                        <p className="text-base font-600 text-gray-900">
-                                            {formData.date ? new Date(formData.date).toLocaleDateString() : '-'}
-                                        </p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <Label className="text-muted-foreground text-xs uppercase">Phone</Label>
+                                        <div className="font-medium">{formData.phone || 'N/A'}</div>
                                     </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-muted-foreground text-xs uppercase">Assigned To</Label>
+                                        <div>
+                                            {formData.assigned ? (
+                                                <Badge variant="secondary">{formData.assigned}</Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                {/* Description */}
+                                <div className="space-y-2">
+                                    <Label className="text-muted-foreground text-xs uppercase">Description</Label>
+                                    <Card className="bg-muted/30 border-none shadow-none">
+                                        <CardContent className="p-4 text-sm leading-relaxed">
+                                            {formData.description}
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Action Taken */}
+                                {formData.actionTaken && (
+                                    <div className="space-y-2">
+                                        <Label className="text-muted-foreground text-xs uppercase">Action Taken</Label>
+                                        <Card className="bg-green-50/50 dark:bg-green-900/10 border-green-100 dark:border-green-900 shadow-none">
+                                            <CardContent className="p-4 text-sm leading-relaxed text-green-800 dark:text-green-300">
+                                                {formData.actionTaken}
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                )}
+
+                                {/* Notes & Documents */}
+                                <div className="grid grid-cols-1 gap-6">
+                                    {formData.note && (
+                                        <div className="space-y-2">
+                                            <Label className="text-muted-foreground text-xs uppercase">Note</Label>
+                                            <p className="text-sm text-balance">{formData.note}</p>
+                                        </div>
+                                    )}
+
+                                    {formData.document && (
+                                        <div className="space-y-2">
+                                            <Label className="text-muted-foreground text-xs uppercase">Attachment</Label>
+                                            <FileDisplay doc={formData.document} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-
-                            {/* Action Details */}
-                            {(formData.actionTaken || formData.assigned) && (
-                                <div className="bg-linear-to-r from-green-50 to-teal-50 rounded-lg p-6 border border-green-100">
-                                    <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        Action Details
-                                    </h3>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        {formData.assigned && (
-                                            <div>
-                                                <p className="text-xs font-600 text-gray-500 uppercase mb-1">Assigned To</p>
-                                                <p className="text-base font-600 text-gray-900">{formData.assigned}</p>
-                                            </div>
-                                        )}
-                                        {formData.actionTaken && (
-                                            <div>
-                                                <p className="text-xs font-600 text-gray-500 uppercase mb-1">Action Taken</p>
-                                                <p className="text-base text-gray-700 whitespace-pre-wrap">{formData.actionTaken}</p>
-                                            </div>
-                                        )}
+                        ) : (
+                                <form id="complain-form" onSubmit={handleSubmit} className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="complainBy">Complain By <span className="text-destructive">*</span></Label>
+                                            <Input
+                                                id="complainBy"
+                                                name="complainBy"
+                                                value={formData.complainBy}
+                                                onChange={handleChange}
+                                                required
+                                                placeholder="John Doe"
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+                                            <Input
+                                                id="date"
+                                                name="date"
+                                                type="date"
+                                                value={formData.date}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            )}
 
-                            {/* Description */}
-                            <div className="bg-linear-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100 col-span-full">
-                                <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center">
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Description
-                                </h3>
-                                <p className="text-base text-gray-700 whitespace-pre-wrap">{formData.description || '-'}</p>
-                            </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="phone">Phone</Label>
+                                            <Input
+                                                id="phone"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleChange}
+                                                placeholder="123-456-7890"
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="assigned">Assigned To</Label>
+                                            <Input
+                                                id="assigned"
+                                                name="assigned"
+                                                value={formData.assigned}
+                                                onChange={handleChange}
+                                                placeholder="Staff Member / Department"
+                                            />
+                                        </div>
+                                    </div>
 
-                            {/* Note */}
-                            {formData.note && (
-                                <div className="bg-linear-to-r from-amber-50 to-orange-50 rounded-lg p-6 border border-amber-100 col-span-full">
-                                    <h3 className="text-lg font-bold text-amber-900 mb-3 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                        </svg>
-                                        Note
-                                    </h3>
-                                    <p className="text-base text-gray-700 whitespace-pre-wrap">{formData.note}</p>
-                                </div>
-                            )}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>
+                                        <Textarea
+                                            id="description"
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleChange}
+                                            required
+                                            placeholder="Detailed description of the complaint..."
+                                            className="h-24 resize-none"
+                                        />
+                                    </div>
 
-                            {/* Attached Document/Image */}
-                            {formData.document && (
-                                <div className="bg-linear-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-100 col-span-full">
-                                    <h3 className="text-lg font-bold text-purple-900 mb-4 flex items-center">
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                        Attached Document
-                                    </h3>
-                                    {(() => {
-                                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(formData.document);
-                                            const fileUrl = formData.document.startsWith('http')
-                                                ? formData.document
-                                                : `${import.meta.env.VITE_API_URL}/${formData.document}`;
-                                        
-                                        if (isImage) {
-                                            return (
-                                                <div className="space-y-3">
-                                                    <div 
-                                                        onClick={() => setShowFullImage(true)}
-                                                        className="cursor-pointer group relative inline-block rounded-lg overflow-hidden border-2 border-purple-200 hover:border-purple-400 transition"
-                                                    >
-                                                        <img 
-                                                            src={fileUrl} 
-                                                            alt="Attached document" 
-                                                            className="max-h-48 object-contain group-hover:opacity-90 transition"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center">
-                                                            <svg className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600">Click to view full size</p>
-                                                </div>
-                                            );
-                                        } else {
-                                            return (
-                                                <a 
-                                                    href={fileUrl} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                                                >
-                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Download Document
-                                                </a>
-                                            );
-                                        }
-                                    })()}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex justify-end mt-8 pt-6 border-t border-gray-200">
-                            <button 
-                                type="button" 
-                                onClick={handleClose} 
-                                className="cursor-pointer px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    /* FORM MODE */
-                    <form onSubmit={handleSubmit} className="p-6 md:p-8">
-                        <div className="space-y-5">
-                            {/* Row 1: Complain By, Phone, Date */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Complain By *</label>
-                                    <input
-                                        name="complainBy"
-                                        value={formData.complainBy}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Enter name"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Phone</label>
-                                    <input
-                                        name="phone"
-                                        type="tel"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        placeholder="Enter phone number"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Date *</label>
-                                    <input
-                                        name="date"
-                                        type="date"
-                                        value={formData.date}
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Row 2: Description */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">Description *</label>
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    required
-                                    rows="3"
-                                    placeholder="Enter complaint description"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
-                                />
-                            </div>
-
-                            {/* Row 3: Assigned, Action Taken */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Assigned</label>
-                                    <input
-                                        name="assigned"
-                                        value={formData.assigned}
-                                        onChange={handleChange}
-                                        placeholder="Assign to person/department"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Action Taken</label>
-                                    <textarea
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="actionTaken">Action Taken</Label>
+                                        <Textarea
+                                            id="actionTaken"
                                         name="actionTaken"
                                         value={formData.actionTaken}
                                         onChange={handleChange}
-                                        rows="1"
-                                        placeholder="Enter action taken"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+                                            placeholder="Steps taken to resolve..."
+                                            className="h-20 resize-none"
                                     />
-                                </div>
-                            </div>
+                                    </div>
 
-                            {/* Row 4: Note, Attach Document */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Note</label>
-                                    <textarea
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="note">Note</Label>
+                                        <Textarea
+                                            id="note"
                                         name="note"
                                         value={formData.note}
                                         onChange={handleChange}
-                                        rows="1"
-                                        placeholder="Additional notes"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+                                            placeholder="Internal notes..."
+                                            className="h-16 resize-none"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">Attach Document</label>
+
+                                    <div className="grid gap-2">
+                                        <Label>Attachment</Label>
                                     <div 
                                         onClick={handleFileClick}
-                                        className={`flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-lg transition h-[46px] cursor-pointer ${formData.document ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400'}`}
+                                            className={`
+                                            border-2 border-dashed rounded-lg p-6 hover:bg-muted/50 cursor-pointer transition-colors
+                                            flex flex-col items-center justify-center text-center gap-2
+                                            ${formData.document ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/25'}
+                                        `}
                                     >
                                         <input 
                                             type="file" 
@@ -354,83 +338,61 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                                         />
                                         
                                         {formData.document ? (
-                                            <div className="flex items-center justify-between w-full">
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    <svg className="w-5 h-5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    <span className="text-sm text-indigo-700 font-medium truncate max-w-[180px]">
-                                                        {formData.document instanceof File 
-                                                            ? formData.document.name 
-                                                            : (typeof formData.document === 'string' && formData.document.includes('uploads') 
-                                                                ? formData.document.split(/[\\/]/).pop() 
-                                                                : formData.document)
-                                                        }
-                                                    </span>
-                                                </div>
-                                                <button 
-                                                    type="button"
-                                                    onClick={handleRemoveFile}
-                                                    className="text-indigo-400 hover:text-indigo-700 transition p-1"
-                                                >
-                                                    <X size={16} />
-                                                </button>
+                                                <div className="w-full">
+                                                    <FileDisplay doc={formData.document} />
+                                                    <p className="text-xs text-muted-foreground mt-2">Click to replace file</p>
                                             </div>
                                         ) : (
                                             <>
-                                                <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                </svg>
-                                                <span className="text-sm text-gray-500 truncate">Click to attach file</span>
+                                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                                            <Upload className="h-5 w-5 text-muted-foreground" />
+                                                        </div>
+                                                        <div className="text-sm font-medium">Click to upload document</div>
+                                                        <div className="text-xs text-muted-foreground">Support for images and documents</div>
                                             </>
                                         )}
                                     </div>
-                                </div>
+                                    </div>
+                            </form>
+                        )}
+                    </div>
+                </ScrollArea>
+
+                <DialogFooter className="p-6 pt-2">
+                    {viewMode ? (
+                        <Button type="button" onClick={onClose} className="w-full sm:w-auto">Close</Button>
+                    ) : (
+                        <div className="flex w-full sm:justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                            <Button type="submit" form="complain-form">
+                                {initialData ? 'Update Complain' : 'Save Complain'}
+                            </Button>
                             </div>
-                        </div>
+                    )}
+                </DialogFooter>
+            </DialogContent>
 
-                        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                            <button 
-                                type="button" 
-                                onClick={handleClose} 
-                                className="cursor-pointer px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit" 
-                                className="cursor-pointer px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-600 transition duration-150 shadow-lg hover:shadow-xl"
-                            >
-                                {initialData ? 'Update Complain' : 'Save'}
-                            </button>
-                        </div>
-                    </form>
-                )}
-            </div>
-            </div>
-
-            {/* Full-Size Image Viewer */}
+            {/* Full-Size Image Dialog/Overlay */}
             {showFullImage && formData.document && (
                 <div 
-                    className="fixed inset-0 z-10000 bg-black/90 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200"
                     onClick={() => setShowFullImage(false)}
                 >
                     <button 
                         onClick={() => setShowFullImage(false)}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black/50 p-2 rounded-lg transition"
+                        className="absolute top-4 right-4 text-white/70 hover:text-white p-2"
                     >
                         <X size={32} />
                     </button>
                     <img 
-                        src={formData.document.startsWith('http') ? formData.document : `${import.meta.env.VITE_API_URL}/${formData.document}`}
+                        src={getDocUrl(formData.document)} 
                         alt="Full size view"
-                        className="max-w-full max-h-full object-contain"
+                        className="max-h-[90vh] max-w-[90vw] object-contain"
                         onClick={(e) => e.stopPropagation()}
                     />
                 </div>
             )}
-        </div>,
-        document.body
+        </Dialog>
     );
 };
 

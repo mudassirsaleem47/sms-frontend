@@ -37,6 +37,7 @@ import {
     IconGripVertical,
 } from '@tabler/icons-react';
 import { Calendar } from '@/components/ui/calendar';
+import PasswordInput from '@/components/ui/password';
 
 const ComponentTest = () => {
     const [selectedRows, setSelectedRows] = useState([]);
@@ -170,6 +171,12 @@ const ComponentTest = () => {
                         <p className="text-xs text-muted-foreground text-center">
                             Selected: {date ? date.toLocaleDateString() : 'No date selected'}
                         </p>
+                    </div>
+
+                    {/* Example: Password Input */}
+                    <div className="space-y-2">
+                        <h3 className="text-sm font-semibold">Password Input</h3>
+                        <PasswordInput />
                     </div>
                 </CardContent>
             </Card>
