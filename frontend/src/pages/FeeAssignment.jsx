@@ -8,8 +8,37 @@ import {
   CheckSquare,
   Square,
   User,
-  Filter
+  Filter,
+  CheckCircle2,
+  CalendarDays,
+  CreditCard,
+  Search,
+  Building
 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -24,10 +53,13 @@ const FeeAssignment = () => {
   
   const [selectedFeeStructure, setSelectedFeeStructure] = useState('');
   const [assignmentMode, setAssignmentMode] = useState('individual'); // individual, class, bulk
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedSection, setSelectedSection] = useState('all');
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
+
+  const [feeSearch, setFeeSearch] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
 
   useEffect(() => {
     if (currentUser) {
@@ -37,7 +69,7 @@ const FeeAssignment = () => {
 
   useEffect(() => {
     filterStudents();
-  }, [selectedClass, selectedSection, students]);
+  }, [selectedClass, selectedSection, students, studentSearch]);
 
   const fetchData = async () => {
     try {
@@ -58,17 +90,29 @@ const FeeAssignment = () => {
     }
   };
 
+  const filteredFees = feeStructures.filter(f =>
+    f.feeName.toLowerCase().includes(feeSearch.toLowerCase()) ||
+    f.feeType.toLowerCase().includes(feeSearch.toLowerCase())
+  );
+
   const filterStudents = () => {
     let filtered = students;
     
-    if (selectedClass) {
+    if (selectedClass && selectedClass !== 'all') {
       filtered = filtered.filter(s => s.sclassName?._id === selectedClass);
     }
     
-    if (selectedSection) {
+    if (selectedSection && selectedSection !== 'all') {
       filtered = filtered.filter(s => s.section === selectedSection);
     }
     
+    if (studentSearch) {
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+        s.rollNum.toString().includes(studentSearch)
+      );
+    }
+
     setFilteredStudents(filtered);
   };
 
@@ -93,6 +137,14 @@ const FeeAssignment = () => {
     }
   };
 
+  // Calculate Totals
+  const selectedFee = feeStructures.find(f => f._id === selectedFeeStructure);
+  const feeAmount = selectedFee ? selectedFee.amount : 0;
+  const studentCount = assignmentMode === 'class'
+    ? filteredStudents.length
+    : selectedStudents.length;
+  const totalProjected = feeAmount * studentCount;
+
   const handleAssignFees = async () => {
     if (!selectedFeeStructure) {
       showToast('Please select a fee structure', 'error');
@@ -108,7 +160,7 @@ const FeeAssignment = () => {
       }
       studentIds = selectedStudents;
     } else if (assignmentMode === 'class') {
-      if (!selectedClass) {
+      if (!selectedClass || selectedClass === 'all') {
         showToast('Please select a class', 'error');
         return;
       }
@@ -143,228 +195,326 @@ const FeeAssignment = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-100px)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="flex-1 space-y-6 p-8 pt-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Assign Fees</h1>
-        <p className="text-gray-600">Assign fee structures to students individually or by class</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Assign Fees</h2>
+          <p className="text-muted-foreground mt-2">Assign fee structures to students individually or by class</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Fee Structure Selection */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Select Fee Structure</h2>
-            
-            <div className="space-y-3">
-              {feeStructures.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No fee structures available</p>
-              ) : (
-                feeStructures.map((fee) => (
-                  <div
-                    key={fee._id}
-                    onClick={() => setSelectedFeeStructure(fee._id)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                      selectedFeeStructure === fee._id
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{fee.feeName}</h3>
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {fee.feeType}
-                      </span>
+          <Card className="h-full flex flex-col">
+            <CardHeader className="bg-muted/40 pb-4 border-b space-y-3">
+              <div>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-primary" /> Fee Structure
+                </CardTitle>
+                <CardDescription>Select the fee to assign</CardDescription>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search fees..."
+                  value={feeSearch}
+                  onChange={(e) => setFeeSearch(e.target.value)}
+                  className="pl-9 bg-background"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden">
+              <ScrollArea className="h-[calc(100vh-300px)] lg:h-[600px] p-4">
+                <div className="space-y-3">
+                  {filteredFees.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                      <p>No fee structures found</p>
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Class: {fee.class?.sclassName} - {fee.section}</p>
-                      <p className="font-semibold text-indigo-600">Rs. {fee.amount.toLocaleString()}</p>
-                      <p>Due: {new Date(fee.dueDate).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+                  ) : (
+                      filteredFees.map((fee) => (
+                        <div
+                          key={fee._id}
+                          onClick={() => setSelectedFeeStructure(fee._id)}
+                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${selectedFeeStructure === fee._id
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm'
+                            : 'border-transparent bg-card hover:bg-accent/50'
+                            }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className={`font-semibold ${selectedFeeStructure === fee._id ? 'text-primary' : 'text-foreground'}`}>
+                              {fee.feeName}
+                            </h3>
+                            <Badge variant={selectedFeeStructure === fee._id ? 'default' : 'secondary'}>
+                              {fee.feeType}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="flex items-center gap-1.5" title="Class Constraint">
+                                <Users className="w-3.5 h-3.5" />
+                                <span>{fee.class?.sclassName || 'Any'} {fee.section ? `(${fee.section})` : ''}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5" title="Due Date">
+                                <CalendarDays className="w-3.5 h-3.5" />
+                                <span>{new Date(fee.dueDate).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            <div className="pt-3 mt-1 border-t flex justify-between items-center">
+                              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Amount</span>
+                              <span className={`font-bold text-lg ${selectedFeeStructure === fee._id ? 'text-primary' : 'text-primary'}`}>
+                                Rs. {fee.amount.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right Panel - Student Selection */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Select Students</h2>
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" /> Select Students
+                </CardTitle>
 
-            {/* Assignment Mode Tabs */}
-            <div className="flex gap-2 mb-6">
-              <button
-                onClick={() => {
-                  setAssignmentMode('individual');
-                  setSelectedStudents([]);
-                }}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  assignmentMode === 'individual'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Individual
-              </button>
-              <button
-                onClick={() => {
-                  setAssignmentMode('class');
-                  setSelectedStudents([]);
-                }}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  assignmentMode === 'class'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                By Class/Section
-              </button>
-              <button
-                onClick={() => {
-                  setAssignmentMode('bulk');
-                  setSelectedStudents([]);
-                }}
-                className={`px-4 py-2 rounded-lg font-semibold transition ${
-                  assignmentMode === 'bulk'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Bulk Select
-              </button>
-            </div>
-
-            {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Filter by Class
-                </label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => {
-                    setSelectedClass(e.target.value);
-                    setSelectedSection('');
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="">All Classes</option>
-                  {classes.map(cls => (
-                    <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
-                  ))}
-                </select>
+                <Tabs value={assignmentMode} onValueChange={setAssignmentMode} className="w-full md:w-auto">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="individual" onClick={() => setSelectedStudents([])}>Individual</TabsTrigger>
+                    <TabsTrigger value="class" onClick={() => setSelectedStudents([])}>By Class</TabsTrigger>
+                    <TabsTrigger value="bulk" onClick={() => setSelectedStudents([])}>Bulk Select</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
+            </CardHeader>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Filter by Section
-                </label>
-                <select
-                  value={selectedSection}
-                  onChange={(e) => setSelectedSection(e.target.value)}
-                  disabled={!selectedClass}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100"
-                >
-                  <option value="">All Sections</option>
-                  {selectedClass && getSectionsForClass(selectedClass).map(section => (
-                    <option key={section.sectionName} value={section.sectionName}>
-                      {section.sectionName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <CardContent className="flex-1 space-y-6">
+              {/* Filters & Search */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Class</Label>
+                  <Select value={selectedClass || 'all'} onValueChange={(val) => {
+                    setSelectedClass(val);
+                    setSelectedSection('all');
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Classes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {classes.map(cls => (
+                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {assignmentMode === 'class' && (
-              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Class Assignment Mode:</strong> Fee will be assigned to all{' '}
-                  {filteredStudents.length} student(s) in the selected class/section.
-                </p>
-              </div>
-            )}
+                <div className="space-y-2">
+                  <Label>Section</Label>
+                  <Select
+                    value={selectedSection || 'all'}
+                    onValueChange={setSelectedSection}
+                    disabled={!selectedClass || selectedClass === 'all'}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Sections" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sections</SelectItem>
+                      {selectedClass && selectedClass !== 'all' && getSectionsForClass(selectedClass).map(section => (
+                        <SelectItem key={section.sectionName} value={section.sectionName}>
+                          {section.sectionName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {(assignmentMode === 'individual' || assignmentMode === 'bulk') && (
-              <>
-                {assignmentMode === 'bulk' && (
-                  <div className="mb-4">
-                    <button
-                      onClick={selectAllStudents}
-                      className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition font-semibold"
-                    >
-                      {selectedStudents.length === filteredStudents.length ? 'Deselect All' : 'Select All'}
-                    </button>
-                    <span className="ml-3 text-sm text-gray-600">
-                      {selectedStudents.length} of {filteredStudents.length} selected
-                    </span>
+                <div className="space-y-2">
+                  <Label>Search Students</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Name or Roll No..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="pl-9 bg-background"
+                    />
                   </div>
-                )}
+                </div>
+              </div>
 
-                {/* Student List */}
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {filteredStudents.length === 0 ? (
-                    <div className="text-center py-12">
-                      <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No students found</p>
-                    </div>
-                  ) : (
-                    filteredStudents.map((student) => (
-                      <div
-                        key={student._id}
-                        onClick={() => toggleStudentSelection(student._id)}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                          selectedStudents.includes(student._id)
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {selectedStudents.includes(student._id) ? (
-                            <CheckSquare className="w-5 h-5 text-indigo-600" />
-                          ) : (
-                            <Square className="w-5 h-5 text-gray-400" />
-                          )}
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900">{student.name}</div>
-                            <div className="text-sm text-gray-600">
-                              Roll: {student.rollNum} | Class: {student.sclassName?.sclassName} {student.section}
-                            </div>
-                          </div>
+              <Separator />
+
+              {/* Mode Specific Content */}
+              <div className="flex-1">
+                {assignmentMode === 'class' ? (
+                  <div className="space-y-4">
+                    {/* Impact Summary Card */}
+                    <div className="bg-muted/30 border border-primary/20 rounded-xl p-6 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                      <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className="p-3 bg-primary/10 rounded-lg shadow-sm text-primary">
+                          <Building className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-foreground">Class Impact Summary</h3>
+                          <p className="text-muted-foreground text-sm">Review the scope before assignment</p>
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-              </>
-            )}
 
-            {/* Assign Button */}
-            <div className="mt-6">
-              <button
-                onClick={handleAssignFees}
-                disabled={!selectedFeeStructure}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold transition flex items-center justify-center gap-2"
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+                        <div className="bg-card p-4 rounded-lg border shadow-sm">
+                          <p className="text-sm text-muted-foreground mb-1">Target Students</p>
+                          <p className="text-2xl font-bold text-foreground">{filteredStudents.length}</p>
+                        </div>
+                        <div className="bg-card p-4 rounded-lg border shadow-sm">
+                          <p className="text-sm text-muted-foreground mb-1">Fee Per Student</p>
+                          <p className="text-2xl font-bold text-foreground">
+                            Rs. {feeAmount.toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="bg-card p-4 rounded-lg border border-primary/20 shadow-sm ring-1 ring-primary/5">
+                          <p className="text-sm text-primary font-medium mb-1">Total Projected</p>
+                          <p className="text-2xl font-bold text-primary">
+                            Rs. {totalProjected.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview List */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+                        Included Students ({filteredStudents.length})
+                      </h4>
+                      {filteredStudents.length === 0 ? (
+                        <div className="text-center py-8 border-2 border-dashed rounded-xl">
+                          <Users className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-muted-foreground">No students match current filters</p>
+                        </div>
+                      ) : (
+                        <ScrollArea className="h-[200px] border rounded-lg bg-muted/10">
+                          <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {filteredStudents.map(student => (
+                              <div key={student._id} className="flex items-center gap-2 text-sm bg-background p-2 rounded border shadow-sm">
+                                <User className="w-3 h-3 text-muted-foreground" />
+                                <span className="truncate">{student.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {assignmentMode === 'bulk' && (
+                        <div className="flex items-center justify-between mb-4 bg-muted/30 p-3 rounded-lg border">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length}
+                              onCheckedChange={selectAllStudents}
+                              id="select-all"
+                            />
+                            <label htmlFor="select-all" className="text-sm font-medium cursor-pointer select-none">
+                              Select All {filteredStudents.length} Students
+                            </label>
+                          </div>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                            {selectedStudents.length} selected
+                          </Badge>
+                        </div>
+                      )}
+
+                      {assignmentMode === 'individual' && filteredStudents.length > 0 && (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Select students from the list below:
+                        </p>
+                      )}
+
+                      <ScrollArea className="h-[400px] border rounded-md shadow-inner bg-muted/5">
+                        {filteredStudents.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                            <Search className="w-12 h-12 opacity-20 mb-2" />
+                            <p>No students found matching your search</p>
+                          </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4">
+                              {filteredStudents.map((student) => (
+                                <div
+                                  key={student._id}
+                                  onClick={() => toggleStudentSelection(student._id)}
+                                  className={`
+                                        relative flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent group
+                                        ${selectedStudents.includes(student._id)
+                                      ? 'border-primary bg-primary/5 shadow-sm'
+                                      : 'border-muted bg-background hover:border-primary/50'}
+                                    `}
+                                >
+                                  <div className={`
+                                        flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors
+                                        ${selectedStudents.includes(student._id) ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-primary/10'}
+                                    `}>
+                                    {selectedStudents.includes(student._id) ? <CheckCircle2 className="w-5 h-5" /> : <User className="w-4 h-4" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-foreground truncate">{student.name}</div>
+                                    <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                                      Roll: {student.rollNum} • {student.sclassName?.sclassName}-{student.section}
+                                    </div>
+                                  </div>
+                                  {selectedStudents.includes(student._id) && (
+                                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                  </>
+                )}
+              </div>
+            </CardContent>
+
+            <CardFooter className="border-t bg-muted/30 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className="bg-background">
+                  Total Projected Amount: Rs. {totalProjected.toLocaleString()}
+                </Badge>
+              </div>
+              <Button
+                onClick={handleAssignFees} 
+                disabled={!selectedFeeStructure || (assignmentMode !== 'class' && selectedStudents.length === 0) || (assignmentMode === 'class' && filteredStudents.length === 0)}
+                size="lg"
+                className="w-full sm:w-auto gap-2 shadow-lg hover:shadow-primary/25 transition-all font-semibold"
               >
-                <DollarSign className="w-5 h-5" />
+                <DollarSign className="w-4 h-4" />
                 Assign Fee to {
                   assignmentMode === 'class' 
-                    ? `${filteredStudents.length} Student(s)` 
-                    : assignmentMode === 'bulk'
-                    ? `${selectedStudents.length} Selected Student(s)`
-                    : 'Selected Student(s)'
+                    ? `${filteredStudents.length} Students`
+                    : `${selectedStudents.length} Selected`
                 }
-              </button>
-            </div>
-          </div>
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </div>

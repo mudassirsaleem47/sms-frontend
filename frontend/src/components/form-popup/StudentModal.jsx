@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
@@ -32,8 +33,16 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         rollNum: '',
         password: '',
         sclassName: '',
-        status: 'Active'
+        status: 'Active',
+        disableReason: '',
+        disableDescription: ''
     });
+
+    const [showDisableReason, setShowDisableReason] = useState(false);
+    const [selectedReason, setSelectedReason] = useState('');
+    const [reasonDescription, setReasonDescription] = useState('');
+
+    const disableReasonOptions = ['Left School', 'Transferred', 'Expelled', 'Medical', 'Financial', 'Other'];
 
     const [classesList, setClassesList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -72,8 +81,13 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 rollNum: '',
                 password: '',
                 sclassName: '',
-                status: 'Active'
+                status: 'Active',
+                disableReason: '',
+                disableDescription: ''
             });
+            setShowDisableReason(false);
+            setSelectedReason('');
+            setReasonDescription('');
         }
     }, [initialData, isOpen]);
 
@@ -82,7 +96,36 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     };
 
     const handleSelectChange = (name, value) => {
+        if (name === 'status' && value === 'Disabled') {
+            setShowDisableReason(true);
+            return;
+        }
+        if (name === 'status' && value === 'Active') {
+            // Setup for re-enabling if needed, but for now just update status
+            setFormData({ ...formData, [name]: value, disableReason: '', disableDescription: '' });
+            return;
+        }
         setFormData({ ...formData, [name]: value });
+    };
+
+    const confirmDisable = () => {
+        if (!selectedReason) {
+            return;
+        }
+        setFormData({
+            ...formData,
+            status: 'Disabled',
+            disableReason: selectedReason,
+            disableDescription: reasonDescription
+        });
+        setShowDisableReason(false);
+    };
+
+    const cancelDisable = () => {
+        setSelectedReason('');
+        setReasonDescription('');
+        setShowDisableReason(false);
+        // Status remains what it was before (likely Active if they were switching)
     };
 
     const handleSubmit = async (e) => {
@@ -188,6 +231,48 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             </Select>
                         </div>
                     )}
+
+                    {/* Disable Reason Confirmation Dialog Overlay */}
+                    <Dialog open={showDisableReason} onOpenChange={(open) => !open && cancelDisable()}>
+                        <DialogContent className="sm:max-w-[400px]">
+                            <DialogHeader>
+                                <DialogTitle>Disable Student Reason</DialogTitle>
+                                <DialogDescription>
+                                    Please provide a reason for disabling this student. This is required.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-2 space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="disable-reason">Reason <span className="text-destructive">*</span></Label>
+                                    <Select value={selectedReason} onValueChange={setSelectedReason}>
+                                        <SelectTrigger id="disable-reason">
+                                            <SelectValue placeholder="Select a reason" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {disableReasonOptions.map((reason) => (
+                                                <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="reason-description">Description <span className="text-muted-foreground text-xs">(Optional)</span></Label>
+                                    <Textarea
+                                        id="reason-description"
+                                        value={reasonDescription}
+                                        onChange={(e) => setReasonDescription(e.target.value)}
+                                        placeholder="Additional details..."
+                                        className="resize-none"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={cancelDisable}>Cancel</Button>
+                                <Button type="button" onClick={confirmDisable} disabled={!selectedReason}>Confirm Disable</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
 
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>

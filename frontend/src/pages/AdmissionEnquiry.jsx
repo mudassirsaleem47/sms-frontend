@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import EnquiryModal from '../components/form-popup/EnquiryModal';
+import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,16 +23,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet';
 import {
     Plus,
     Search,
@@ -67,13 +66,16 @@ const AdmissionEnquiry = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentEnquiry, setCurrentEnquiry] = useState(null);
-    const [viewMode, setViewMode] = useState(false);
     
     // Delete Confirmation State
     const [deleteItem, setDeleteItem] = useState(null);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
+
+    // Drawer State
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [selectedEnquiry, setSelectedEnquiry] = useState(null);
 
     // --- 1. Data Fetching ---
     const fetchData = async () => {
@@ -142,22 +144,20 @@ const AdmissionEnquiry = () => {
         setDeleteItem(null);
     };
 
-    // View/Edit/Add/Copy Actions
-    const handleView = (enquiry) => {
-        setCurrentEnquiry(enquiry);
-        setViewMode(true);
-        setIsModalOpen(true);
+    const handleNameClick = (enquiry) => {
+        setSelectedEnquiry(enquiry);
+        setIsDrawerOpen(true);
     };
+
+    // Edit/Add/Copy Actions
 
     const handleEdit = (enquiry) => {
         setCurrentEnquiry(enquiry);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
     const handleAdd = () => {
         setCurrentEnquiry(null);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
@@ -170,7 +170,7 @@ const AdmissionEnquiry = () => {
             name: `${enquiry.name} (Copy)`
         };
         setCurrentEnquiry(copiedData);
-        setViewMode(false);
+        setCurrentEnquiry(copiedData);
         setIsModalOpen(true);
         toast.info("Creating copy of enquiry");
     };
@@ -216,13 +216,13 @@ const AdmissionEnquiry = () => {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-blue-600">Total Enquiries</CardTitle>
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <Users className="h-4 w-4 text-blue-600" />
+                        <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Enquiries</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-800">{totalEnquiries}</div>
+                        <div className="text-2xl font-bold text-foreground">{totalEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Total registered enquiries
                         </p>
@@ -231,13 +231,13 @@ const AdmissionEnquiry = () => {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-green-600">Assigned</CardTitle>
-                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <CardTitle className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Assigned</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-800">{assignedEnquiries}</div>
+                        <div className="text-2xl font-bold text-foreground">{assignedEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Handled by teachers/staff
                         </p>
@@ -246,13 +246,13 @@ const AdmissionEnquiry = () => {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-amber-600">Pending</CardTitle>
-                        <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                            <Clock className="h-4 w-4 text-amber-600" />
+                        <CardTitle className="text-sm font-medium text-amber-600 dark:text-amber-400">Pending</CardTitle>
+                        <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center">
+                            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-gray-800">{pendingEnquiries}</div>
+                        <div className="text-2xl font-bold text-foreground">{pendingEnquiries}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             Awaiting assignment
                         </p>
@@ -314,10 +314,15 @@ const AdmissionEnquiry = () => {
                                         </TableHeader>
                                         <TableBody>
                                     {filteredEnquiries.map((item) => (
-                                        <TableRow key={item._id} className="hover:bg-muted/5 transition-colors">
+                                        <TableRow key={item._id} className="cursor-pointer hover:bg-muted/50 transition-colors">
                                             <TableCell>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground">{item.name}</span>
+                                                    <span
+                                                        className="font-medium text-foreground hover:underline hover:text-primary transition-colors"
+                                                        onClick={() => handleNameClick(item)}
+                                                    >
+                                                        {item.name}
+                                                    </span>
                                                     {item.noOfChild > 1 && (
                                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                             <Users className="h-3 w-3" /> {item.noOfChild} Children
@@ -327,8 +332,8 @@ const AdmissionEnquiry = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="space-y-1">
-                                                    <div className="flex items-center text-sm">
-                                                        <Phone className="mr-2 h-3 w-3 text-muted-foreground" />
+                                                    <div className="flex items-center text-sm text-muted-foreground">
+                                                        <Phone className="mr-2 h-3 w-3" />
                                                         {item.phone}
                                                     </div>
                                                     {item.email && (
@@ -340,7 +345,7 @@ const AdmissionEnquiry = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100">
+                                                <Badge variant="outline" className="text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20">
                                                     <GraduationCap className="mr-1 h-3 w-3" />
                                                     {item.class?.sclassName || 'N/A'}
                                                 </Badge>
@@ -348,14 +353,14 @@ const AdmissionEnquiry = () => {
                                             <TableCell>
                                                 {item.assigned?.name ? (
                                                     <div className="flex items-center gap-2">
-                                                        <Badge className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                                                        <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20">
                                                             <CheckCircle2 className="mr-1 h-3 w-3" />
                                                             Assigned
                                                         </Badge>
                                                         <span className="text-xs text-muted-foreground">to {item.assigned.name}</span>
                                                     </div>
                                                 ) : (
-                                                        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                                                        <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
                                                             <Clock className="mr-1 h-3 w-3" />
                                                             Pending
                                                         </Badge>
@@ -376,9 +381,13 @@ const AdmissionEnquiry = () => {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => handleView(item)}>
+                                                        <DropdownMenuItem onClick={() => handleNameClick(item)}>
+                                                          <Users className="mr-2 h-4 w-4" />
+                                                          View Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleEdit(item)}>
                                                             <Pencil className="mr-2 h-4 w-4" />
-                                                            View / Edit
+                                                            Edit
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => handleCopy(item)}>
                                                             <Copy className="mr-2 h-4 w-4" />
@@ -406,24 +415,20 @@ const AdmissionEnquiry = () => {
             </Card>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the enquiry for
-                            <span className="font-medium text-foreground"> {deleteItem?.name} </span>
-                            and remove it from the system.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDeleteModal
+                isOpen={!!deleteItem}
+                onClose={() => setDeleteItem(null)}
+                onConfirm={confirmDelete}
+                title="Are you absolutely sure?"
+                description={
+                    <span>
+                        This action cannot be undone. This will permanently delete the enquiry for
+                        <span className="font-medium text-foreground"> {deleteItem?.name} </span>
+                        and remove it from the system.
+                    </span>
+                }
+                confirmText="Delete"
+            />
 
             {/* Form Modal */}
             <EnquiryModal 
@@ -433,8 +438,119 @@ const AdmissionEnquiry = () => {
                 initialData={currentEnquiry}
                 classesList={classesList}
                 teachersList={teachersList}
-                viewMode={viewMode}
+                viewMode={false}
             />
+
+            {/* Details Drawer */}
+            <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Enquiry Details</SheetTitle>
+                        <SheetDescription>
+                            Detailed information for {selectedEnquiry?.name}
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    {selectedEnquiry && (
+                        <div className="mt-6 space-y-6">
+                            {/* Personal Info Section */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Personal Information</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Full Name</div>
+                                        <div className="col-span-2 font-medium">{selectedEnquiry.name}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Phone className="h-3.5 w-3.5" /> Phone
+                                        </div>
+                                        <div className="col-span-2">{selectedEnquiry.phone}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Mail className="h-3.5 w-3.5" /> Email
+                                        </div>
+                                        <div className="col-span-2">{selectedEnquiry.email || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Children</div>
+                                        <div className="col-span-2">{selectedEnquiry.noOfChild}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Academic Section */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Academic Interest</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <GraduationCap className="h-3.5 w-3.5" /> Class
+                                        </div>
+                                        <div className="col-span-2">
+                                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                {selectedEnquiry.class?.sclassName || 'N/A'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Calendar className="h-3.5 w-3.5" /> Date
+                                        </div>
+                                        <div className="col-span-2">{new Date(selectedEnquiry.date).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Status Section */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Status & Assignment</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Status</div>
+                                        <div className="col-span-2">
+                                            {selectedEnquiry.assigned ? (
+                                                <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200">
+                                                    Assigned
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                                                    Pending
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {selectedEnquiry.assigned && (
+                                        <div className="grid grid-cols-3 gap-2 text-sm">
+                                            <div className="font-medium text-gray-500 flex items-center gap-2">
+                                                <User className="h-3.5 w-3.5" /> Assigned To
+                                            </div>
+                                            <div className="col-span-2 font-medium">
+                                                {selectedEnquiry.assigned.name}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-4 flex gap-2">
+                                <Button className="w-full" variant="outline" onClick={() => {
+                                    handleEdit(selectedEnquiry);
+                                    setIsDrawerOpen(false);
+                                }}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

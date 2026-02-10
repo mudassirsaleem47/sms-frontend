@@ -11,7 +11,10 @@ import {
     Trash2,
     AlertCircle,
     Check,
-    MoreHorizontal
+
+    MoreHorizontal,
+    Phone,
+    Calendar
 } from 'lucide-react';
 
 // Shadcn Components
@@ -46,6 +49,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from "@/components/ui/sheet";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -60,7 +70,10 @@ const ComplainPage = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedComplain, setSelectedComplain] = useState(null);
-    const [viewMode, setViewMode] = useState(false);
+
+    // Drawer State
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [drawerData, setDrawerData] = useState(null);
 
     // Delete State
     const [itemToDelete, setItemToDelete] = useState(null);
@@ -87,21 +100,19 @@ const ComplainPage = () => {
     };
 
     // --- 2. Action Handlers ---
+    // --- 2. Action Handlers ---
     const handleAdd = () => {
         setSelectedComplain(null);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
-    const handleView = (complain) => {
-        setSelectedComplain(complain);
-        setViewMode(true);
-        setIsModalOpen(true);
+    const handleNameClick = (complain) => {
+        setDrawerData(complain);
+        setIsDrawerOpen(true);
     };
 
     const handleEdit = (complain) => {
         setSelectedComplain(complain);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
@@ -225,7 +236,14 @@ const ComplainPage = () => {
                                         <TableBody>
                                             {filteredComplains.map((complain) => (
                                                 <TableRow key={complain._id}>
-                                                    <TableCell className="font-medium">{complain.complainBy}</TableCell>
+                                                    <TableCell className="font-medium">
+                                                        <span
+                                                            className="cursor-pointer hover:underline hover:text-primary transition-colors"
+                                                            onClick={() => handleNameClick(complain)}
+                                                        >
+                                                            {complain.complainBy}
+                                                        </span>
+                                                    </TableCell>
                                                     <TableCell>{complain.phone || '-'}</TableCell>
                                                     <TableCell>
                                                         {new Date(complain.date).toLocaleDateString()}
@@ -253,9 +271,6 @@ const ComplainPage = () => {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => handleView(complain)}>
-                                                                    <Eye className="mr-2 h-4 w-4" /> View Details
-                                                                </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => handleEdit(complain)}>
                                                                     <Pencil className="mr-2 h-4 w-4" /> Edit Record
                                                                 </DropdownMenuItem>
@@ -280,7 +295,7 @@ const ComplainPage = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleSubmit}
                 initialData={selectedComplain}
-                viewMode={viewMode}
+                viewMode={false}
             />
 
             {/* Delete Alert Dialog */}
@@ -298,6 +313,125 @@ const ComplainPage = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* View Details Drawer */}
+            <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Complaint Details</SheetTitle>
+                        <SheetDescription>
+                            Full details for complaint by {drawerData?.complainBy}
+                        </SheetDescription>
+                    </SheetHeader>
+                    {drawerData && (
+                        <div className="mt-6 space-y-6">
+                            {/* Header Info */}
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                                    <AlertCircle className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold">{drawerData.complainBy}</h3>
+                                    <div className="flex gap-2 text-sm text-muted-foreground">
+                                        {drawerData.phone && (
+                                            <span className="flex items-center gap-1">
+                                                <Phone className="h-3 w-3" /> {drawerData.phone}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Main Details */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Complaint Info</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Type</div>
+                                        <div className="col-span-2">
+                                            <Badge variant="outline">{drawerData.complainType || 'General'}</Badge>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Source</div>
+                                        <div className="col-span-2">{drawerData.source || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Calendar className="h-3.5 w-3.5" /> Date
+                                        </div>
+                                        <div className="col-span-2 font-medium">
+                                            {new Date(drawerData.date).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Description */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Description</h3>
+                                <div className="p-3 bg-muted/30 rounded-md border text-sm italic">
+                                    "{drawerData.description || 'No description provided.'}"
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Resolution Status */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Resolution</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Assigned To</div>
+                                        <div className="col-span-2">
+                                            {drawerData.assigned ? (
+                                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200">
+                                                    {drawerData.assigned}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">Unassigned</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Action Taken</div>
+                                        <div className="col-span-2">{drawerData.actionTaken || 'Pending'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Note</div>
+                                        <div className="col-span-2 text-muted-foreground">{drawerData.note || '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Attachments */}
+                            {drawerData.document && (
+                                <div className="pt-2">
+                                    <Button variant="outline" className="w-full" asChild>
+                                        <a href={`${API_BASE}/${drawerData.document}`} target="_blank" rel="noopener noreferrer">
+                                            <Eye className="h-4 w-4 mr-2" /> View Attached Document
+                                        </a>
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="pt-4 flex gap-2">
+                                <Button className="w-full" variant="outline" onClick={() => {
+                                    handleEdit(drawerData);
+                                    setIsDrawerOpen(false);
+                                }}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit Complaint
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

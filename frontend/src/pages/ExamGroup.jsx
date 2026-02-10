@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { BookOpen, Plus, Edit, Trash2, Calendar, FileText, X } from 'lucide-react';
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue,} from "@/components/ui/select";
+import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle,DialogTrigger,} from "@/components/ui/dialog";
+import { AlertDialog,AlertDialogAction,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle,} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -14,14 +21,12 @@ const ExamGroup = () => {
   
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingGroup, setEditingGroup] = useState(null);
-  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
   
-  const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
-    setShowModal(false);
-    setEditingGroup(null);
-  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   const [formData, setFormData] = useState({
     groupName: '',
@@ -43,6 +48,7 @@ const ExamGroup = () => {
       setGroups(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (error) {
+      console.error("Error fetching exam groups:", error);
       showToast(error.response?.data?.message || 'Error fetching exam groups', 'error');
       setLoading(false);
     }
@@ -53,10 +59,19 @@ const ExamGroup = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     try {
+      if (!formData.groupName || !formData.academicYear || !formData.status) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+      }
+
       const payload = { ...formData, school: currentUser._id };
 
       if (editingGroup) {
@@ -70,6 +85,7 @@ const ExamGroup = () => {
       resetForm();
       fetchGroups();
     } catch (error) {
+      console.error("Error saving exam group:", error);
       showToast(error.response?.data?.message || 'Error saving exam group', 'error');
     }
   };
@@ -82,30 +98,26 @@ const ExamGroup = () => {
       description: group.description || '',
       status: group.status
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
-    const handleDelete = (id) => {
-      if (selectedDeleteId === id) {
-        confirmDelete();
-      } else {
-        setSelectedDeleteId(id);
-        setTimeout(() => {
-          setSelectedDeleteId(prev => prev === id ? null : prev);
-        }, 3000);
-      }
-    };
+  const handleDeleteClick = (id) => {
+    setItemToDelete(id);
+    setDeleteDialogOpen(true);
+  };
 
-    const confirmDelete = async () => {
-      if (!selectedDeleteId) return;
-        try {
-          await axios.delete(`${API_BASE}/ExamGroup/${selectedDeleteId}`);
-        showToast('Exam group deleted successfully!', 'success');
-        fetchGroups();
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await axios.delete(`${API_BASE}/ExamGroup/${itemToDelete}`);
+      showToast('Exam group deleted successfully!', 'success');
+      fetchGroups();
     } catch (error) {
-        showToast(error.response?.data?.message || 'Error deleting exam group', 'error');
+      console.error("Error deleting exam group:", error);
+      showToast(error.response?.data?.message || 'Error deleting exam group', 'error');
     }
-      setSelectedDeleteId(null);
+    setDeleteDialogOpen(false);
+    setItemToDelete(null);
   };
 
   const resetForm = () => {
@@ -116,201 +128,211 @@ const ExamGroup = () => {
       status: 'Active'
     });
     setEditingGroup(null);
-    setShowModal(false);
+    setIsDialogOpen(false);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusBadgeVariant = (status) => {
     switch(status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Inactive': return 'bg-gray-100 text-gray-800';
-      case 'Completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Active': return 'default'; // varies by theme, often dark
+      case 'Inactive': return 'secondary';
+      case 'Completed': return 'outline';
+      default: return 'secondary';
     }
+  };
+  
+  // Custom styled badges for specific statuses if needed
+  const StatusBadge = ({ status }) => {
+    let classes = "";
+    switch(status) {
+        case 'Active': classes = "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"; break;
+        case 'Inactive': classes = "bg-slate-100 text-slate-800 hover:bg-slate-200 border-slate-200"; break;
+        case 'Completed': classes = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200"; break;
+        default: classes = "bg-gray-100 text-gray-800";
+    }
+    
+    return (
+        <Badge variant="outline" className={`px-3 py-1 rounded-full ${classes}`}>
+            {status}
+        </Badge>
+    );
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Exam Groups</h1>
-        <p className="text-gray-600">Organize exams by term, semester, or academic year</p>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">All Exam Groups</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            <Plus className="w-5 h-5" />
-            Create Exam Group
-          </button>
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Exam Groups</h1>
+          <p className="text-muted-foreground mt-1">Organize exams by term, semester, or academic year</p>
         </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            if (!open) resetForm();
+            setIsDialogOpen(open);
+        }}>
+            <DialogTrigger asChild>
+                <Button className="shadow-lg hover:shadow-xl transition-all duration-200">
+                    <Plus className="mr-2 h-4 w-4" /> Create Exam Group
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>{editingGroup ? 'Edit Exam Group' : 'Create Exam Group'}</DialogTitle>
+                    <DialogDescription>
+                        {editingGroup ? 'Update the details for this exam group.' : 'Add a new exam group to your academic calendar.'}
+                    </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="groupName">Group Name *</Label>
+                        <Input
+                            id="groupName"
+                            name="groupName"
+                            value={formData.groupName}
+                            onChange={handleInputChange}
+                            placeholder="e.g., Mid Term 2024, Final Exam"
+                            required
+                        />
+                    </div>
 
-        {groups.length === 0 ? (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No exam groups yet</p>
-            <p className="text-gray-400 text-sm">Create your first exam group to get started</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groups.map((group) => (
-              <div
-                key={group._id}
-                className="bg-linear-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-100 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="bg-indigo-600 p-3 rounded-lg">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(group.status)}`}>
-                    {group.status}
-                  </span>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="academicYear">Academic Year *</Label>
+                            <Input
+                                id="academicYear"
+                                name="academicYear"
+                                value={formData.academicYear}
+                                onChange={handleInputChange}
+                                placeholder="e.g., 2024"
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="status">Status *</Label>
+                            <Select 
+                                value={formData.status} 
+                                onValueChange={(value) => handleSelectChange('status', value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Active">Active</SelectItem>
+                                    <SelectItem value="Inactive">Inactive</SelectItem>
+                                    <SelectItem value="Completed">Completed</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                            id="description"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleInputChange}
+                            placeholder="Optional description..."
+                            className="resize-none"
+                            rows={3}
+                        />
+                    </div>
                 </div>
-                
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{group.groupName}</h3>
-                <div className="flex items-center gap-2 text-gray-600 text-sm mb-3">
-                  <Calendar className="w-4 h-4" />
-                  <span>{group.academicYear}</span>
-                </div>
-                
-                {group.description && (
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{group.description}</p>
-                )}
-                
-                <div className="flex items-center gap-2 pt-4 border-t border-indigo-200">
-                  <button
-                    onClick={() => handleEdit(group)}
-                    className="flex-1 px-3 py-2 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition flex items-center justify-center gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(group._id)}
-                    className={`flex-1 px-3 py-2 rounded-lg transition flex items-center justify-center gap-2 ${selectedDeleteId === group._id
-                      ? "bg-red-600 text-white hover:bg-red-700 font-bold"
-                      : "bg-white text-red-600 hover:bg-red-50"
-                      }`}
-                  >
-                    {selectedDeleteId === group._id ? (
-                      <span>Sure?</span>
-                    ) : (
-                      <>
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+
+                <DialogFooter>
+                     <Button variant="outline" onClick={resetForm} type="button">Cancel</Button>
+                     <Button onClick={handleSubmit} type="submit">{editingGroup ? 'Update Group' : 'Create Group'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Add/Edit Modal */}
-      {isVisible && (
-        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`bg-white rounded-xl shadow-2xl max-w-2xl w-full ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingGroup ? 'Edit Exam Group' : 'Create Exam Group'}
-              </h3>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Group Name *
-                </label>
-                <input
-                  type="text"
-                  name="groupName"
-                  value={formData.groupName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="e.g., Mid Term 2024, Final Exam"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Academic Year *
-                </label>
-                <input
-                  type="text"
-                  name="academicYear"
-                  value={formData.academicYear}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="e.g., 2024"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status *
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+      {groups.length === 0 ? (
+        <Card className="border-dashed border-2 bg-slate-50/50">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <BookOpen className="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">No exam groups yet</h3>
+                <p className="text-muted-foreground max-w-sm mt-2 mb-6">
+                    Create your first exam group to start scheduling exams and managing results.
+                </p>
+                <Button onClick={() => setIsDialogOpen(true)} variant="outline">
+                    <Plus className="mr-2 h-4 w-4" /> Create First Group
+                </Button>
+            </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {groups.map((group) => (
+            <Card key={group._id} className="group hover:shadow-md transition-all duration-200 border-slate-200">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between">
+                  <div className="h-10 w-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <StatusBadge status={group.status} />
+                </div>
+                <CardTitle className="mt-4 text-xl">{group.groupName}</CardTitle>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{group.academicYear}</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-600 line-clamp-2 min-h-[2.5rem]">
+                    {group.description || "No description provided."}
+                </p>
+              </CardContent>
+              <CardFooter className="pt-2 flex gap-2 border-t bg-slate-50/50 px-6 py-4 rounded-b-xl">
+                <Button 
+                    variant="outline" 
+                    className="flex-1 bg-white hover:bg-slate-50 border-slate-200"
+                    onClick={() => handleEdit(group)}
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Optional description"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
+                    <Edit className="mr-2 h-3.5 w-3.5" /> Edit
+                </Button>
+                <Button 
+                    variant="ghost" 
+                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteClick(group._id)}
                 >
-                  {editingGroup ? 'Update' : 'Create'} Group
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+                    <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
       )}
 
-
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the exam group and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+                setDeleteDialogOpen(false);
+                setItemToDelete(null);
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -45,6 +45,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -59,8 +66,12 @@ const VisitorBook = () => {
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState("add"); // 'add', 'edit', 'view'
+    const [modalMode, setModalMode] = useState("add"); // 'add', 'edit'
     const [selectedVisitor, setSelectedVisitor] = useState(null);
+
+    // Drawer State
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [drawerData, setDrawerData] = useState(null);
 
     // Delete Confirmation State
     const [deleteId, setDeleteId] = useState(null);
@@ -92,11 +103,7 @@ const VisitorBook = () => {
         setIsModalOpen(true);
     };
 
-    const handleView = (visitor) => {
-        setSelectedVisitor(visitor);
-        setModalMode("view");
-        setIsModalOpen(true);
-    };
+
 
     const handleEdit = (visitor) => {
         setSelectedVisitor(visitor);
@@ -136,6 +143,11 @@ const VisitorBook = () => {
             toast.error("Failed to delete record");
             fetchData(); 
         }
+    };
+
+    const handleNameClick = (visitor) => {
+        setDrawerData(visitor);
+        setIsDrawerOpen(true);
     };
 
     const handleFormSubmit = async (formData) => {
@@ -255,7 +267,12 @@ const VisitorBook = () => {
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div className="flex flex-col">
-                                                                <span className="font-medium text-foreground">{visitor.visitorName}</span>
+                                                                <span
+                                                                    className="font-medium text-foreground cursor-pointer hover:underline hover:text-primary transition-colors"
+                                                                    onClick={() => handleNameClick(visitor)}
+                                                                >
+                                                                    {visitor.visitorName}
+                                                                </span>
                                                                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                                     {visitor.numberOfPerson > 1 ? (
                                                                         <Badge variant="secondary" className="text-[10px] h-4 px-1">
@@ -330,7 +347,7 @@ const VisitorBook = () => {
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => handleEdit(visitor)}>
-                                                                    <Pencil className="mr-2 h-4 w-4" /> View / Edit
+                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => handleCopy(visitor)}>
                                                                     <Copy className="mr-2 h-4 w-4" /> Duplicate
@@ -360,7 +377,7 @@ const VisitorBook = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleFormSubmit}
                 initialData={selectedVisitor}
-                viewMode={modalMode === "view"}
+                viewMode={false}
             />
 
             {/* Delete Confirmation Dialog */}
@@ -379,6 +396,126 @@ const VisitorBook = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* View Details Drawer */}
+            <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Visitor Details</SheetTitle>
+                        <SheetDescription>
+                            Complete information for {drawerData?.visitorName}
+                        </SheetDescription>
+                    </SheetHeader>
+                    {drawerData && (
+                        <div className="mt-6 space-y-6">
+                            {/* Header Info */}
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-16 w-16 border-2 border-primary/20">
+                                    <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                                        {drawerData.visitorName?.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="text-xl font-bold">{drawerData.visitorName}</h3>
+                                    <Badge variant="outline" className="mt-1">
+                                        {drawerData.visitorID || 'Visitors ID: N/A'}
+                                    </Badge>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Visit Details */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Visit Info</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Calendar className="h-3.5 w-3.5" /> Date
+                                        </div>
+                                        <div className="col-span-2 font-medium">
+                                            {drawerData.date ? new Date(drawerData.date).toLocaleDateString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <CreditCard className="h-3.5 w-3.5" /> ID Card
+                                        </div>
+                                        <div className="col-span-2">{drawerData.idCard || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <User className="h-3.5 w-3.5" /> Persons
+                                        </div>
+                                        <div className="col-span-2">{drawerData.numberOfPerson}</div>
+                                    </div>
+                                    <div className="col-span-3 text-sm italic border-l-2 pl-3 py-1 bg-muted/20">
+                                        "{drawerData.purpose}"
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Meeting With */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Meeting With</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Person</div>
+                                        <div className="col-span-2 font-medium">
+                                            {drawerData.meetingWith === 'Staff'
+                                                ? drawerData.staff?.name
+                                                : drawerData.student?.name}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Role</div>
+                                        <div className="col-span-2">
+                                            <Badge variant="secondary">{drawerData.meetingWith}</Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Timings */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Timing</h3>
+                                <div className="flex items-center gap-6">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs text-muted-foreground uppercase">In Time</span>
+                                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                            {drawerData.inTime}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs text-muted-foreground uppercase">Out Time</span>
+                                        {drawerData.outTime ? (
+                                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                                {drawerData.outTime}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-sm text-muted-foreground">--:--</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-4 flex gap-2">
+                                <Button className="w-full" variant="outline" onClick={() => {
+                                    handleEdit(drawerData);
+                                    setIsDrawerOpen(false);
+                                }}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit Record
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

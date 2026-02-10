@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { Trash2, Plus, X, GraduationCap, GripVertical } from 'lucide-react';
+import { Plus, GraduationCap, Users, BookOpen, Trash2, X, MoreHorizontal, Pencil, AlertTriangle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,14 +15,6 @@ import {
     CardFooter
 } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter
-} from '@/components/ui/dialog';
-import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -32,6 +24,22 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from '@/components/ui/dialog';
 import {
     Select,
     SelectContent,
@@ -205,14 +213,27 @@ const ShowClasses = () => {
                                         <CardTitle className="text-xl font-bold text-primary">{item.sclassName}</CardTitle>
                                         <CardDescription className="text-xs pt-1">ID: {item._id.slice(-4)}</CardDescription>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        onClick={() => handleDeleteRequest('class', item._id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:bg-transparent">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem onClick={() => { }}>
+                                                <Users className="mr-2 h-4 w-4" /> View Students
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { }}>
+                                                <Pencil className="mr-2 h-4 w-4" /> Edit Class
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDeleteRequest('class', item._id)}>
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete Class
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                                 {item.classIncharge && (
                                     <Badge variant="secondary" className="w-fit mt-2 font-normal">
@@ -226,13 +247,19 @@ const ShowClasses = () => {
                                 <div className="flex flex-wrap gap-2">
                                     {item.sections && item.sections.length > 0 ? (
                                         item.sections.map((sec) => (
-                                            <Badge key={sec._id} variant="outline" className="pl-2 pr-1 py-1 flex items-center gap-1 group">
-                                                {sec.sectionName}
+                                            <Badge
+                                                key={sec._id}
+                                                variant="secondary"
+                                                className="pl-3 pr-2 py-0.5 flex items-center gap-2 group hover:bg-secondary/80 transition-all border border-transparent hover:border-border"
+                                            >
+                                                <span className="text-sm font-medium">{sec.sectionName}</span>
                                                 <div
-                                                    className="w-4 h-4 rounded-full flex items-center justify-center cursor-pointer hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="w-5 h-5 rounded-full flex items-center justify-center cursor-pointer hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                                                     onClick={() => handleDeleteRequest('section', item._id, sec._id)}
+                                                    role="button"
+                                                    title="Remove Section"
                                                 >
-                                                    <X className="h-3 w-3" />
+                                                    <X className="h-3.5 w-3.5" />
                                                 </div>
                                             </Badge>
                                         ))
@@ -242,7 +269,7 @@ const ShowClasses = () => {
                                 </div>
                             </CardContent>
 
-                            <CardFooter className="pt-2 border-t bg-muted/20">
+                            <CardFooter className="border-t pt-2 bg-muted/20">
                                 <form 
                                     onSubmit={(e) => {
                                         e.preventDefault();
@@ -321,6 +348,25 @@ const ShowClasses = () => {
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the
                             {deleteConfig.type === 'class' ? ' class and all its sections/students' : ' section'}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Delete Alert Dialog */}
+            <AlertDialog open={deleteConfig.open} onOpenChange={(open) => !open && setDeleteConfig({ ...deleteConfig, open: false })}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the
+                            {deleteConfig.type === 'class' ? ' class and all its sections' : ' section'}
+                            from our servers.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

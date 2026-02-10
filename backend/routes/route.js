@@ -66,7 +66,7 @@ router.put('/Sclass/:id/Section', addSection);
 router.delete('/Sclass/:id/Section/:sectionId', deleteSection);
 
 // --- Subject Routes ---
-const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeClassSubjects, allSubjects, deleteSubjects } = require('../controllers/subject-controller.js');
+const { subjectCreate, classSubjects, deleteSubjectsByClass, getSubjectDetail, deleteSubject, freeClassSubjects, allSubjects, deleteSubjects, updateSubject } = require('../controllers/subject-controller.js');
 
 router.post('/SubjectCreate', subjectCreate);
 router.get('/AllSubjects/:id', allSubjects);
@@ -76,6 +76,7 @@ router.get('/Subject/:id', getSubjectDetail);
 router.delete('/Subject/:id', deleteSubject);
 router.delete('/Subjects/:id', deleteSubjects);
 router.delete('/SubjectsClass/:id', deleteSubjectsByClass);
+router.put('/Subject/:id', updateSubject);
 
 // --- Class Schedule Routes ---
 const { createSchedule, getScheduleByClassSection, getTeacherSchedule } = require('../controllers/class-schedule-controller.js');

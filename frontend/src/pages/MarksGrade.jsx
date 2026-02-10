@@ -1,10 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { Award, Plus, Edit, Trash2, TrendingUp, Check } from 'lucide-react';
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -14,14 +44,12 @@ const MarksGrade = () => {
   
   const [grades, setGrades] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingGrade, setEditingGrade] = useState(null);
-  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
   
-  const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
-    setShowModal(false);
-    setEditingGrade(null);
-  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingGrade, setEditingGrade] = useState(null);
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   const [formData, setFormData] = useState({
     gradeName: '',
@@ -55,7 +83,7 @@ const MarksGrade = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     try {
       const payload = {
@@ -90,28 +118,25 @@ const MarksGrade = () => {
       gradePoint: grade.gradePoint.toString(),
       remarks: grade.remarks || ''
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
-    const handleDelete = (id) => {
-      if (selectedDeleteId === id) {
-        confirmDelete();
-      } else {
-        setSelectedDeleteId(id);
-        setTimeout(() => setSelectedDeleteId(prev => prev === id ? null : prev), 3000);
-      }
-    };
+  const handleDeleteClick = (id) => {
+    setItemToDelete(id);
+    setDeleteDialogOpen(true);
+  };
 
-    const confirmDelete = async () => {
-      if (!selectedDeleteId) return;
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
         try {
-          await axios.delete(`${API_BASE}/MarksGrade/${selectedDeleteId}`);
+          await axios.delete(`${API_BASE}/MarksGrade/${itemToDelete}`);
         showToast('Grade deleted successfully!', 'success');
         fetchGrades();
         } catch (error) {
         showToast(error.response?.data?.message || 'Error deleting grade', 'error');
         }
-      setSelectedDeleteId(null);
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
   };
 
   const resetForm = () => {
@@ -123,236 +148,206 @@ const MarksGrade = () => {
       remarks: ''
     });
     setEditingGrade(null);
-    setShowModal(false);
-  };
-
-  const getGradeColor = (gradeName) => {
-    const colors = {
-      'A+': 'from-emerald-500 to-teal-500',
-      'A': 'from-green-500 to-emerald-500',
-      'B+': 'from-blue-500 to-cyan-500',
-      'B': 'from-indigo-500 to-blue-500',
-      'C': 'from-yellow-500 to-orange-500',
-      'D': 'from-orange-500 to-red-500',
-      'F': 'from-red-500 to-pink-500'
-    };
-    return colors[gradeName] || 'from-gray-500 to-gray-600';
+    setIsDialogOpen(false);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Marks Grade Configuration</h1>
-        <p className="text-gray-600">Configure grading system with percentage ranges</p>
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Marks Grade Configuration</h1>
+        <p className="text-muted-foreground">Configure grading system with percentage ranges</p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Grade System</h2>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            <Plus className="w-5 h-5" />
-            Add Grade
-          </button>
-        </div>
-
-        {grades.length === 0 ? (
-          <div className="text-center py-12">
-            <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No grades configured yet</p>
-            <p className="text-gray-400 text-sm">Set up your grading system to get started</p>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Grade System</CardTitle>
+            <CardDescription>Manage your grading scale and points.</CardDescription>
           </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Percentage Range</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Grade Point</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Remarks</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {grades.map((grade) => (
-                  <tr key={grade._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4">
-                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br ${getGradeColor(grade.gradeName)} text-white font-bold text-2xl shadow-lg`}>
-                        {grade.gradeName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-indigo-600" />
-                        <span className="font-semibold text-gray-900">
-                          {grade.percentageFrom}% - {grade.percentageTo}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
-                        {grade.gradePoint}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {grade.remarks || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(grade)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(grade._id)}
-                          className={`p-2 rounded-lg transition overflow-hidden ${selectedDeleteId === grade._id
-                            ? "bg-red-600 text-white hover:bg-red-700"
-                            : "text-red-600 hover:bg-red-50"
-                            }`}
-                          title="Delete"
-                        >
-                          {selectedDeleteId === grade._id ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                              <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              if (!open) resetForm();
+              setIsDialogOpen(open);
+          }}>
+              <DialogTrigger asChild>
+                  <Button>
+                      <Plus className="mr-2 h-4 w-4" /> Add Grade
+                  </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                      <DialogTitle>{editingGrade ? 'Edit Grade' : 'Add New Grade'}</DialogTitle>
+                      <DialogDescription>
+                          {editingGrade ? 'Update the details for this grade level.' : 'Define a new grade level for student evaluation.'}
+                      </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="gradeName">Grade Name *</Label>
+                              <Input
+                                  id="gradeName"
+                                  name="gradeName"
+                                  value={formData.gradeName}
+                                  onChange={handleInputChange}
+                                  placeholder="e.g., A+"
+                                  required
+                              />
+                          </div>
 
-      {/* Add/Edit Modal */}
-      {isVisible && (
-        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`bg-white rounded-xl shadow-2xl max-w-2xl w-full ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingGrade ? 'Edit Grade' : 'Add New Grade'}
-              </h3>
+                          <div className="space-y-2">
+                              <Label htmlFor="gradePoint">Grade Point *</Label>
+                              <Input
+                                  id="gradePoint"
+                                  name="gradePoint"
+                                  type="number"
+                                  value={formData.gradePoint}
+                                  onChange={handleInputChange}
+                                  step="0.01"
+                                  placeholder="e.g., 4.0"
+                                  required
+                              />
+                          </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="percentageFrom">Percentage From *</Label>
+                              <Input
+                                  id="percentageFrom"
+                                  name="percentageFrom"
+                                  type="number"
+                                  value={formData.percentageFrom}
+                                  onChange={handleInputChange}
+                                  min="0"
+                                  max="100"
+                                  placeholder="e.g., 90"
+                                  required
+                              />
+                          </div>
+
+                          <div className="space-y-2">
+                              <Label htmlFor="percentageTo">Percentage To *</Label>
+                              <Input
+                                  id="percentageTo"
+                                  name="percentageTo"
+                                  type="number"
+                                  value={formData.percentageTo}
+                                  onChange={handleInputChange}
+                                  min="0"
+                                  max="100"
+                                  placeholder="e.g., 100"
+                                  required
+                              />
+                          </div>
+                      </div>
+
+                      <div className="space-y-2">
+                          <Label htmlFor="remarks">Remarks</Label>
+                          <Input
+                              id="remarks"
+                              name="remarks"
+                              value={formData.remarks}
+                              onChange={handleInputChange}
+                              placeholder="e.g., Excellent, Good"
+                          />
+                      </div>
+                  </div>
+
+                  <DialogFooter>
+                       <Button variant="outline" onClick={resetForm} type="button">Cancel</Button>
+                       <Button onClick={handleSubmit} type="submit">{editingGrade ? 'Update Grade' : 'Add Grade'}</Button>
+                  </DialogFooter>
+              </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {grades.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground bg-muted/10 border border-dashed rounded-lg">
+                <Award className="h-10 w-10 mb-2 opacity-50" />
+                <p className="text-lg font-medium">No grades configured</p>
+                <p className="text-sm">Set up your grading system to get started.</p>
             </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Grade Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="gradeName"
-                    value={formData.gradeName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., A+, A, B+"
-                  />
-                </div>
+          ) : (
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Grade</TableHead>
+                            <TableHead>Percentage Range</TableHead>
+                            <TableHead>Grade Point</TableHead>
+                            <TableHead>Remarks</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {grades.map((grade) => (
+                            <TableRow key={grade._id}>
+                                <TableCell>
+                                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary font-bold text-lg">
+                                        {grade.gradeName}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                                        <span>{grade.percentageFrom}% - {grade.percentageTo}%</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="secondary" className="text-sm">
+                                        {grade.gradePoint}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {grade.remarks || '-'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(grade)}>
+                                            <Edit className="h-4 w-4 text-primary" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(grade._id)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Grade Point *
-                  </label>
-                  <input
-                    type="number"
-                    name="gradePoint"
-                    value={formData.gradePoint}
-                    onChange={handleInputChange}
-                    required
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 4.0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Percentage From *
-                  </label>
-                  <input
-                    type="number"
-                    name="percentageFrom"
-                    value={formData.percentageFrom}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 90"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Percentage To *
-                  </label>
-                  <input
-                    type="number"
-                    name="percentageTo"
-                    value={formData.percentageTo}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Remarks
-                </label>
-                <input
-                  type="text"
-                  name="remarks"
-                  value={formData.remarks}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="e.g., Excellent, Good, etc."
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
-                >
-                  {editingGrade ? 'Update' : 'Add'} Grade
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the grade configuration.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+                setDeleteDialogOpen(false);
+                setItemToDelete(null);
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -1,10 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
-import { Calendar, Plus, Edit, Trash2, Clock, BookOpen, FileText } from 'lucide-react';
-
+import { Calendar, Plus, Edit, Trash2, Clock, BookOpen, FileText, Search } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -16,15 +54,14 @@ const ExamSchedule = () => {
   const [examGroups, setExamGroups] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState('');
-  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
   
-  const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
-    setShowModal(false);
-    setEditingSchedule(null);
-  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
+  
+  const [selectedGroup, setSelectedGroup] = useState('');
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   const [formData, setFormData] = useState({
     examGroup: '',
@@ -82,8 +119,12 @@ const ExamSchedule = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSelectChange = (name, value) => {
+      setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     try {
       const payload = {
@@ -103,7 +144,7 @@ const ExamSchedule = () => {
       }
       
       resetForm();
-      fetchSchedules();
+      if (selectedGroup) fetchSchedules();
     } catch (error) {
       showToast(error.response?.data?.message || 'Error saving schedule', 'error');
     }
@@ -123,28 +164,25 @@ const ExamSchedule = () => {
       roomNumber: schedule.roomNumber || '',
       instructions: schedule.instructions || ''
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
-    const handleDelete = (id) => {
-      if (selectedDeleteId === id) {
-        confirmDelete();
-      } else {
-        setSelectedDeleteId(id);
-        setTimeout(() => setSelectedDeleteId(prev => prev === id ? null : prev), 3000);
-      }
-    };
+  const handleDeleteClick = (id) => {
+    setItemToDelete(id);
+    setDeleteDialogOpen(true);
+  };
 
-    const confirmDelete = async () => {
-      if (!selectedDeleteId) return;
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
         try {
-          await axios.delete(`${API_BASE}/ExamSchedule/${selectedDeleteId}`);
+          await axios.delete(`${API_BASE}/ExamSchedule/${itemToDelete}`);
         showToast('Schedule deleted successfully!', 'success');
         fetchSchedules();
         } catch (error) {
         showToast(error.response?.data?.message || 'Error deleting schedule', 'error');
         }
-      setSelectedDeleteId(null);
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
   };
 
   const resetForm = () => {
@@ -161,316 +199,311 @@ const ExamSchedule = () => {
       instructions: ''
     });
     setEditingSchedule(null);
-    setShowModal(false);
+    setIsDialogOpen(false);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Exam Schedule</h1>
-        <p className="text-gray-600">Create and manage exam timetables</p>
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Exam Schedule</h1>
+        <p className="text-muted-foreground">Create and manage exam timetables for different classes</p>
       </div>
 
-      {/* Group Selector */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          Select Exam Group
-        </label>
-        <select
-          value={selectedGroup}
-          onChange={(e) => setSelectedGroup(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        >
-          <option value="">-- Select Exam Group --</option>
-          {examGroups.map(group => (
-            <option key={group._id} value={group._id}>
-              {group.groupName} ({group.academicYear})
-            </option>
-          ))}
-        </select>
-      </div>
+      <Card>
+        <CardHeader>
+            <CardTitle>Schedule Management</CardTitle>
+            <CardDescription>Select an exam group to view or manage its schedule.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="examGroupSelect">Select Exam Group</Label>
+                    <Select 
+                        value={selectedGroup} 
+                        onValueChange={setSelectedGroup}
+                    >
+                        <SelectTrigger id="examGroupSelect">
+                            <SelectValue placeholder="Select Exam Group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {examGroups.map(group => (
+                                <SelectItem key={group._id} value={group._id}>
+                                    {group.groupName} ({group.academicYear})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                
+                {selectedGroup && (
+                    <div className="ml-auto">
+                        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                            if (!open) resetForm();
+                            setIsDialogOpen(open);
+                        }}>
+                            <DialogTrigger asChild>
+                                <Button>
+                                    <Plus className="mr-2 h-4 w-4" /> Add Exam
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>{editingSchedule ? 'Edit Exam Schedule' : 'Add Exam Schedule'}</DialogTitle>
+                                    <DialogDescription>
+                                        {editingSchedule ? 'Update the details for this exam.' : 'Schedule a new exam for a class.'}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="examGroup">Exam Group *</Label>
+                                            <Select 
+                                                value={formData.examGroup} 
+                                                onValueChange={(value) => handleSelectChange('examGroup', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Group" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {examGroups.map(group => (
+                                                        <SelectItem key={group._id} value={group._id}>{group.groupName}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="class">Class *</Label>
+                                            <Select 
+                                                value={formData.class} 
+                                                onValueChange={(value) => handleSelectChange('class', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Class" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {classes.map(cls => (
+                                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="subject">Subject *</Label>
+                                        <Input
+                                            id="subject"
+                                            name="subject"
+                                            value={formData.subject}
+                                            onChange={handleInputChange}
+                                            placeholder="e.g., Mathematics"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="examDate">Exam Date *</Label>
+                                            <Input
+                                                id="examDate"
+                                                name="examDate"
+                                                type="date"
+                                                value={formData.examDate}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="startTime">Start Time *</Label>
+                                            <Input
+                                                id="startTime"
+                                                name="startTime"
+                                                type="time"
+                                                value={formData.startTime}
+                                                onChange={handleInputChange}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="duration">Duration (min) *</Label>
+                                            <Input
+                                                id="duration"
+                                                name="duration"
+                                                type="number"
+                                                value={formData.duration}
+                                                onChange={handleInputChange}
+                                                min="1"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="totalMarks">Total Marks *</Label>
+                                            <Input
+                                                id="totalMarks"
+                                                name="totalMarks"
+                                                type="number"
+                                                value={formData.totalMarks}
+                                                onChange={handleInputChange}
+                                                min="1"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="passingMarks">Passing Marks *</Label>
+                                            <Input
+                                                id="passingMarks"
+                                                name="passingMarks"
+                                                type="number"
+                                                value={formData.passingMarks}
+                                                onChange={handleInputChange}
+                                                min="1"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="roomNumber">Room Number</Label>
+                                        <Input
+                                            id="roomNumber"
+                                            name="roomNumber"
+                                            value={formData.roomNumber}
+                                            onChange={handleInputChange}
+                                            placeholder="e.g., Room 101"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="instructions">Instructions</Label>
+                                        <Textarea
+                                            id="instructions"
+                                            name="instructions"
+                                            value={formData.instructions}
+                                            onChange={handleInputChange}
+                                            placeholder="Special instructions..."
+                                            rows={3}
+                                        />
+                                    </div>
+                                </div>
+
+                                <DialogFooter>
+                                     <Button variant="outline" onClick={resetForm} type="button">Cancel</Button>
+                                     <Button onClick={handleSubmit} type="submit">{editingSchedule ? 'Update Schedule' : 'Add Schedule'}</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                )}
+            </div>
+        </CardContent>
+      </Card>
 
       {selectedGroup && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Exam Timetable</h2>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              <Plus className="w-5 h-5" />
-              Add Exam
-            </button>
-          </div>
-
-          {schedules.length === 0 ? (
-            <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No exams scheduled yet</p>
-              <p className="text-gray-400 text-sm">Add exams to create a timetable</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-2xl">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Class</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Subject</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Marks</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Room</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {schedules.map((schedule) => (
-                    <tr key={schedule._id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-indigo-600" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {new Date(schedule.examDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-indigo-600" />
-                          <span className="text-sm text-gray-700">{schedule.startTime}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                          {schedule.class?.sclassName || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-gray-400" />
-                          <span className="font-medium text-gray-900">{schedule.subject}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {schedule.duration} min
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {schedule.totalMarks} ({schedule.passingMarks} to pass)
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {schedule.roomNumber || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(schedule)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(schedule._id)}
-                            className={`p-2 rounded-lg transition overflow-hidden ${selectedDeleteId === schedule._id
-                              ? "bg-red-600 text-white w-20 hover:bg-red-700"
-                              : "text-red-600 hover:bg-red-50"
-                              }`}
-                            title="Delete"
-                          >
-                            {selectedDeleteId === schedule._id ? (
-                              <span className="text-xs font-bold">Sure?</span>
-                            ) : (
-                                <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Exam Timetable</CardTitle>
+            <CardDescription>
+                Checking schedule for {examGroups.find(g => g._id === selectedGroup)?.groupName}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {schedules.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground bg-muted/10 border border-dashed rounded-lg">
+                    <Calendar className="h-10 w-10 mb-2 opacity-50" />
+                    <p className="text-lg font-medium">No exams scheduled</p>
+                    <p className="text-sm">Add exams to create the timetable for this group.</p>
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Time</TableHead>
+                                <TableHead>Class</TableHead>
+                                <TableHead>Subject</TableHead>
+                                <TableHead>Duration</TableHead>
+                                <TableHead>Marks (Pass)</TableHead>
+                                <TableHead>Room</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {schedules.map((schedule) => (
+                                <TableRow key={schedule._id}>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                            {new Date(schedule.examDate).toLocaleDateString()}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-muted-foreground" />
+                                            {schedule.startTime}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary">
+                                            {schedule.class?.sclassName || 'N/A'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="font-medium">{schedule.subject}</TableCell>
+                                    <TableCell>{schedule.duration} min</TableCell>
+                                    <TableCell>{schedule.totalMarks} ({schedule.passingMarks})</TableCell>
+                                    <TableCell>{schedule.roomNumber || '-'}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)}>
+                                                <Edit className="h-4 w-4 text-primary" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(schedule._id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      {/* Add/Edit Modal */}
-      {isVisible && (
-        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingSchedule ? 'Edit Exam Schedule' : 'Add Exam Schedule'}
-              </h3>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Exam Group *</label>
-                  <select
-                    name="examGroup"
-                    value={formData.examGroup}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Select Group</option>
-                    {examGroups.map(group => (
-                      <option key={group._id} value={group._id}>{group.groupName}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Class *</label>
-                  <select
-                    name="class"
-                    value={formData.class}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Select Class</option>
-                    {classes.map(cls => (
-                      <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
-                  <input
-                    type="text"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., Mathematics"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Exam Date *</label>
-                  <input
-                    type="date"
-                    name="examDate"
-                    value={formData.examDate}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Start Time *</label>
-                  <input
-                    type="time"
-                    name="startTime"
-                    value={formData.startTime}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Duration (minutes) *</label>
-                  <input
-                    type="number"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 90"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Total Marks *</label>
-                  <input
-                    type="number"
-                    name="totalMarks"
-                    value={formData.totalMarks}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Passing Marks *</label>
-                  <input
-                    type="number"
-                    name="passingMarks"
-                    value={formData.passingMarks}
-                    onChange={handleInputChange}
-                    required
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., 33"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Room Number</label>
-                  <input
-                    type="text"
-                    name="roomNumber"
-                    value={formData.roomNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="e.g., Room 101"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Instructions</label>
-                  <textarea
-                    name="instructions"
-                    value={formData.instructions}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Special instructions for students"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
-                >
-                  {editingSchedule ? 'Update' : 'Add'} Schedule
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the exam schedule.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+                setDeleteDialogOpen(false);
+                setItemToDelete(null);
+            }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

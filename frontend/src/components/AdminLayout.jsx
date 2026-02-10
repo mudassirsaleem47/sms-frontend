@@ -61,6 +61,11 @@ const AdminLayout = () => {
     }
   ];
 
+  // Reset extra breadcrumb on route change
+  useEffect(() => {
+    setExtraBreadcrumb(null);
+  }, [location.pathname]);
+
   // Generate breadcrumb dari current path
   const generateBreadcrumbs = () => {
     const paths = location.pathname.split('/').filter(Boolean);
@@ -79,13 +84,17 @@ const AdminLayout = () => {
     return pathsWithoutAdmin.map((path, index) => {
       const href = `/admin/${pathsWithoutAdmin.slice(0, index + 1).join('/')}`;
       const isLast = index === pathsWithoutAdmin.length - 1;
+      const title = toTitle(path);
+
+      // Skip "Dashboard" from dynamic crumbs to avoid redundancy with the static root crumb
+      if (title === "Dashboard") return null;
 
       return {
-        title: toTitle(path),
+        title: title,
         href: href,
         isLast: isLast
       };
-    });
+    }).filter(Boolean); // Filter out nulls
   };
 
   const breadcrumbs = generateBreadcrumbs();
@@ -105,7 +114,7 @@ const AdminLayout = () => {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
-              {/* Dashboard Link */}
+              {/* Dashboard Link - Always visible as root */}
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink asChild>
                   <Link to="/admin/dashboard">Dashboard</Link>

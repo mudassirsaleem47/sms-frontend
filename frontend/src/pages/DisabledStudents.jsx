@@ -234,9 +234,6 @@ const DisabledStudents = () => {
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                            <div className="p-2 bg-destructive/10 rounded-lg">
-                                <UserX className="h-8 w-8 text-destructive" />
-                            </div>
                             Disabled Students
                         </h2>
                         <p className="text-muted-foreground mt-2">

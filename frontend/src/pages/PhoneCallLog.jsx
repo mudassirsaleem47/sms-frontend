@@ -58,6 +58,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from "@/components/ui/sheet";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -71,7 +78,10 @@ const PhoneCallLog = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentCall, setCurrentCall] = useState(null);
-    const [viewMode, setViewMode] = useState(false);
+
+    // Drawer State
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [drawerData, setDrawerData] = useState(null);
 
     // Delete State
     const [itemToDelete, setItemToDelete] = useState(null);
@@ -147,24 +157,22 @@ const PhoneCallLog = () => {
         setIsDeleteOpen(true);
     };
 
-    // View Button Click Logic
-    const handleView = (call) => {
-        setCurrentCall(call);
-        setViewMode(true);
-        setIsModalOpen(true);
+    const handleNameClick = (call) => {
+        setDrawerData(call);
+        setIsDrawerOpen(true);
     };
+
+
 
     // Edit Button Click Logic
     const handleEdit = (call) => {
         setCurrentCall(call);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
     // Add Button Click Logic
     const handleAdd = () => {
         setCurrentCall(null);
-        setViewMode(false);
         setIsModalOpen(true);
     };
 
@@ -254,7 +262,14 @@ const PhoneCallLog = () => {
                                         <TableBody>
                                     {filteredCalls.map((call) => (
                                         <TableRow key={call._id}>
-                                            <TableCell className="font-medium">{call.callerName}</TableCell>
+                                            <TableCell className="font-medium">
+                                                <span
+                                                    className="cursor-pointer hover:underline hover:text-primary transition-colors"
+                                                    onClick={() => handleNameClick(call)}
+                                                >
+                                                    {call.callerName}
+                                                </span>
+                                            </TableCell>
                                             <TableCell>{call.phone}</TableCell>
                                             <TableCell>
                                                 <Badge
@@ -294,9 +309,7 @@ const PhoneCallLog = () => {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => handleView(call)}>
-                                                            <Eye className="mr-2 h-4 w-4" /> View Details
-                                                        </DropdownMenuItem>
+
                                                         <DropdownMenuItem onClick={() => handleEdit(call)}>
                                                             <Edit className="mr-2 h-4 w-4" /> Edit Record
                                                         </DropdownMenuItem>
@@ -322,7 +335,7 @@ const PhoneCallLog = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleFormSubmit}
                 initialData={currentCall}
-                viewMode={viewMode}
+                viewMode={false}
             />
 
             {/* Delete Alert Dialog */}
@@ -341,6 +354,119 @@ const PhoneCallLog = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* View Details Drawer */}
+            <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Call Details</SheetTitle>
+                        <SheetDescription>
+                            Complete information for call with {drawerData?.callerName}
+                        </SheetDescription>
+                    </SheetHeader>
+                    {drawerData && (
+                        <div className="mt-6 space-y-6">
+                            {/* Header Info */}
+                            <div className="flex items-center gap-4">
+                                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${drawerData.callType === 'Incoming' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                                    {drawerData.callType === 'Incoming' ? <PhoneIncoming className="h-6 w-6" /> : <PhoneOutgoing className="h-6 w-6" />}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold">{drawerData.callerName}</h3>
+                                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <Phone className="h-3 w-3" /> {drawerData.phone}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Call Info */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Call Info</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Type</div>
+                                        <div className="col-span-2">
+                                            <Badge
+                                                variant={drawerData.callType === 'Incoming' ? "success" : "secondary"}
+                                                className={`gap-1 ${drawerData.callType === 'Incoming' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}
+                                            >
+                                                {drawerData.callType}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500 flex items-center gap-2">
+                                            <Calendar className="h-3.5 w-3.5" /> Date
+                                        </div>
+                                        <div className="col-span-2 font-medium">
+                                            {new Date(drawerData.callDate).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Time</div>
+                                        <div className="col-span-2 font-medium">{drawerData.callTime}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Duration</div>
+                                        <div className="col-span-2">{drawerData.callDuration || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Purpose & Follow-up */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Details</h3>
+                                <div className="space-y-4">
+                                    <div className="space-y-1">
+                                        <div className="text-xs font-semibold text-gray-500 uppercase">Purpose</div>
+                                        <div className="text-sm p-3 bg-muted/30 rounded-md italic border">
+                                            "{drawerData.purpose || 'No purpose recorded'}"
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <div className="text-xs font-semibold text-gray-500 uppercase">Description / Notes</div>
+                                        <div className="text-sm p-3 bg-muted/30 rounded-md border min-h-[60px]">
+                                            {drawerData.description || 'No additional notes.'}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-3 border rounded-md bg-amber-50/50 border-amber-100">
+                                        <span className="text-sm font-medium text-amber-900">Follow-up Required?</span>
+                                        {drawerData.followUpRequired ? (
+                                            <Badge className="bg-amber-100 text-amber-700 border-amber-200">Yes</Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-muted-foreground">No</Badge>
+                                        )}
+                                    </div>
+                                    {drawerData.followUpRequired && drawerData.followUpDate && (
+                                        <div className="grid grid-cols-3 gap-2 text-sm pt-2">
+                                            <div className="font-medium text-gray-500">Follow-up Date</div>
+                                            <div className="col-span-2 font-medium text-amber-700">
+                                                {new Date(drawerData.followUpDate).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-4 flex gap-2">
+                                <Button className="w-full" variant="outline" onClick={() => {
+                                    handleEdit(drawerData);
+                                    setIsDrawerOpen(false);
+                                }}>
+                                    <Edit className="h-4 w-4 mr-2" /> Edit Record
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

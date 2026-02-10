@@ -171,4 +171,13 @@ const deleteSubjectsByClass = async (req, res) => {
     }
 };
 
-module.exports = { subjectCreate, freeClassSubjects, classSubjects, getSubjectDetail, deleteSubjectsByClass, deleteSubjects, deleteSubject, allSubjects };
+const updateSubject = async (req, res) => {
+    try {
+        const result = await Subject.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.send(result);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+module.exports = { subjectCreate, freeClassSubjects, classSubjects, getSubjectDetail, deleteSubjectsByClass, deleteSubjects, deleteSubject, allSubjects, updateSubject };

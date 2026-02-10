@@ -1,9 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
-import { Save, Plus, X, Calendar, Clock, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Save, Plus, X, Calendar, Clock, Loader2, Trash2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+} from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -11,7 +35,6 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 
 const ClassSchedule = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     
     // State
     const [classes, setClasses] = useState([]);
@@ -34,8 +57,6 @@ const ClassSchedule = () => {
         startTime: "09:00",
         endTime: "10:00"
     });
-    
-    const { isVisible, isClosing, handleClose } = useModalAnimation(showPopup, () => setShowPopup(false));
 
     // Fetch Classes
     useEffect(() => {
@@ -110,7 +131,7 @@ const ClassSchedule = () => {
 
     const handleSaveSchedule = async () => {
         if (!selectedClass || !selectedSection) {
-            showToast("Please select class and section", "error");
+            toast.error("Please select class and section");
             return;
         }
 
@@ -123,9 +144,9 @@ const ClassSchedule = () => {
             };
             
             await axios.post(`${API_BASE}/ScheduleCreate`, payload);
-            showToast("Schedule saved successfully!", "success");
+            toast.success("Schedule saved successfully!");
         } catch (err) {
-            showToast("Error saving schedule", "error");
+            toast.error("Error saving schedule");
         }
     };
 
@@ -149,7 +170,7 @@ const ClassSchedule = () => {
         });
         
         setSchedule(updatedSchedule);
-        handleClose();
+        setShowPopup(false);
     };
 
     const removePeriod = (day, index) => {
@@ -178,166 +199,183 @@ const ClassSchedule = () => {
     };
 
     return (
-         <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Class Schedule</h1>
-                    <p className="text-gray-600 mt-2">Manage weekly timetable for classes</p>
+                    <h2 className="text-3xl font-bold tracking-tight">Class Schedule</h2>
+                    <p className="text-muted-foreground mt-2">Manage weekly timetable for classes</p>
                 </div>
-                <button 
+                <Button 
                     onClick={handleSaveSchedule}
                     disabled={!selectedClass || !selectedSection}
-                    className="flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 shadow-lg hover:shadow-xl transition duration-200 font-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    size="lg"
+                    className="gap-2"
                 >
-                    <Save className="w-5 h-5 mr-2" /> Save Schedule
-                </button>
+                    <Save className="w-4 h-4" /> Save Schedule
+                </Button>
             </div>
 
             {/* Selection Bar */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-wrap gap-6 items-end">
-                <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-                    <select
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                        value={selectedClass}
-                        onChange={(e) => setSelectedClass(e.target.value)}
-                    >
-                        <option value="">-- Select Class --</option>
-                        {classes.map(c => <option key={c._id} value={c._id}>{c.sclassName}</option>)}
-                    </select>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Section</label>
-                    <select
-                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                        value={selectedSection}
-                        onChange={(e) => setSelectedSection(e.target.value)}
-                        disabled={!selectedClass}
-                    >
-                        <option value="">-- Select Section --</option>
-                        {sections.map(s => <option key={s._id} value={s._id}>{s.sectionName}</option>)}
-                    </select>
-                </div>
-            </div>
+            <Card>
+                <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label>Select Class</Label>
+                            <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Select Class --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classes.map(c => <SelectItem key={c._id} value={c._id}>{c.sclassName}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Select Section</Label>
+                            <Select
+                                value={selectedSection} 
+                                onValueChange={setSelectedSection}
+                                disabled={!selectedClass}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Select Section --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {sections.map(s => <SelectItem key={s._id} value={s._id}>{s.sectionName}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
              {/* Timetable Grid */}
              {loading ? (
-                 <div className="flex justify-center py-12">
-                     <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+                <div className="flex justify-center py-20">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
                  </div>
              ) : (!selectedClass || !selectedSection) ? (
-                 <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                     <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                     <p className="text-gray-500 text-lg">Please select a class and section to view/edit the schedule.</p>
+                    <div className="flex flex-col items-center justify-center py-20 border rounded-xl bg-muted/10 border-dashed text-center">
+                        <Calendar className="w-16 h-16 text-muted-foreground/50 mb-4" />
+                        <h3 className="text-xl font-medium">No Schedule Selected</h3>
+                        <p className="text-muted-foreground mt-2">Please select a class and section to view or edit the schedule.</p>
                  </div>
              ) : (
-                 <div className="space-y-6">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                      {schedule.map((dayPlan, index) => (
-                         <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                             <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100 flex justify-between items-center">
-                                 <h3 className="font-bold text-indigo-900">{dayPlan.day}</h3>
-                                 <button 
-                                    onClick={() => openAddPeriod(dayPlan.day)}
-                                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center bg-white px-3 py-1 rounded-full shadow-xs hover:shadow-sm transition"
+                         <Card key={index} className="overflow-hidden">
+                             <CardHeader className="bg-muted/30 pb-3 border-b flex flex-row items-center justify-between space-y-0">
+                                 <CardTitle className="text-base font-semibold text-primary">{dayPlan.day}</CardTitle>
+                                 <Button
+                                     variant="outline"
+                                     size="sm"
+                                     className="h-8 gap-1 bg-background"
+                                     onClick={() => openAddPeriod(dayPlan.day)}
                                 >
-                                     <Plus className="w-4 h-4 mr-1" /> Add Period
-                                 </button>
-                             </div>
-                             <div className="p-4 flex flex-wrap gap-4 min-h-[100px]">
-                                 {dayPlan.periods.length === 0 ? (
-                                     <p className="text-gray-400 text-sm italic w-full text-center py-4">No periods scheduled</p>
-                                 ) : (
-                                     dayPlan.periods.map((period, pIndex) => (
-                                         <div key={pIndex} className="bg-white border border-gray-200 rounded-lg p-3 w-64 shadow-xs relative group hover:border-indigo-300 transition">
-                                             <button 
-                                                onClick={() => removePeriod(dayPlan.day, pIndex)}
-                                                className="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"
-                                            >
-                                                 <X className="w-4 h-4" />
-                                             </button>
-                                             <div className="flex items-center gap-2 mb-2 text-indigo-600 font-semibold">
-                                                 <Clock className="w-4 h-4" />
-                                                 <span className="text-sm">{period.startTime} - {period.endTime}</span>
-                                             </div>
-                                             <div className="text-gray-900 font-bold mb-1">{getSubjectName(period.subject)}</div>
-                                             <div className="text-gray-500 text-sm">{getTeacherName(period.teacher)}</div>
+                                     <Plus className="w-3.5 h-3.5" /> Add Period
+                                 </Button>
+                             </CardHeader>
+                             <CardContent className="p-4 min-h-[120px]">
+                                 <div className="flex flex-wrap gap-3">
+                                     {dayPlan.periods.length === 0 ? (
+                                         <div className="flex flex-col items-center justify-center w-full py-6 text-muted-foreground border border-dashed rounded-lg bg-muted/5">
+                                             <Clock className="w-8 h-8 opacity-20 mb-2" />
+                                             <span className="text-sm">No periods scheduled</span>
                                          </div>
-                                     ))
-                                 )}
-                             </div>
-                         </div>
+                                     ) : (
+                                         dayPlan.periods.map((period, pIndex) => (
+                                             <div key={pIndex} className="relative group bg-card border rounded-lg p-3 w-56 shadow-sm hover:shadow-md hover:border-primary/30 transition-all">
+                                                 <button
+                                                     onClick={() => removePeriod(dayPlan.day, pIndex)}
+                                                     className="absolute top-2 right-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                 >
+                                                     <X className="w-3.5 h-3.5" />
+                                                 </button>
+                                                 <Badge variant="secondary" className="mb-2 font-mono text-xs">
+                                                     {period.startTime} - {period.endTime}
+                                                 </Badge>
+                                                 <div className="font-bold text-sm line-clamp-1">{getSubjectName(period.subject)}</div>
+                                                 <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                                     {getTeacherName(period.teacher)}
+                                                 </div>
+                                             </div>
+                                         ))
+                                     )}
+                                 </div>
+                             </CardContent>
+                         </Card>
                      ))}
                  </div>
              )}
 
              {/* Add Period Modal */}
-             {isVisible && (
-                <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-                    <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-md relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900">Add Period ({activeDay})</h2>
-                            <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                <X className="w-5 h-5 text-gray-500" />
-                            </button>
-                        </div>
-                        
-                        <form onSubmit={handleAddPeriod} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                                    <input 
-                                        type="time" 
-                                        required
-                                        className="w-full p-2 border border-gray-300 rounded-lg"
-                                        value={newPeriod.startTime}
-                                        onChange={e => setNewPeriod({...newPeriod, startTime: e.target.value})}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                                    <input 
-                                        type="time" 
-                                        required
-                                        className="w-full p-2 border border-gray-300 rounded-lg"
-                                        value={newPeriod.endTime}
-                                        onChange={e => setNewPeriod({...newPeriod, endTime: e.target.value})}
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                                <select 
+            <Dialog open={showPopup} onOpenChange={setShowPopup}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add Period ({activeDay})</DialogTitle>
+                    </DialogHeader>
+
+                    <form onSubmit={handleAddPeriod} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Start Time</Label>
+                                <Input
+                                    type="time"
                                     required
-                                    className="w-full p-2 border border-gray-300 rounded-lg"
-                                    value={newPeriod.subject}
-                                    onChange={e => setNewPeriod({...newPeriod, subject: e.target.value})}
-                                >
-                                    <option value="">-- Select Subject --</option>
-                                    {subjects.map(s => <option key={s._id} value={s._id}>{s.subName}</option>)}
-                                </select>
+                                    value={newPeriod.startTime}
+                                    onChange={e => setNewPeriod({ ...newPeriod, startTime: e.target.value })}
+                                />
                             </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Teacher</label>
-                                <select 
-                                    className="w-full p-2 border border-gray-300 rounded-lg"
-                                    value={newPeriod.teacher}
-                                    onChange={e => setNewPeriod({...newPeriod, teacher: e.target.value})}
-                                >
-                                    <option value="">-- Select Teacher (Optional) --</option>
-                                    {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
-                                </select>
+                            <div className="space-y-2">
+                                <Label>End Time</Label>
+                                <Input
+                                    type="time"
+                                    required
+                                    value={newPeriod.endTime}
+                                    onChange={e => setNewPeriod({ ...newPeriod, endTime: e.target.value })}
+                                />
                             </div>
-                            
-                            <div className="pt-4 flex justify-end gap-3">
-                                <button type="button" onClick={handleClose} className="px-5 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
-                                <button type="submit" className="px-5 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg">Add</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-             )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Subject</Label>
+                            <Select
+                                value={newPeriod.subject} 
+                                onValueChange={(val) => setNewPeriod({ ...newPeriod, subject: val })}
+                                required
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Select Subject --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {subjects.map(s => <SelectItem key={s._id} value={s._id}>{s.subName}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Teacher (Optional)</Label>
+                            <Select
+                                value={newPeriod.teacher} 
+                                onValueChange={(val) => setNewPeriod({ ...newPeriod, teacher: val })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="-- Select Teacher --" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {teachers.map(t => <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowPopup(false)}>Cancel</Button>
+                            <Button type="submit">Add Period</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
          </div>
     );
 };

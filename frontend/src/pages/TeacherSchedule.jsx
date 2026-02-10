@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Loader2 } from 'lucide-react';
+import { Calendar, Loader2, Clock, User } from 'lucide-react';
+
+import {
+    Card,
+    CardHeader,
+    CardTitle,
+    CardContent,
+} from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -78,60 +94,72 @@ const TeacherSchedule = () => {
     }, [selectedTeacher]);
 
     return (
-         <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Teacher Schedule</h1>
-                    <p className="text-gray-600 mt-2">View weekly timetable for teachers</p>
+                    <h2 className="text-3xl font-bold tracking-tight">Teacher Schedule</h2>
+                    <p className="text-muted-foreground mt-2">View weekly timetable for teachers</p>
                 </div>
             </div>
 
             {/* Selection Bar */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Teacher</label>
-                <select
-                    className="w-full md:w-1/3 p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    value={selectedTeacher}
-                    onChange={(e) => setSelectedTeacher(e.target.value)}
-                >
-                    <option value="">-- Select Teacher --</option>
-                    {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
-                </select>
-            </div>
+            <Card>
+                <CardContent className="p-6">
+                    <div className="max-w-md space-y-2">
+                        <Label>Select Teacher</Label>
+                        <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="-- Select Teacher --" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {teachers.map(t => <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardContent>
+            </Card>
 
              {/* Timetable Grid */}
              {loading ? (
-                 <div className="flex justify-center py-12">
-                     <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+                <div className="flex justify-center py-20">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary" />
                  </div>
              ) : (!selectedTeacher) ? (
-                 <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
-                     <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                     <p className="text-gray-500 text-lg">Please select a teacher to view their schedule.</p>
+                    <div className="flex flex-col items-center justify-center py-20 border rounded-xl bg-muted/10 border-dashed text-center">
+                        <User className="w-16 h-16 text-muted-foreground/50 mb-4" />
+                        <h3 className="text-xl font-medium">No Teacher Selected</h3>
+                        <p className="text-muted-foreground mt-2">Please select a teacher to view their schedule.</p>
                  </div>
              ) : (
-                 <div className="space-y-6">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                      {schedule.map((dayPlan, index) => (
-                         <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                             <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-100">
-                                 <h3 className="font-bold text-emerald-900">{dayPlan.day}</h3>
-                             </div>
-                             <div className="p-4 flex flex-wrap gap-4 min-h-[40px]">
-                                 {dayPlan.periods.length === 0 ? (
-                                     <p className="text-gray-400 text-sm italic">No classes scheduled</p>
-                                 ) : (
-                                     dayPlan.periods.map((period, pIndex) => (
-                                         <div key={pIndex} className="bg-white border border-gray-200 rounded-lg p-3 w-64 shadow-xs relative hover:border-emerald-300 transition">
-                                             <div className="flex items-center gap-2 mb-2 text-emerald-600 font-semibold bg-emerald-50 inline-block px-2 rounded text-sm">
-                                                 {period.startTime} - {period.endTime}
-                                             </div>
-                                             <div className="text-gray-900 font-bold mb-1">{period.subject?.subName || "Subject"}</div>
-                                             <div className="text-gray-500 text-sm">Class: <span className="font-medium text-gray-800">{period.className}</span></div>
+                         <Card key={index} className="overflow-hidden">
+                             <CardHeader className="bg-muted/30 pb-3 border-b">
+                                 <CardTitle className="text-base font-semibold text-primary">{dayPlan.day}</CardTitle>
+                             </CardHeader>
+                             <CardContent className="p-4 min-h-[120px]">
+                                 <div className="flex flex-wrap gap-3">
+                                     {dayPlan.periods.length === 0 ? (
+                                         <div className="flex flex-col items-center justify-center w-full py-6 text-muted-foreground border border-dashed rounded-lg bg-muted/5">
+                                             <Clock className="w-8 h-8 opacity-20 mb-2" />
+                                             <span className="text-sm">No classes scheduled</span>
                                          </div>
-                                     ))
-                                 )}
-                             </div>
-                         </div>
+                                     ) : (
+                                         dayPlan.periods.map((period, pIndex) => (
+                                             <div key={pIndex} className="bg-card border rounded-lg p-3 w-56 shadow-sm hover:shadow-md hover:border-primary/30 transition-all">
+                                                 <Badge variant="secondary" className="mb-2 font-mono text-xs">
+                                                     {period.startTime} - {period.endTime}
+                                                 </Badge>
+                                                 <div className="font-bold text-sm line-clamp-1 mb-1">{period.subject?.subName || "Subject"}</div>
+                                                 <div className="text-xs text-muted-foreground">
+                                                     Class: <span className="font-medium text-foreground">{period.className}</span>
+                                                 </div>
+                                             </div>
+                                         ))
+                                     )}
+                                 </div>
+                             </CardContent>
+                         </Card>
                      ))}
                  </div>
              )}

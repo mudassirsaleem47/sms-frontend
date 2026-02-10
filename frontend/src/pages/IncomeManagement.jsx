@@ -1,21 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
 import { 
   DollarSign, 
   TrendingUp, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Plus, 
-  Edit, 
+  MoreHorizontal, 
+  Pencil, 
   Trash2,
   FileText,
   Filter,
   X,
-  Check
+  CreditCard,
+  Banknote,
+  Wallet,
+  Building2,
+  Search,
+  Eye,
+  CheckCircle2
 } from 'lucide-react';
+import { format } from 'date-fns';
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectLabel,
+  SelectGroup
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Separator } from '@/components/ui/separator';
+import { cn } from "@/lib/utils";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -32,15 +98,22 @@ const IncomeManagement = () => {
   
   const [incomeEntries, setIncomeEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingIncome, setEditingIncome] = useState(null);
-  const [filterCategory, setFilterCategory] = useState('');
-  const [selectedDeleteId, setSelectedDeleteId] = useState(null);
   
-  const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
-    setShowModal(false);
-    setEditingIncome(null);
-  });
+  // Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingIncome, setEditingIncome] = useState(null);
+  
+  // Sheet State
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedIncome, setSelectedIncome] = useState(null);
+
+  // Delete Alert State
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  // Filters
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   
   const [formData, setFormData] = useState({
     amount: '',
@@ -83,10 +156,19 @@ const IncomeManagement = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     try {
+      if (!formData.amount || !formData.date || !formData.category) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+      }
+
       const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
@@ -115,32 +197,29 @@ const IncomeManagement = () => {
       amount: income.amount.toString(),
       category: income.category,
       description: income.description,
-      date:new Date(income.date).toISOString().split('T')[0],
+      date: new Date(income.date).toISOString().split('T')[0],
       paymentMethod: income.paymentMethod,
       reference: income.reference || ''
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
   const handleDelete = (id) => {
-    if (selectedDeleteId === id) {
-      confirmDelete();
-    } else {
-      setSelectedDeleteId(id);
-      setTimeout(() => setSelectedDeleteId(prev => prev === id ? null : prev), 3000);
-    }
+    setDeleteId(id);
+    setIsDeleteAlertOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!selectedDeleteId) return;
+    if (!deleteId) return;
     try {
-      await axios.delete(`${API_BASE}/Income/${selectedDeleteId}`);
+      await axios.delete(`${API_BASE}/Income/${deleteId}`);
       showToast('Income deleted successfully!', 'success');
       fetchData();
     } catch (error) {
       showToast(error.response?.data?.message || 'Error deleting income', 'error');
     }
-    setSelectedDeleteId(null);
+    setIsDeleteAlertOpen(false);
+    setDeleteId(null);
   };
 
   const resetForm = () => {
@@ -153,301 +232,458 @@ const IncomeManagement = () => {
       reference: ''
     });
     setEditingIncome(null);
-    setShowModal(false);
+    setIsDialogOpen(false);
   };
 
-  const filteredEntries = incomeEntries.filter(entry => 
-    !filterCategory || entry.category === filterCategory
-  );
+  const handleViewDetails = (income) => {
+    setSelectedIncome(income);
+    setIsSheetOpen(true);
+  };
+
+  const filteredEntries = incomeEntries.filter(entry => {
+    const matchesCategory = filterCategory === "all" || entry.category === filterCategory;
+    const matchesSearch = 
+        entry.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.amount.toString().includes(searchQuery);
+    return matchesCategory && matchesSearch;
+  });
+
+  const getPaymentIcon = (method) => {
+    switch(method) {
+        case 'Cash': return <Banknote className="h-4 w-4" />;
+        case 'Online': return <CreditCard className="h-4 w-4" />;
+        case 'Bank Transfer': return <Building2 className="h-4 w-4" />;
+        case 'Cheque': return <FileText className="h-4 w-4" />;
+        default: return <Wallet className="h-4 w-4" />;
+    }
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="flex-1 space-y-6 p-8 pt-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Income Management</h1>
-        <p className="text-gray-600">Track and manage all income sources</p>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Income Management</h1>
+                <p className="text-muted-foreground">Track and manage all income sources for your school</p>
+            </div>
+            
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                if (!open) resetForm();
+                setIsDialogOpen(open);
+            }}>
+                <DialogTrigger asChild>
+                    <Button>
+                        <Plus className="mr-2 h-4 w-4" /> Add Income
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>{editingIncome ? 'Edit Income' : 'Add New Income'}</DialogTitle>
+                        <DialogDescription>
+                            {editingIncome ? 'Update the details of this income entry.' : 'Record a new income entry for your school.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="amount">Amount *</Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-2.5 text-muted-foreground">Rs.</span>
+                                    <Input
+                                        id="amount"
+                                        name="amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={formData.amount}
+                                        onChange={handleInputChange}
+                                        className="pl-9"
+                                        placeholder="0.00"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="date">Date *</Label>
+                                <Input
+                                    id="date"
+                                    name="date"
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="category">Category *</Label>
+                                <Select 
+                                    value={formData.category} 
+                                    onValueChange={(value) => handleSelectChange('category', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                       <SelectGroup>
+                                        <SelectLabel>Income Categories</SelectLabel>
+                                        {incomeCategories.map(cat => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                       </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="paymentMethod">Payment Method *</Label>
+                                <Select 
+                                    value={formData.paymentMethod} 
+                                    onValueChange={(value) => handleSelectChange('paymentMethod', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select method" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {paymentMethods.map(method => (
+                                            <SelectItem key={method} value={method}>{method}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description *</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                placeholder="Enter details regarding this income..."
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="reference">Reference ID (Optional)</Label>
+                            <Input
+                                id="reference"
+                                name="reference"
+                                value={formData.reference}
+                                onChange={handleInputChange}
+                                placeholder="Receipt No, Transaction ID, etc."
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                         <Button variant="outline" onClick={resetForm} type="button">Cancel</Button>
+                         <Button onClick={handleSubmit} type="submit">{editingIncome ? 'Save Changes' : 'Create Entry'}</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 p-3 rounded-lg">
-              <DollarSign className="w-6 h-6" />
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/10 border-emerald-200 dark:border-emerald-800">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-emerald-800 dark:text-emerald-400">Total Income</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-emerald-200 dark:bg-emerald-900/40 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
             </div>
-            <TrendingUp className="w-8 h-8 opacity-50" />
-          </div>
-          <h3 className="text-white/90 text-sm font-medium mb-1">Total Income</h3>
-          <p className="text-3xl font-bold">Rs. {statistics.totalIncome.amount.toLocaleString()}</p>
-          <p className="text-white/80 text-sm mt-2">{statistics.totalIncome.count} entries</p>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">Rs. {statistics.totalIncome.amount.toLocaleString()}</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+              {statistics.totalIncome.count} total transactions
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 p-3 rounded-lg">
-              <Calendar className="w-6 h-6" />
+        <Card className="bg-gradient-to-br from-blue-100 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 border-blue-200 dark:border-blue-800">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-400">Today's Income</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-blue-200 dark:bg-blue-900/40 flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-blue-700 dark:text-blue-400" />
             </div>
-            <DollarSign className="w-8 h-8 opacity-50" />
-          </div>
-          <h3 className="text-white/90 text-sm font-medium mb-1">Today's Income</h3>
-          <p className="text-3xl font-bold">Rs. {statistics.todayIncome.amount.toLocaleString()}</p>
-          <p className="text-white/80 text-sm mt-2">{statistics.todayIncome.count} entries</p>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">Rs. {statistics.todayIncome.amount.toLocaleString()}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              {statistics.todayIncome.count} transactions today
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="bg-white/20 p-3 rounded-lg">
-              <TrendingUp className="w-6 h-6" />
+        <Card className="bg-gradient-to-br from-purple-100 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/10 border-purple-200 dark:border-purple-800">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-400">Monthly Income</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-purple-200 dark:bg-purple-900/40 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-purple-700 dark:text-purple-400" />
             </div>
-            <DollarSign className="w-8 h-8 opacity-50" />
-          </div>
-          <h3 className="text-white/90 text-sm font-medium mb-1">Monthly Income</h3>
-          <p className="text-3xl font-bold">Rs. {statistics.monthlyIncome.amount.toLocaleString()}</p>
-          <p className="text-white/80 text-sm mt-2">{statistics.monthlyIncome.count} entries</p>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">Rs. {statistics.monthlyIncome.amount.toLocaleString()}</div>
+            <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+              {statistics.monthlyIncome.count} transactions this month
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Income Table Section */}
-      <div className="bg-white rounded-xl shadow-lg pt-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl ml-6 font-bold text-gray-900">Income Entries</h2>
-          <div className="flex gap-3 mr-6">
-            {/* Category Filter */}
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              <option value="">All Categories</option>
-              {incomeCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-            
-            {filterCategory && (
-              <button 
-                onClick={() => setFilterCategory('')}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-              >
-                <X size={14} /> Clear
-              </button>
+      {/* Main Content */}
+      <Card>
+        <CardHeader>
+            <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                <div>
+                    <CardTitle>Income Entries</CardTitle>
+                    <CardDescription>A detailed list of all income transactions.</CardDescription>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative w-full sm:w-[250px]">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search description..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-8"
+                        />
+                    </div>
+                    <Select value={filterCategory} onValueChange={setFilterCategory}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="All Categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Categories</SelectItem>
+                            {incomeCategories.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
+            {filteredEntries.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground bg-muted/10 border border-dashed rounded-lg">
+                    <div className="h-12 w-12 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                        <Search className="h-6 w-6 opacity-50" />
+                    </div>
+                    <p className="text-lg font-medium text-foreground">No income found</p>
+                    <p className="text-sm max-w-sm mx-auto mt-1">
+                        Try adjusting your filters or search query. Or create a new income entry.
+                    </p>
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="w-[300px]">Description</TableHead>
+                                <TableHead>Details</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredEntries.map((income) => (
+                                <TableRow key={income._id} className="hover:bg-muted/50">
+                                    <TableCell className="font-medium">
+                                        {format(new Date(income.date), "MMM dd, yyyy")}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="secondary" className="font-normal capitalize">
+                                            {income.category}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div 
+                                            className="font-medium text-foreground hover:underline cursor-pointer truncate max-w-[280px]"
+                                            onClick={() => handleViewDetails(income)}
+                                        >
+                                            {income.description}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded text-xs">
+                                                {getPaymentIcon(income.paymentMethod)}
+                                                {income.paymentMethod}
+                                            </span>
+                                            {income.reference && (
+                                                <span className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800">
+                                                    Ref: {income.reference}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                        Rs. {income.amount.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <span className="sr-only">Open menu</span>
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <DropdownMenuItem onClick={() => handleViewDetails(income)}>
+                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleEdit(income)}>
+                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem 
+                                                    onClick={() => handleDelete(income._id)}
+                                                    className="text-destructive focus:text-destructive"
+                                                >
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             )}
-            
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              <Plus className="w-5 h-5" />
-              Add Income
-            </button>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Income Table */}
-        {filteredEntries.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No income entries yet</p>
-            <p className="text-gray-400 text-sm">Click "Add Income" to create your first entry</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Payment Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredEntries.map((income) => (
-                  <tr key={income._id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {new Date(income.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                        {income.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{income.description}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-semibold text-gray-900">Rs. {income.amount.toLocaleString()}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{income.paymentMethod}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(income)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(income._id)}
-                          className={`p-2 rounded-lg transition overflow-hidden ${selectedDeleteId === income._id
-                            ? "bg-red-600 text-white hover:bg-red-700"
-                            : "text-red-600 hover:bg-red-50"
-                            }`}
-                          title="Delete"
-                        >
-                          {selectedDeleteId === income._id ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                              <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* View Details Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+            <SheetHeader>
+                <SheetTitle>Income Details</SheetTitle>
+                <SheetDescription>
+                    Complete information for this transaction.
+                </SheetDescription>
+            </SheetHeader>
+            {selectedIncome && (
+                <div className="mt-6 space-y-6">
+                    <div className="flex flex-col items-center justify-center p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                        <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-1">Total Amount</div>
+                        <div className="text-4xl font-bold text-emerald-700 dark:text-emerald-300">
+                            Rs. {selectedIncome.amount.toLocaleString()}
+                        </div>
+                        <Badge className="mt-3 bg-emerald-600 hover:bg-emerald-700">
+                            INCOME
+                        </Badge>
+                    </div>
 
-      {/* Add/Edit Modal */}
-      {isVisible && (
-        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingIncome ? 'Edit Income Entry' : 'Add Income Entry'}
-              </h3>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Amount (Rs.) *
-                  </label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={formData.amount}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Enter amount"
-                  />
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="font-medium text-muted-foreground flex items-center gap-2">
+                                <CalendarIcon className="h-4 w-4" /> Date
+                            </div>
+                            <div className="col-span-2 font-medium">
+                                {format(new Date(selectedIncome.date), "MMMM dd, yyyy")}
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="font-medium text-muted-foreground flex items-center gap-2">
+                                <Filter className="h-4 w-4" /> Category
+                            </div>
+                            <div className="col-span-2">
+                                <Badge variant="outline" className="text-base font-normal">
+                                    {selectedIncome.category}
+                                </Badge>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div className="font-medium text-muted-foreground flex items-center gap-2">
+                                <Wallet className="h-4 w-4" /> Method
+                            </div>
+                            <div className="col-span-2 font-medium">
+                                {selectedIncome.paymentMethod}
+                            </div>
+                        </div>
+
+                        {selectedIncome.reference && (
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                <div className="font-medium text-muted-foreground flex items-center gap-2">
+                                    <FileText className="h-4 w-4" /> Reference
+                                </div>
+                                <div className="col-span-2 font-mono text-xs bg-muted p-1 rounded inline-block">
+                                    {selectedIncome.reference}
+                                </div>
+                            </div>
+                        )}
+
+                        <Separator />
+
+                        <div>
+                            <div className="font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                                <FileText className="h-4 w-4" /> Description
+                            </div>
+                            <div className="bg-muted/30 p-3 rounded-md text-sm leading-relaxed">
+                                {selectedIncome.description}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-6">
+                        <Button className="flex-1" variant="outline" onClick={() => {
+                            setIsSheetOpen(false);
+                            handleEdit(selectedIncome);
+                        }}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                        </Button>
+                        <Button className="flex-1" variant="destructive" onClick={() => {
+                            setIsSheetOpen(false);
+                            handleDelete(selectedIncome._id);
+                        }}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                    </div>
                 </div>
+            )}
+        </SheetContent>
+      </Sheet>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Category *
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    {incomeCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Payment Method *
-                  </label>
-                  <select
-                    name="paymentMethod"
-                    value={formData.paymentMethod}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    {paymentMethods.map(method => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Description *
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Enter description"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Reference (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="reference"
-                    value={formData.reference}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="Receipt number, transaction ID, etc."
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
-                >
-                  {editingIncome ? 'Update' : 'Add'} Income
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-
+      {/* Delete Confirmation Alert */}
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the income entry from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

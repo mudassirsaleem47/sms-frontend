@@ -22,6 +22,11 @@ const subjectSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'admin',
         required: true,
+    },
+    status: {
+        type: String,
+        enum: ['Active', 'Disabled'],
+        default: 'Active'
     }
 }, { timestamps: true });
 

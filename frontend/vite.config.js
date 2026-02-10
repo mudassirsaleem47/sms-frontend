@@ -25,15 +25,4 @@ export default defineConfig({
       "react-draggable": path.resolve(__dirname, "node_modules/react-draggable/build/cjs/cjs.js").replace(/\\/g, '/'),
     },
   },
-  server: {
-    host: '0.0.0.0', // Makes the server accessible on local network
-    port: 5173, // Default Vite port
-    watch: {
-      usePolling: true, // Enable polling for Docker
-      interval: 1000, // Check for changes every 1 second
-    },
-    hmr: {
-      host: '192.168.10.21', // Hot Module Replacement host
-    }
-  }
 })

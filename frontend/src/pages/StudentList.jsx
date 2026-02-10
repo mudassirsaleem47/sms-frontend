@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -10,12 +10,10 @@ import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
 
 import {
     Users,
-    ChevronLeft,
     Search,
     MoreHorizontal,
     Plus,
     Trash2,
-    Eye,
     Pencil,
     Copy,
     Star,
@@ -51,6 +49,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+} from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -61,26 +66,46 @@ const StudentList = () => {
     const navigate = useNavigate();
     const { setExtraBreadcrumb } = useOutletContext() || {};
     
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentClassId = searchParams.get('class');
+
     // --- State Management ---
-    const [viewMode, setViewMode] = useState('classes'); // 'classes' | 'students'
+    // Remove local viewMode and selectedClass state
+    // viewMode is derived from whether a class is selected
     const [viewType, setViewType] = useState('list'); // 'list' | 'grid'
     const [classesList, setClassesList] = useState([]);
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Derived Selection
+    const selectedClass = useMemo(() => {
+        return classesList.find(c => c._id === currentClassId) || null;
+    }, [classesList, currentClassId]);
+
+    const viewMode = selectedClass ? 'students' : 'classes';
+
     // Selected Data
-    const [selectedClass, setSelectedClass] = useState(null);
     const [selectedStudents, setSelectedStudents] = useState([]); // Array of IDs
 
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Reset state on class change
+    useEffect(() => {
+        setSearchQuery("");
+        setViewType('list');
+        setSelectedStudents([]);
+    }, [currentClassId]);
+
     // Modals
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [currentStudent, setCurrentStudent] = useState(null);
     const [deleteId, setDeleteId] = useState(null); // Single delete
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false); // Bulk delete confirm
+
+    // Drawer State
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [drawerData, setDrawerData] = useState(null);
 
     // --- Data Fetching ---
     useEffect(() => {
@@ -127,11 +152,12 @@ const StudentList = () => {
     // --- Handlers ---
 
     const handleClassClick = (cls) => {
-        setSelectedClass(cls);
-        setViewMode('students');
-        setSelectedStudents([]); // Reset selection
-        setSearchQuery("");
-        setViewType('list'); // Default to list view
+        setSearchParams({ class: cls._id });
+    };
+
+    const handleNameClick = (student) => {
+        setDrawerData(student);
+        setIsDrawerOpen(true);
     };
 
     // Breadcrumb Effect
@@ -146,9 +172,7 @@ const StudentList = () => {
     }, [viewMode, selectedClass]);
 
     const handleBackToClasses = () => {
-        setViewMode('classes');
-        setSelectedClass(null);
-        setSelectedStudents([]);
+        setSearchParams({});
     };
 
     // Selection Logic
@@ -178,10 +202,7 @@ const StudentList = () => {
         setIsAddModalOpen(true);
     };
 
-    const handleViewStudent = (student) => {
-        setCurrentStudent(student);
-        setIsDetailModalOpen(true);
-    };
+
 
     const handleCopy = (student) => {
         const copiedData = { ...student, _id: undefined, name: `${student.name} (Copy)`, rollNum: '' };
@@ -197,6 +218,18 @@ const StudentList = () => {
     const handleFormSubmit = async (formData) => {
         try {
             const payload = { ...formData, school: currentUser._id };
+
+            // Handle Disable Logic
+            if (payload.status === 'Disabled') {
+                payload.disableInfo = {
+                    reason: payload.disableReason, // Now using the selected enum
+                    description: payload.disableDescription || "", // Optional description
+                    disabledDate: new Date(),
+                    disabledBy: currentUser._id
+                };
+                delete payload.disableReason;
+                delete payload.disableDescription;
+            }
 
             if (currentStudent) {
                 // Clean payload for update
@@ -432,7 +465,12 @@ const StudentList = () => {
                                                                         <AvatarFallback className="bg-primary/10 text-primary">{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                                     </Avatar>
                                                                     <div className="flex flex-col">
-                                                                        <span className="font-medium">{student.name}</span>
+                                                                        <span
+                                                                            className="font-medium hover:underline hover:text-primary cursor-pointer transition-colors"
+                                                                            onClick={() => handleNameClick(student)}
+                                                                        >
+                                                                            {student.name}
+                                                                        </span>
                                                                         <span className="text-xs text-muted-foreground">{student.email || 'No email'}</span>
                                                                     </div>
                                                                 </div>
@@ -460,7 +498,7 @@ const StudentList = () => {
                                                                     <DropdownMenuContent align="end">
                                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                                         <DropdownMenuItem onClick={() => handleEditStudent(student)}>
-                                                                            <Pencil className="mr-2 h-4 w-4" /> View / Edit
+                                                                            <Pencil className="mr-2 h-4 w-4" /> Edit
                                                                         </DropdownMenuItem>
                                                                         <DropdownMenuItem onClick={() => handleCopy(student)}>
                                                                             <Copy className="mr-2 h-4 w-4" /> Duplicate
@@ -526,7 +564,11 @@ const StudentList = () => {
 
                                                     {/* Student Info */}
                                                     <div className="text-center w-full px-1 space-y-1 mb-6">
-                                                        <h3 className="font-bold text-lg leading-tight truncate px-2" title={student.name}>
+                                                            <h3
+                                                                className="font-bold text-lg leading-tight truncate px-2 hover:underline hover:text-primary cursor-pointer transition-colors"
+                                                                title={student.name}
+                                                                onClick={() => handleNameClick(student)}
+                                                            >
                                                             {student.name}
                                                         </h3>
                                                         <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
@@ -553,14 +595,7 @@ const StudentList = () => {
 
                                                 {/* Actions Footer */}
                                                 <CardFooter className="p-0 border-t bg-muted/40 grid grid-cols-3 divide-x divide-border/60">
-                                                    <Button
-                                                        variant="ghost"
-                                                        className="h-11 rounded-none w-full hover:bg-background hover:text-primary transition-colors group/btn"
-                                                        onClick={() => handleViewStudent(student)}
-                                                        title="View Details"
-                                                    >
-                                                        <Eye className="h-4 w-4 text-muted-foreground group-hover/btn:text-primary transition-colors" />
-                                                    </Button>
+
                                                     <Button
                                                         variant="ghost"
                                                         className="h-11 rounded-none w-full hover:bg-background hover:text-blue-600 transition-colors group/btn"
@@ -596,11 +631,7 @@ const StudentList = () => {
                 classesList={classesList}
             />
 
-            <StudentDetailsModal 
-                isOpen={isDetailModalOpen}
-                onClose={() => setIsDetailModalOpen(false)}
-                student={currentStudent}
-            />
+
 
             {/* Single Delete Alert */}
             <ConfirmDeleteModal
@@ -620,6 +651,117 @@ const StudentList = () => {
                 description={`Are you sure you want to delete these ${selectedStudents.length} students? This action cannot be undone.`}
                 confirmText="Delete All Selected"
             />
+
+            {/* View Details Drawer */}
+            <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <SheetContent className="overflow-y-auto sm:max-w-md w-full">
+                    <SheetHeader>
+                        <SheetTitle>Student Profile</SheetTitle>
+                        <SheetDescription>
+                            Complete profile information for {drawerData?.name}
+                        </SheetDescription>
+                    </SheetHeader>
+                    {drawerData && (
+                        <div className="mt-6 space-y-6">
+                            {/* Profile Header */}
+                            <div className="flex flex-col items-center justify-center p-4 bg-muted/20 rounded-lg border border-dashed">
+                                <Avatar className="h-24 w-24 border-4 border-background shadow-md mb-3">
+                                    <AvatarImage src={`${API_BASE}/${drawerData.studentPhoto}`} className="object-cover" />
+                                    <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+                                        {drawerData.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <h3 className="text-xl font-bold">{drawerData.name}</h3>
+                                <div className="flex gap-2 mt-1">
+                                    <Badge variant="outline">Roll: {drawerData.rollNum}</Badge>
+                                    <Badge variant="secondary">{drawerData.sclassName?.sclassName || 'No Class'}</Badge>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Personal Details */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Personal Details</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Gender</div>
+                                        <div className="col-span-2 capitalize">{drawerData.gender}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">DOB</div>
+                                        <div className="col-span-2">
+                                            {drawerData.dob ? new Date(drawerData.dob).toLocaleDateString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Email</div>
+                                        <div className="col-span-2 break-all">{drawerData.email || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Address</div>
+                                        <div className="col-span-2">{drawerData.address || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Parents / Guardian */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Parent Information</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Father's Name</div>
+                                        <div className="col-span-2 font-medium">{drawerData.fatherName || drawerData.father?.name || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Mother's Name</div>
+                                        <div className="col-span-2">{drawerData.motherName || drawerData.mother?.name || 'N/A'}</div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Phone</div>
+                                        <div className="col-span-2 font-medium">{drawerData.phone || drawerData.father?.phone || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <iframe className="w-full h-px bg-muted my-2" />
+
+                            {/* Academic Status */}
+                            <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">School Status</h3>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Admission Date</div>
+                                        <div className="col-span-2">
+                                            {drawerData.admissionDate ? new Date(drawerData.admissionDate).toLocaleDateString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="font-medium text-gray-500">Current Status</div>
+                                        <div className="col-span-2">
+                                            <Badge className={drawerData.status === 'Active' || !drawerData.status ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-700'}>
+                                                {drawerData.status || 'Active'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="pt-4 grid grid-cols-1 gap-3">
+                                <Button className="w-full" onClick={() => {
+                                    handleEditStudent(drawerData);
+                                    setIsDrawerOpen(false);
+                                }}>
+                                    <Pencil className="h-4 w-4 mr-2" /> Edit Student
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </SheetContent>
+            </Sheet>
 
         </div>
     );

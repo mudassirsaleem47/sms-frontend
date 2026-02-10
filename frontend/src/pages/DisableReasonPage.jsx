@@ -1,15 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
+import { toast } from 'sonner';
 import API_URL from '../config/api.js';
-import { UserX, Search, Eye, CheckCircle, Calendar, User, Check } from 'lucide-react';
+import { UserX, Search, Eye, CheckCircle, Calendar, User, Check, ArrowUpDown, Filter, MoreHorizontal } from 'lucide-react';
 import StudentDetailsModal from '../components/form-popup/StudentDetailsModal';
 
+// Shadcn Components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const DisableReasonPage = () => {
     const { currentUser } = useAuth();
-    const { showToast } = useToast();
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,12 +55,12 @@ const DisableReasonPage = () => {
     const reasons = ['Left School', 'Transferred', 'Expelled', 'Medical', 'Financial', 'Other'];
 
     const reasonColors = {
-        'Left School': 'bg-blue-100 text-blue-700',
-        'Transferred': 'bg-purple-100 text-purple-700',
-        'Expelled': 'bg-red-100 text-red-700',
-        'Medical': 'bg-green-100 text-green-700',
-        'Financial': 'bg-yellow-100 text-yellow-700',
-        'Other': 'bg-gray-100 text-gray-700'
+        'Left School': 'bg-blue-100 text-blue-700 border-blue-200',
+        'Transferred': 'bg-purple-100 text-purple-700 border-purple-200',
+        'Expelled': 'bg-red-100 text-red-700 border-red-200',
+        'Medical': 'bg-green-100 text-green-700 border-green-200',
+        'Financial': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Other': 'bg-gray-100 text-gray-700 border-gray-200'
     };
 
     useEffect(() => {
@@ -39,7 +73,7 @@ const DisableReasonPage = () => {
             const response = await axios.get(`${API_URL}/Students/Disabled/${currentUser._id}`);
             setStudents(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
-            showToast("Error loading disabled students", "error");
+            toast.error("Error loading disabled students");
         } finally {
             setLoading(false);
         }
@@ -58,13 +92,18 @@ const DisableReasonPage = () => {
         if (!selectedEnableId) return;
         try {
             await axios.put(`${API_URL}/Student/${selectedEnableId}`, { status: 'Active' });
-            showToast("Student enabled successfully!", "success");
+            toast.success("Student enabled successfully!");
             fetchData();
         } catch (err) {
-            showToast("Error enabling student", "error");
+            toast.error("Error enabling student");
         } finally {
             setSelectedEnableId(null);
         }
+    };
+
+    const handleNameClick = (student) => {
+        setSelectedStudent(student);
+        setShowDetailsModal(true);
     };
 
     const filteredStudents = students.filter(student => {
@@ -86,168 +125,187 @@ const DisableReasonPage = () => {
     const stats = getReasonStats();
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mx-auto">
-                {/* Header */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                <UserX className="w-8 h-8 text-indigo-600" />
-                                Disable Reasons
-                            </h1>
-                            <p className="text-gray-600 mt-1">View disabled students with their reasons</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-600">Total Disabled</p>
-                            <p className="text-3xl font-bold text-indigo-600">{students.length}</p>
-                        </div>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-                        {reasons.map(reason => (
-                            <div key={reason} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                <p className="text-xs text-gray-600 mb-1">{reason}</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats[reason] || 0}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Filters */}
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search by name or roll number..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border-2 border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500 transition"
-                            />
-                        </div>
-                        <select
-                            value={filterReason}
-                            onChange={(e) => setFilterReason(e.target.value)}
-                            className="px-4 py-2.5 border-2 border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500 transition"
-                        >
-                            <option value="all">All Reasons</option>
-                            {reasons.map(reason => (
-                                <option key={reason} value={reason}>{reason}</option>
-                            ))}
-                        </select>
-                    </div>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Disable Reasons</h2>
+                    <p className="text-muted-foreground">
+                        View and manage students who have been disabled or left.
+                    </p>
                 </div>
+                <div className="flex flex-col items-end">
+                    <span className="text-sm text-muted-foreground">Total Disabled</span>
+                    <span className="text-2xl font-bold text-primary">{students.length}</span>
+                </div>
+            </div>
 
-                {/* Students Table */}
-                {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {reasons.map(reason => (
+                    <Card key={reason} className="shadow-sm">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-xs font-medium text-muted-foreground uppercase">{reason}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0">
+                            <div className="text-2xl font-bold">{stats[reason] || 0}</div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <Card>
+                <CardHeader className="pb-3">
+                    <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+                        <CardTitle className="text-lg font-medium">Disabled Students List</CardTitle>
+                        <div className="flex gap-2 flex-1 md:flex-none">
+                            <div className="relative w-full md:w-[250px]">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search by name or roll no..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-8"
+                                />
+                            </div>
+                            <Select value={filterReason} onValueChange={setFilterReason}>
+                                <SelectTrigger className="w-[180px]">
+                                    <div className="flex items-center gap-2">
+                                        <Filter className="h-4 w-4" />
+                                        <SelectValue placeholder="All Reasons" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Reasons</SelectItem>
+                                    {reasons.map(reason => (
+                                        <SelectItem key={reason} value={reason}>{reason}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                ) : filteredStudents.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-                        <UserX className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-600 text-gray-900 mb-2">No Disabled Students</h3>
-                        <p className="text-gray-600">
-                            {searchQuery || filterReason !== 'all' 
-                                ? 'No students match your search criteria'
-                                : 'There are no disabled students'}
-                        </p>
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200">
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Student</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Roll No</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Class</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Reason</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Description</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Disabled Date</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="flex h-32 items-center justify-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+                        </div>
+                    ) : filteredStudents.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 text-center">
+                                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                                    <UserX className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <h3 className="text-lg font-semibold">No disabled students found</h3>
+                                <p className="text-muted-foreground max-w-sm mt-1">
+                                    {searchQuery || filterReason !== 'all' 
+                                        ? "Try adjusting your search or filters to find what you're looking for."
+                                        : "No students have been marked as disabled yet."}
+                                </p>
+                            </div>
+                        ) : (
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Student</TableHead>
+                                                <TableHead>Roll No</TableHead>
+                                                <TableHead>Class</TableHead>
+                                                <TableHead>Reason</TableHead>
+                                                <TableHead className="max-w-[200px]">Description</TableHead>
+                                                <TableHead>Disabled Date</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
                                     {filteredStudents.map((student) => (
-                                        <tr key={student._id} className="hover:bg-indigo-50 transition">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center">
-                                                    <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold mr-3 overflow-hidden border border-gray-200">
-                                                        {student.studentPhoto ? (
-                                                            <img src={`${API_URL}/${student.studentPhoto}`} alt={student.name} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            student.name.charAt(0)
-                                                        )}
+                                        <TableRow key={student._id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9 border">
+                                                        <AvatarImage src={`${API_URL}/${student.studentPhoto}`} alt={student.name} />
+                                                        <AvatarFallback>{student.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <span
+                                                            className="font-medium cursor-pointer hover:underline hover:text-primary transition-colors"
+                                                            onClick={() => handleNameClick(student)}
+                                                        >
+                                                            {student.name}
+                                                        </span>
                                                     </div>
-                                                    <div className="text-sm font-600 text-gray-900">{student.name}</div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{student.rollNum}</td>
-                                            <td className="px-6 py-4 text-sm">
-                                                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-600">
-                                                    {student.sclassName?.sclassName || 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-600 ${reasonColors[student.disableInfo?.reason] || 'bg-gray-100 text-gray-700'}`}>
+                                            </TableCell>
+                                            <TableCell>{student.rollNum}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{student.sclassName?.sclassName || 'N/A'}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className={`border-0 ${reasonColors[student.disableInfo?.reason] || 'bg-gray-100 text-gray-700'}`}>
                                                     {student.disableInfo?.reason || 'N/A'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px]">
+                                                <span className="truncate block text-muted-foreground" title={student.disableInfo?.description}>
+                                                    {student.disableInfo?.description || '-'}
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                                                {student.disableInfo?.description || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                            </TableCell>
+                                            <TableCell>
                                                 {student.disableInfo?.disabledDate 
                                                     ? new Date(student.disableInfo.disabledDate).toLocaleDateString()
                                                     : '-'}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => {
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => {
                                                             setSelectedStudent(student);
                                                             setShowDetailsModal(true);
-                                                        }}
-                                                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition"
-                                                        title="View Details"
-                                                    >
-                                                        <Eye size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleEnableClick(student._id)}
-                                                        className={`p-2 rounded-lg transition overflow-hidden flex items-center justify-center ${selectedEnableId === student._id
-                                                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                                                            : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                                                            }`}
-                                                        title="Re-enable Student"
-                                                    >
-                                                        {selectedEnableId === student._id ? (
-                                                            <Check size={16} />
-                                                        ) : (
-                                                                <CheckCircle size={16} />
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                        }}>
+                                                            <Eye className="mr-2 h-4 w-4" /> View Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={async () => {
+                                                                if (window.confirm(`Are you sure you want to re-enable ${student.name}?`)) {
+                                                                    // We can reuse the confirm logic, but we need the ID. 
+                                                                    // Since handleEnableConfirm uses selectedEnableId, we can just call the API directly here 
+                                                                    // or update state. calling axios directly to be safe and clean.
+                                                                    try {
+                                                                        await axios.put(`${API_URL}/Student/${student._id}`, { status: 'Active' });
+                                                                        toast.success("Student enabled successfully!");
+                                                                        fetchData();
+                                                                    } catch (err) {
+                                                                        toast.error("Error enabling student");
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="text-green-600 focus:text-green-600"
+                                                        >
+                                                            <CheckCircle className="mr-2 h-4 w-4" /> Enable Student
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                </tbody>
-                            </table>
+                                </TableBody>
+                            </Table>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </CardContent>
+            </Card>
 
-            {/* Student Details Modal */}
             <StudentDetailsModal
                 isOpen={showDetailsModal}
                 onClose={() => setShowDetailsModal(false)}
                 student={selectedStudent}
             />
-
-
         </div>
     );
 };

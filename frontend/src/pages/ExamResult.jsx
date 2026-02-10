@@ -1,9 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useModalAnimation } from '../hooks/useModalAnimation';
 import axios from 'axios';
-import { Award, Plus, Edit, Search, TrendingUp, Users, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Award, Plus, Edit, Search, TrendingUp, Users, CheckCircle, XCircle, AlertCircle, Calculator } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -18,17 +47,12 @@ const ExamResult = () => {
   const [grades, setGrades] = useState([]);
   
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingResult, setEditingResult] = useState(null);
   
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedSchedule, setSelectedSchedule] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
-  
-  const { isVisible, isClosing, handleClose } = useModalAnimation(showModal, () => {
-    setShowModal(false);
-    setEditingResult(null);
-  });
   
   const [formData, setFormData] = useState({
     marksObtained: '',
@@ -112,6 +136,10 @@ const ExamResult = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handleSelectChange = (name, value) => {
+      setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleAddResult = (student) => {
     setSelectedStudent(student);
@@ -121,7 +149,7 @@ const ExamResult = () => {
       status: 'Pass',
       remarks: ''
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
   const handleEditResult = (result, student) => {
@@ -132,11 +160,11 @@ const ExamResult = () => {
       status: result.status,
       remarks: result.remarks || ''
     });
-    setShowModal(true);
+    setIsDialogOpen(true);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     
     const schedule = schedules.find(s => s._id === selectedSchedule);
     if (!schedule) return;
@@ -166,7 +194,7 @@ const ExamResult = () => {
         showToast('Result added successfully!', 'success');
       }
       
-      handleClose();
+      setIsDialogOpen(false);
       fetchScheduleDetails();
     } catch (error) {
       showToast(error.response?.data?.message || 'Error saving result', 'error');
@@ -177,28 +205,36 @@ const ExamResult = () => {
     return results.find(r => r.student._id === studentId || r.student === studentId);
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusBadgeVariant = (status) => {
     switch(status) {
-      case 'Pass': return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case 'Fail': return <XCircle className="w-5 h-5 text-red-600" />;
-      case 'Absent': return <AlertCircle className="w-5 h-5 text-orange-600" />;
-      default: return null;
+      case 'Pass': return 'success'; // or a custom success variant
+      case 'Fail': return 'destructive';
+      case 'Absent': return 'warning'; // or custom
+      default: return 'secondary';
     }
   };
 
-  const getStatusColor = (status) => {
+  // Custom Badge until we have variants configured
+  const StatusBadge = ({ status }) => {
+    let classes = "";
     switch(status) {
-      case 'Pass': return 'bg-green-100 text-green-800';
-      case 'Fail': return 'bg-red-100 text-red-800';
-      case 'Absent': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+        case 'Pass': classes = "bg-green-100 text-green-800 hover:bg-green-200 border-green-200"; break;
+        case 'Fail': classes = "bg-red-100 text-red-800 hover:bg-red-200 border-red-200"; break;
+        case 'Absent': classes = "bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200"; break;
+        default: classes = "bg-gray-100 text-gray-800";
     }
+    
+    return (
+        <Badge variant="outline" className={`px-2 py-0.5 rounded-full ${classes}`}>
+            {status}
+        </Badge>
+    );
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -206,269 +242,244 @@ const ExamResult = () => {
   const currentSchedule = schedules.find(s => s._id === selectedSchedule);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Exam Results</h1>
-        <p className="text-gray-600">Enter and manage student exam results</p>
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Exam Results</h1>
+        <p className="text-muted-foreground">Enter and manage student marks and results</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Exam Group</label>
-            <select
-              value={selectedGroup}
-              onChange={(e) => {
-                setSelectedGroup(e.target.value);
-                setSelectedSchedule('');
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              <option value="">-- Select Exam Group --</option>
-              {examGroups.map(group => (
-                <option key={group._id} value={group._id}>
-                  {group.groupName} ({group.academicYear})
-                </option>
-              ))}
-            </select>
-          </div>
+      <Card>
+        <CardHeader>
+            <CardTitle>Result Filter</CardTitle>
+            <CardDescription>Select Exam Group and Exam to manage results</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="examGroupSelect">Exam Group</Label>
+                    <Select 
+                        value={selectedGroup} 
+                        onValueChange={(value) => {
+                            setSelectedGroup(value);
+                            setSelectedSchedule('');
+                        }}
+                    >
+                        <SelectTrigger id="examGroupSelect">
+                            <SelectValue placeholder="Select Exam Group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {examGroups.map(group => (
+                                <SelectItem key={group._id} value={group._id}>
+                                    {group.groupName} ({group.academicYear})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Select Exam</label>
-            <select
-              value={selectedSchedule}
-              onChange={(e) => setSelectedSchedule(e.target.value)}
-              disabled={!selectedGroup}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100"
-            >
-              <option value="">-- Select Exam --</option>
-              {schedules.map(schedule => (
-                <option key={schedule._id} value={schedule._id}>
-                  {schedule.class?.sclassName} - {schedule.subject}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {currentSchedule && (
-          <div className="mt-4 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Subject:</span>
-                <span className="ml-2 font-semibold text-gray-900">{currentSchedule.subject}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Total Marks:</span>
-                <span className="ml-2 font-semibold text-gray-900">{currentSchedule.totalMarks}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Passing Marks:</span>
-                <span className="ml-2 font-semibold text-gray-900">{currentSchedule.passingMarks}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Date:</span>
-                <span className="ml-2 font-semibold text-gray-900">
-                  {new Date(currentSchedule.examDate).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Results Table */}
-      {selectedSchedule && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Student Results</h2>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-gray-600">{students.length} Students</span>
-            </div>
-          </div>
-
-          {students.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No students found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-2xl">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Roll No</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Student Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Marks Obtained</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Percentage</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Grade</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {students.map((student) => {
-                    const result = getStudentResult(student._id);
-                    return (
-                      <tr key={student._id} className="hover:bg-gray-50 transition">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {student.rollNum}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">{student.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {result ? (
-                            <span className="font-semibold text-gray-900">
-                              {result.marksObtained}/{currentSchedule.totalMarks}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">Not entered</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {result ? (
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-indigo-600" />
-                              <span className="font-semibold">{result.percentage}%</span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {result && result.grade ? (
-                            <span className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-bold">
-                              {result.grade}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {result ? (
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(result.status)}
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(result.status)}`}>
-                                {result.status}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">Pending</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {result ? (
-                            <button
-                              onClick={() => handleEditResult(result, student)}
-                              className="flex items-center gap-1 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition text-sm"
-                            >
-                              <Edit className="w-4 h-4" />
-                              Edit
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleAddResult(student)}
-                              className="flex items-center gap-1 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition text-sm"
-                            >
-                              <Plus className="w-4 h-4" />
-                              Add
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Add/Edit Modal */}
-      {isVisible && selectedStudent && (
-        <div className={`fixed inset-0 bg-black/70 flex items-center justify-center z-50 overflow-y-auto p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-          <div className={`bg-white rounded-xl shadow-2xl max-w-xl w-full ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
-              <h3 className="text-2xl font-bold text-gray-900">
-                {editingResult ? 'Edit' : 'Add'} Result for {selectedStudent.name}
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Roll No: {selectedStudent.rollNum} | Total Marks: {currentSchedule?.totalMarks}
-              </p>
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="examSelect">Exam</Label>
+                    <Select 
+                        value={selectedSchedule} 
+                        onValueChange={setSelectedSchedule}
+                        disabled={!selectedGroup}
+                    >
+                        <SelectTrigger id="examSelect">
+                            <SelectValue placeholder="Select Exam" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {schedules.map(schedule => (
+                                <SelectItem key={schedule._id} value={schedule._id}>
+                                    {schedule.class?.sclassName} - {schedule.subject}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Marks Obtained *
-                </label>
-                <input
-                  type="number"
-                  name="marksObtained"
-                  value={formData.marksObtained}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  max={currentSchedule?.totalMarks}
-                  step="0.5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder={`Enter marks (Max: ${currentSchedule?.totalMarks})`}
-                />
-              </div>
+            {currentSchedule && (
+                <div className="mt-6 flex flex-wrap gap-4 p-4 rounded-lg bg-muted/50 border">
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-muted-foreground">Subject:</span>
+                        <span className="font-medium text-foreground">{currentSchedule.subject}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-muted-foreground">Total Marks:</span>
+                        <span className="font-medium text-foreground">{currentSchedule.totalMarks}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-muted-foreground">Passing:</span>
+                        <span className="font-medium text-foreground">{currentSchedule.passingMarks}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-muted-foreground">Date:</span>
+                        <span className="font-medium text-foreground">{new Date(currentSchedule.examDate).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            )}
+        </CardContent>
+      </Card>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Status *
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="Pass">Pass</option>
-                  <option value="Fail">Fail</option>
-                  <option value="Absent">Absent</option>
-                </select>
-              </div>
+      {selectedSchedule && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle>Student Results</CardTitle>
+                    <CardDescription>
+                        Managing results for {students.length} students
+                    </CardDescription>
+                </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {students.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-center text-muted-foreground bg-muted/10 border border-dashed rounded-lg">
+                    <Users className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">No students found for this class.</p>
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Roll No</TableHead>
+                                <TableHead>Student Name</TableHead>
+                                <TableHead>Marks</TableHead>
+                                <TableHead>Percentage</TableHead>
+                                <TableHead>Grade</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {students.map((student) => {
+                                const result = getStudentResult(student._id);
+                                return (
+                                    <TableRow key={student._id}>
+                                        <TableCell className="font-medium">{student.rollNum}</TableCell>
+                                        <TableCell>{student.name}</TableCell>
+                                        <TableCell>
+                                            {result ? (
+                                                <span className="font-semibold">
+                                                  {result.marksObtained}/{currentSchedule.totalMarks}
+                                                </span>
+                                              ) : (
+                                                <span className="text-muted-foreground italic">Not entered</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {result ? (
+                                                <div className="flex items-center gap-1">
+                                                    <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                                                    <span>{result.percentage}%</span>
+                                                </div>
+                                            ) : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {result && result.grade ? (
+                                                <Badge variant="secondary">{result.grade}</Badge>
+                                            ) : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {result ? (
+                                                <StatusBadge status={result.status} />
+                                            ) : (
+                                                <Badge variant="outline" className="text-muted-foreground">Pending</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {result ? (
+                                                <Button size="sm" variant="ghost" onClick={() => handleEditResult(result, student)}>
+                                                    <Edit className="h-4 w-4 mr-1" /> Edit
+                                                </Button>
+                                            ) : (
+                                                <Button size="sm" variant="outline" onClick={() => handleAddResult(student)}>
+                                                    <Plus className="h-4 w-4 mr-1" /> Add
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Remarks
-                </label>
-                <textarea
-                  name="remarks"
-                  value={formData.remarks}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Optional remarks"
-                />
-              </div>
+      {selectedStudent && (
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>{editingResult ? 'Edit Result' : 'Add Result'}</DialogTitle>
+                    <DialogDescription>
+                        {selectedStudent.name} (Roll: {selectedStudent.rollNum})
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Total Marks</Label>
+                            <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+                                {currentSchedule?.totalMarks}
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="marksObtained">Marks Obtained *</Label>
+                            <Input
+                                id="marksObtained"
+                                name="marksObtained"
+                                type="number"
+                                value={formData.marksObtained}
+                                onChange={handleInputChange}
+                                min="0"
+                                max={currentSchedule?.totalMarks}
+                                step="0.5"
+                                placeholder="Enter marks"
+                                required
+                            />
+                        </div>
+                    </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
-                >
-                  {editingResult ? 'Update' : 'Add'} Result
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Status *</Label>
+                        <Select
+                            value={formData.status}
+                            onValueChange={(value) => handleSelectChange('status', value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Pass">Pass</SelectItem>
+                                <SelectItem value="Fail">Fail</SelectItem>
+                                <SelectItem value="Absent">Absent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Textarea
+                            id="remarks"
+                            name="remarks"
+                            value={formData.remarks}
+                            onChange={handleInputChange}
+                            placeholder="Optional remarks"
+                            rows={3}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSubmit}>{editingResult ? 'Update Result' : 'Save Result'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       )}
     </div>
   );

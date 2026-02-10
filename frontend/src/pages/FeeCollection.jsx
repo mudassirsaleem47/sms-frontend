@@ -6,13 +6,43 @@ import {
   Search, 
   DollarSign, 
   User, 
-  Calendar,
-  CreditCard,
+  CheckCircle,
   Receipt,
   X,
-  CheckCircle,
-  AlertCircle
+  CreditCard,
+  Banknote,
+  Building
 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+  CardFooter
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -152,395 +182,387 @@ const FeeCollection = () => {
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'Paid': return 'bg-green-100 text-green-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Partial': return 'bg-orange-100 text-orange-800';
-      case 'Overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Paid': return 'bg-green-100 text-green-800 hover:bg-green-200 border-green-200';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200';
+      case 'Partial': return 'bg-orange-100 text-orange-800 hover:bg-orange-200 border-orange-200';
+      case 'Overdue': return 'bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20';
+      default: return 'bg-secondary text-secondary-foreground';
     }
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="flex-1 space-y-6 p-8 pt-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Fee Collection</h1>
-        <p className="text-gray-600">Process student fee payments and generate receipts</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Fee Collection</h2>
+          <p className="text-muted-foreground mt-2">Process student fee payments and generate receipts</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Student Search & List */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Select Student</h2>
-            
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search by name or roll number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Student List */}
-            <div className="space-y-2 max-h-[600px] overflow-y-auto">
-              {filteredStudents.length === 0 ? (
-                <div className="text-center py-8">
-                  <User className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                  <p className="text-gray-500">No students found</p>
-                </div>
-              ) : (
-                filteredStudents.map((student) => (
-                  <div
-                    key={student._id}
-                    onClick={() => handleStudentSelect(student)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition ${
-                      selectedStudent?._id === student._id
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-indigo-100 p-2 rounded-lg">
-                        <User className="w-5 h-5 text-indigo-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-600">
-                          Roll: {student.rollNum} | Class: {student.sclassName?.sclassName} {student.section}
-                        </div>
-                      </div>
-                    </div>
+        <div className="lg:col-span-1 h-full">
+          <Card className="h-[calc(100vh-200px)] flex flex-col">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl">Select Student</CardTitle>
+              <div className="relative mt-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or roll..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 p-0 overflow-hidden">
+              <ScrollArea className="h-full px-4 pb-4">
+                {filteredStudents.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+                    <User className="h-12 w-12 mb-3 opacity-20" />
+                    <p>No students found</p>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+                ) : (
+                    <div className="space-y-2">
+                      {filteredStudents.map((student) => (
+                        <div
+                          key={student._id}
+                          onClick={() => handleStudentSelect(student)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent ${selectedStudent?._id === student._id
+                                ? 'border-primary bg-primary/5 shadow-sm'
+                                : 'border-transparent'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`h-10 w-10 rounded-full flex items-center justify-center ${selectedStudent?._id === student._id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                <User className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <div className="font-semibold text-sm">{student.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  Roll: {student.rollNum} • Class: {student.sclassName?.sclassName} {student.section}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Fee Details & Payment Form */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           {!selectedStudent ? (
-            <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Student Selected</h3>
-              <p className="text-gray-500">Please select a student to view their fees and collect payment</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Student Info Card */}
-              <div className="bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold mb-2">{selectedStudent.name}</h2>
-                    <div className="space-y-1 text-indigo-100">
-                      <p>Roll Number: {selectedStudent.rollNum}</p>
-                      <p>Class: {selectedStudent.sclassName?.sclassName} - Section {selectedStudent.section}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelectedStudent(null)}
-                    className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+            <Card className="h-[calc(100vh-200px)] flex flex-col items-center justify-center border-dashed">
+              <div className="text-center p-8">
+                <div className="bg-muted/30 p-4 rounded-full inline-flex mb-4">
+                  <User className="w-12 h-12 text-muted-foreground/50" />
                 </div>
+                <h3 className="text-xl font-semibold">No Student Selected</h3>
+                <p className="text-muted-foreground mt-2 max-w-sm">Select a student from the list to view their fee details and collect payments.</p>
               </div>
+            </Card>
+          ) : (
+              <>
+              {/* Student Info Card */}
+                <Card className="bg-primary text-primary-foreground border-none shadow-md overflow-hidden relative">
+                  {/* Decorative background circle */}
+                  <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+
+                  <CardContent className="p-6 flex items-start justify-between relative z-10">
+                    <div>
+                      <h2 className="text-2xl font-bold mb-1">{selectedStudent.name}</h2>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-primary-foreground/80 text-sm">
+                        <span>Roll Number: <span className="font-medium text-white">{selectedStudent.rollNum}</span></span>
+                        <span className="hidden sm:inline">•</span>
+                        <span>Class: <span className="font-medium text-white">{selectedStudent.sclassName?.sclassName} - {selectedStudent.section}</span></span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedStudent(null)}
+                      className="text-primary-foreground hover:bg-white/20 -mr-2 -mt-2"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </CardContent>
+                </Card>
 
               {/* Pending Fees */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Pending Fees</h3>
-                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Fees</CardTitle>
+                    <CardDescription>Select a fee record to process payment</CardDescription>
+                  </CardHeader>
+                  <CardContent>
                 {studentFees.filter(f => f.status !== 'Paid').length === 0 ? (
-                  <div className="text-center py-8">
-                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                    <p className="text-gray-600 font-medium">All fees are paid!</p>
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <CheckCircle className="w-12 h-12 text-green-500 mb-3" />
+                        <p className="text-lg font-medium">All fees are cleared!</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                        <div className="grid gap-3">
                     {studentFees.filter(f => f.status !== 'Paid').map((fee) => (
                       <div
                         key={fee._id}
                         onClick={() => handleFeeSelect(fee)}
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition ${
+                        className={`p-4 rounded-xl border transition-all cursor-pointer hover:shadow-md ${
                           selectedFee?._id === fee._id
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300'
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                          : 'bg-card hover:bg-accent/50'
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-gray-900">
-                                {fee.feeStructure?.feeName}
-                              </h4>
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(fee.status)}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{fee.feeStructure?.feeName}</h4>
+                              <Badge variant="outline" className={getStatusColor(fee.status)}>
                                 {fee.status}
-                              </span>
+                              </Badge>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
-                              <div>Total: Rs.{fee.totalAmount.toLocaleString()}</div>
-                              <div>Paid: Rs.{fee.paidAmount.toLocaleString()}</div>
-                              <div className="font-semibold text-red-600">
-                                Pending: Rs.{fee.pendingAmount.toLocaleString()}
-                              </div>
-                              <div>Due: {new Date(fee.dueDate).toLocaleDateString()}</div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span>Due: {new Date(fee.dueDate).toLocaleDateString()}</span>
                             </div>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">Pending Amount</div>
+                            <div className="text-lg font-bold text-destructive">Rs.{fee.pendingAmount.toLocaleString()}</div>
+                            <div className="text-xs text-muted-foreground">Total: Rs.{fee.totalAmount.toLocaleString()}</div>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+                  </CardContent>
+                </Card>
 
               {/* Payment Form */}
               {selectedFee && (
-                <div className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Collect Payment</h3>
-                  
-                  <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Amount (Rs.) *
-                        </label>
-                        <input
-                          type="number"
-                          name="amount"
-                          value={paymentForm.amount}
-                          onChange={handleInputChange}
-                          required
-                          min="0.01"
-                          max={selectedFee.pendingAmount}
-                          step="0.01"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Maximum: Rs.{selectedFee.pendingAmount.toLocaleString()}
-                        </p>
+                  <Card className="border-t-4 border-t-primary shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <CardHeader>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-primary" />
+                        <CardTitle>Collect Payment</CardTitle>
                       </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Payment Method *
-                        </label>
-                        <select
-                          name="paymentMethod"
-                          value={paymentForm.paymentMethod}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                        >
-                          {paymentMethods.map(method => (
-                            <option key={method} value={method}>{method}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {paymentForm.paymentMethod === 'Cheque' && (
-                        <>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Cheque Number
-                            </label>
-                            <input
-                              type="text"
-                              name="chequeNumber"
-                              value={paymentForm.chequeNumber}
+                      <CardDescription>
+                        Receiving payment for <span className="font-medium text-foreground">{selectedFee.feeStructure?.feeName}</span>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Amount (Rs.) <span className="text-destructive">*</span></Label>
+                            <Input
+                              type="number"
+                              name="amount"
+                              value={paymentForm.amount}
                               onChange={handleInputChange}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                              required
+                              min="0.01"
+                              max={selectedFee.pendingAmount}
+                              step="0.01"
+                            />
+                            <p className="text-xs text-muted-foreground">Max payable: Rs.{selectedFee.pendingAmount.toLocaleString()}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Payment Method <span className="text-destructive">*</span></Label>
+                            <Select
+                              value={paymentForm.paymentMethod} 
+                              onValueChange={(val) => setPaymentForm(prev => ({ ...prev, paymentMethod: val }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {paymentMethods.map(method => (
+                                          <SelectItem key={method} value={method}>{method}</SelectItem>
+                                        ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {paymentForm.paymentMethod === 'Cheque' && (
+                            <>
+                              <div className="space-y-2">
+                                <Label>Cheque Number</Label>
+                                <Input
+                                  type="text"
+                                  name="chequeNumber"
+                                  value={paymentForm.chequeNumber}
+                                  onChange={handleInputChange}
+                                  placeholder="xxxxxx"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Bank Name</Label>
+                                <Input
+                                  type="text"
+                                  name="bankName"
+                                  value={paymentForm.bankName}
+                                  onChange={handleInputChange}
+                                  placeholder="Bank Name"
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {(paymentForm.paymentMethod === 'Online' || paymentForm.paymentMethod === 'Bank Transfer') && (
+                            <div className="space-y-2 md:col-span-2">
+                              <Label>Transaction Reference / ID</Label>
+                              <Input
+                                type="text"
+                                name="transactionReference"
+                                value={paymentForm.transactionReference}
+                                onChange={handleInputChange}
+                                placeholder="Enter Transaction ID"
+                              />
+                            </div>
+                          )}
+
+                          <div className="md:col-span-2 space-y-2">
+                            <Label>Remarks (Optional)</Label>
+                            <Textarea
+                              name="remarks"
+                              value={paymentForm.remarks}
+                              onChange={handleInputChange}
+                              rows={2}
+                              placeholder="Any additional notes..."
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Bank Name
-                            </label>
-                            <input
-                              type="text"
-                              name="bankName"
-                              value={paymentForm.bankName}
-                              onChange={handleInputChange}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                          </div>
-                        </>
-                      )}
-
-                      {(paymentForm.paymentMethod === 'Online' || paymentForm.paymentMethod === 'Bank Transfer') && (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Transaction Reference
-                          </label>
-                          <input
-                            type="text"
-                            name="transactionReference"
-                            value={paymentForm.transactionReference}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          />
                         </div>
-                      )}
-
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Remarks
-                        </label>
-                        <textarea
-                          name="remarks"
-                          value={paymentForm.remarks}
-                          onChange={handleInputChange}
-                          rows="2"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                          placeholder="Optional notes"
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition flex items-center justify-center gap-2"
-                    >
-                      <DollarSign className="w-5 h-5" />
-                      Collect Payment
-                    </button>
-                  </form>
-                </div>
+                      </form>
+                    </CardContent>
+                    <CardFooter className="bg-muted/20 border-t p-4 flex justify-end">
+                      <Button onClick={handlePaymentSubmit} size="lg" className="w-full md:w-auto gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Confirm Payment
+                      </Button>
+                    </CardFooter>
+                  </Card>
               )}
-            </div>
+              </>
           )}
         </div>
       </div>
 
-      {/* Receipt Modal */}
-      {showReceipt && receiptData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 rounded-t-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 p-3 rounded-lg">
+      {/* Receipt Dialog */}
+      <Dialog open={showReceipt} onOpenChange={setShowReceipt}>
+        <DialogContent className="max-w-2xl">
+          {receiptData && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 text-primary mb-2">
+                  <div className="p-2 bg-primary/10 rounded-lg">
                     <Receipt className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">Payment Receipt</h3>
-                    <p className="text-green-100">Transaction Successful</p>
+                    <DialogTitle>Payment Receipt</DialogTitle>
+                    <p className="text-sm text-muted-foreground">Transaction Successful</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowReceipt(false)}
-                  className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6" id="receipt-content">
-              {/* School Details */}
-              <div className="text-center border-b pb-4">
-                <h2 className="text-2xl font-bold text-gray-900">{receiptData.school?.schoolName}</h2>
-                <p className="text-gray-600">{receiptData.school?.address}</p>
-                <p className="text-gray-600">
-                  {receiptData.school?.email} | {receiptData.school?.phone}
-                </p>
-              </div>
+              </DialogHeader>
 
-              {/* Receipt Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600 mb-1">Receipt Number</p>
-                  <p className="font-semibold text-gray-900">{receiptData.receiptNumber}</p>
+              <div className="space-y-6 py-2" id="receipt-content">
+                {/* School Info */}
+                <div className="text-center space-y-1">
+                  <h2 className="text-xl font-bold">{receiptData.school?.schoolName}</h2>
+                  <p className="text-sm text-gray-500">{receiptData.school?.address}</p>
+                  <p className="text-sm text-gray-500">{receiptData.school?.email} | {receiptData.school?.phone}</p>
                 </div>
-                <div>
-                  <p className="text-gray-600 mb-1">Transaction ID</p>
-                  <p className="font-semibold text-gray-900">{receiptData.transactionId}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 mb-1">Date</p>
-                  <p className="font-semibold text-gray-900">
-                    {new Date(receiptData.paymentDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600 mb-1">Time</p>
-                  <p className="font-semibold text-gray-900">
-                    {new Date(receiptData.paymentDate).toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
 
-              {/* Student Details */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Student Details</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <Separator />
+
+                {/* Receipt Meta */}
+                <div className="grid grid-cols-2 gap-y-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Name:</span>{' '}
-                    <span className="font-medium">{receiptData.student?.name}</span>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Receipt No</span>
+                    <span className="font-mono font-medium">{receiptData.receiptNumber}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Roll Number:</span>{' '}
-                    <span className="font-medium">{receiptData.student?.rollNum}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Class:</span>{' '}
+                  <div className="text-right">
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Date & Time</span>
                     <span className="font-medium">
-                      {receiptData.student?.sclassName?.sclassName} - {receiptData.student?.section}
+                      {new Date(receiptData.paymentDate).toLocaleDateString()} &nbsp;
+                      {new Date(receiptData.paymentDate).toLocaleTimeString()}
                     </span>
                   </div>
+                  <div>
+                    <span className="text-muted-foreground block text-xs uppercase tracking-wider">Trans. ID</span>
+                    <span className="font-mono">{receiptData.transactionId}</span>
+                  </div>
+                </div>
+
+                {/* Student Info Box */}
+                <div className="bg-muted/30 p-4 rounded-lg border">
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <User className="w-4 h-4" /> Student Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="ml-2 font-medium">{receiptData.student?.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Roll No:</span>
+                      <span className="ml-2 font-medium">{receiptData.student?.rollNum}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Class:</span>
+                      <span className="ml-2 font-medium">
+                        {receiptData.student?.sclassName?.sclassName} - {receiptData.student?.section}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Summary */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center text-sm border-b pb-2">
+                    <span className="text-muted-foreground">Fee Description</span>
+                    <span className="font-medium">{receiptData.fee?.feeStructure?.feeName}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm border-b pb-2">
+                    <span className="text-muted-foreground">Payment Method</span>
+                    <span className="font-medium">{receiptData.paymentMethod}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg font-bold pt-2">
+                    <span>Total Amount Paid</span>
+                    <span className="text-primary">Rs.{receiptData.amount.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                {/* Remarks Footer */}
+                {receiptData.remarks && (
+                  <div className="text-sm bg-yellow-50 p-3 rounded text-yellow-800 border border-yellow-100">
+                    <strong>Note:</strong> {receiptData.remarks}
+                  </div>
+                )}
+
+                <div className="text-center text-xs text-muted-foreground pt-4">
+                  <p>Collected by: {receiptData.collectedBy?.schoolName || 'Admin'}</p>
+                  <p>This is a computer-generated receipt.</p>
                 </div>
               </div>
 
-              {/* Payment Details */}
-              <div className="border-t border-b py-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-600">Fee Type:</span>
-                  <span className="font-semibold">{receiptData.fee?.feeStructure?.feeName}</span>
-                </div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-600">Payment Method:</span>
-                  <span className="font-semibold">{receiptData.paymentMethod}</span>
-                </div>
-                <div className="flex items-center justify-between text-xl">
-                  <span className="font-bold text-gray-900">Amount Paid:</span>
-                  <span className="font-bold text-green-600">Rs.{receiptData.amount.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {receiptData.remarks && (
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">Remarks:</p>
-                  <p className="text-gray-900">{receiptData.remarks}</p>
-                </div>
-              )}
-
-              <div className="text-center text-sm text-gray-500 pt-4">
-                <p>This is a computer-generated receipt.</p>
-                <p className="mt-1">Collected by: {receiptData.collectedBy?.schoolName}</p>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 rounded-b-xl flex gap-3">
-              <button
-                onClick={printReceipt}
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold transition"
-              >
-                Print Receipt
-              </button>
-              <button
-                onClick={() => setShowReceipt(false)}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setShowReceipt(false)}>Close</Button>
+                <Button onClick={printReceipt} className="gap-2">
+                  <Receipt className="w-4 h-4" /> Print Receipt
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
