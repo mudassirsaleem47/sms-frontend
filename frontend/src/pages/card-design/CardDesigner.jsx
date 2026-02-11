@@ -1,64 +1,127 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Draggable from 'react-draggable';
 import axios from 'axios';
 import {
-    IconMaximize, IconMinimize, IconUpload, IconDeviceFloppy, IconX,
-    IconArrowsMove, IconPlus, IconPhoto, IconLayoutCards, IconPrinter,
-    IconTrash, IconEdit, IconChevronDown
-} from '@tabler/icons-react';
+    Maximize2, Minimize2, Upload, Save, X,
+    Plus, Image as ImageIcon, LayoutTemplate, Printer,
+    Trash2, Edit, Type, Grid3X3,
+    Settings2, Palette, Layers, MousePointer2,
+    Undo2, Loader2, Search, ArrowRight, MoreHorizontal, Copy, Check, AlertCircle,
+    ZoomIn, ZoomOut, RotateCcw
+} from 'lucide-react';
 import API_URL from '../../config/api';
 import { useToast } from '../../context/ToastContext';
 import ColorPicker from '../../components/ui/ColorPicker';
-import Tooltip from '../../components/ui/Tooltip';
 
-const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// --- Draggable Element Component ---
+const DraggableElement = ({ element, isSelected, onSelect, onUpdate, scale }) => {
     const nodeRef = useRef(null);
     return (
         <Draggable
             nodeRef={nodeRef}
             bounds="parent"
-            defaultPosition={{ x: element.x, y: element.y }}
+            scale={scale}
+            position={{ x: element.x, y: element.y }}
             onStop={(e, data) => onUpdate(element.id, { x: data.x, y: data.y })}
-            onStart={() => onSelect(element.id)}
         >
             <div
                 ref={nodeRef}
                 onClick={(e) => {
                     e.stopPropagation();
-                    onSelect(element.id); // Ensure click also selects
+                    onSelect(element.id);
                 }}
-                className={`absolute cursor-move hover:outline-1 hover:outline-blue-400 ${isSelected ? 'outline-2 outline-blue-600 z-10' : 'z-0'}`}
+                className={`absolute cursor-move group ${isSelected ? 'z-50' : 'z-10'}`}
                 style={{
-                    fontSize: `${element.fontSize}px`,
-                    fontWeight: element.fontWeight,
-                    color: element.color,
                     width: element.width,
                     height: element.height
                 }}
             >
-                {element.type === 'image' ? (
-                    <div className="w-full h-full bg-gray-200 opacity-80 border border-dashed border-gray-400 flex items-center justify-center text-[10px] text-gray-500 overflow-hidden text-center leading-tight p-1">
-                        {element.label}
-                    </div>
-                ) : element.type === 'marksTable' ? (
-                    <div className="w-full h-full bg-white/90 border border-gray-800 text-[8px] overflow-hidden flex flex-col">
-                        <div className="bg-gray-200 border-b border-gray-800 font-bold p-1 text-center">MARKS TABLE</div>
-                        <table className="w-full text-center flex-1">
-                            <thead className="border-b border-gray-300 bg-gray-50">
-                                <tr><th>Subject</th><th>Max</th><th>Obt</th></tr>
-                            </thead>
-                            <tbody className="opacity-50">
-                                <tr><td>Math</td><td>100</td><td>95</td></tr>
-                                <tr><td>Eng</td><td>100</td><td>88</td></tr>
-                                <tr><td>Sci</td><td>100</td><td>92</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <span>{`{${element.label}}`}</span>
-                )}
+                {/* Visual Feedback on Hover/Selection */}
+                <div className={`absolute inset-0 transition-all duration-200 pointer-events-none ${isSelected
+                    ? 'border-[1.5px] border-primary ring-primary/10 z-50'
+                    : 'border border-dashed border-gray-400/50 group-hover:border-primary/40'
+                    }`} />
+
+                {/* Content Rendering */}
+                <div
+                    className="w-full h-full overflow-hidden select-none"
+                    style={{
+                        fontSize: `${element.fontSize}px`,
+                        fontWeight: element.fontWeight,
+                        color: element.color,
+                        fontFamily: 'Inter, sans-serif',
+                        textAlign: element.textAlign || 'left',
+                        display: 'flex',
+                        alignItems: element.type === 'text' ? 'center' : 'flex-start',
+                        justifyContent: element.textAlign === 'center' ? 'center' : element.textAlign === 'right' ? 'flex-end' : 'flex-start',
+                        pointerEvents: 'none' // Ensure drags work smoothly
+                    }}
+                >
+                    {element.type === 'image' ? (
+                        <div className="w-full h-full bg-muted/30 flex flex-col items-center justify-center text-[10px] text-muted-foreground p-1 text-center">
+                            <ImageIcon className="w-4 h-4 mb-1 opacity-50" />
+                            <span className="truncate w-full font-medium">{element.label}</span>
+                        </div>
+                    ) : element.type === 'marksTable' ? (
+                            <div className="w-full h-full bg-background border border-border text-[8px] flex flex-col shadow-sm rounded-sm">
+                                <div className="bg-muted/50 border-b border-border font-semibold p-1 text-center uppercase tracking-wider">Marks Sheet</div>
+                                <div className="flex-1 p-1">
+                                    <div className="grid grid-cols-3 gap-1 mb-1 border-b pb-0.5 font-medium text-muted-foreground">
+                                        <span>Sub</span><span>Max</span><span>Obt</span>
+                                    </div>
+                                    <div className="space-y-0.5 opacity-70">
+                                        <div className="grid grid-cols-3 gap-1"><span>Eng</span><span>100</span><span>85</span></div>
+                                        <div className="grid grid-cols-3 gap-1"><span>Math</span><span>100</span><span>92</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                        <span className="whitespace-nowrap px-0.5">{`{${element.label}}`}</span>
+                    )}
+                </div>
+
+
             </div>
         </Draggable>
     );
@@ -66,660 +129,647 @@ const DraggableElement = ({ element, isSelected, onSelect, onUpdate }) => {
 
 const CardDesigner = () => {
     const { showToast } = useToast();
-    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('currentUser'));
     const schoolId = user?.schoolName ? user._id : user?.school;
 
     // --- State ---
+    const [view, setView] = useState('list'); // 'list' | 'design'
+    const [templates, setTemplates] = useState([]);
+
+    // Editor State
     const [templateName, setTemplateName] = useState('');
     const [cardType, setCardType] = useState('student');
-    const [backgroundImage, setBackgroundImage] = useState(null); // Local preview URL
-    const [backgroundFile, setBackgroundFile] = useState(null); // Actual file for upload
-    const [elements, setElements] = useState([]); // { id, field, label, x, y, fontSize, color, ... }
+    const [elements, setElements] = useState([]);
     const [selectedElementId, setSelectedElementId] = useState(null);
-    const [templates, setTemplates] = useState([]);
-    const [view, setView] = useState('design'); // 'design' | 'list'
+    const [backgroundImage, setBackgroundImage] = useState(null);
+    const [backgroundFile, setBackgroundFile] = useState(null);
     const [saving, setSaving] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
+    const [zoom, setZoom] = useState(1);
 
-    // New State for Presets
-    const [preset, setPreset] = useState('cr80'); // cr80, a4, custom, etc.
-    const [orientation, setOrientation] = useState('horizontal'); // horizontal, vertical
+    // Delete Dialog State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [templateToDelete, setTemplateToDelete] = useState(null);
+    const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+
+    // Canvas Settings
+    const [preset, setPreset] = useState('cr80');
+    const [orientation, setOrientation] = useState('horizontal');
     const [customWidth, setCustomWidth] = useState(350);
     const [customHeight, setCustomHeight] = useState(220);
 
-    // --- Constants ---
+    // --- Config ---
     const CARD_PRESETS = {
-        'cr80': { label: 'Standard ID (CR80)', width: 323, height: 204, unit: 'px', ratio: 1.58 }, // approx px @ 96dpi
-        'a4': { label: 'A4 Paper', width: 794, height: 1123, unit: 'px', ratio: 0.707 },
-        'letter': { label: 'Letter Paper', width: 816, height: 1056, unit: 'px', ratio: 0.77 },
-        'square': { label: 'Square', width: 400, height: 400, unit: 'px', ratio: 1.0 },
-        'custom': { label: 'Custom Size', width: 0, height: 0, unit: 'px', ratio: 0 }
+        'cr80': { label: 'Standard ID', width: 323, height: 204 },
+        'a4': { label: 'A4 Doc', width: 794, height: 1123 },
+        'square': { label: 'Square Badge', width: 400, height: 400 },
+        'custom': { label: 'Custom Size', width: 0, height: 0 }
     };
 
     const availableFields = {
         student: [
-            { id: 'name', label: 'Student Name' },
-            { id: 'rollNum', label: 'Roll Number' },
-            { id: 'class', label: 'Class' },
-            { id: 'section', label: 'Section' },
-            { id: 'fatherName', label: 'Father Name' },
-            { id: 'admissionId', label: 'Admission ID' },
-            { id: 'dob', label: 'Date of Birth' },
-            { id: 'phone', label: 'Phone' },
-            { id: 'address', label: 'Address' },
-            { id: 'photo', label: 'Student Photo', type: 'image' },
-            { id: 'logo', label: 'School Logo', type: 'image' },
-            { id: 'signature', label: 'Auth. Signature', type: 'image' }
+            { id: 'name', label: 'Name', icon: Type },
+            { id: 'rollNum', label: 'Roll No', icon: Type },
+            { id: 'class', label: 'Class', icon: Type },
+            { id: 'section', label: 'Section', icon: Type },
+            { id: 'fatherName', label: 'Father Name', icon: Type },
+            { id: 'dob', label: 'DOB', icon: Type },
+            { id: 'phone', label: 'Phone', icon: Type },
+            { id: 'address', label: 'Address', icon: Type },
+            { id: 'photo', label: 'Student Photo', type: 'image', icon: ImageIcon },
+            { id: 'logo', label: 'School Logo', type: 'image', icon: ImageIcon },
+            { id: 'signature', label: 'Auth. Sig', type: 'image', icon: ImageIcon }
         ],
         staff: [
-            { id: 'name', label: 'Staff Name' },
-            { id: 'role', label: 'Role/Designation' },
-            { id: 'email', label: 'Email' },
-            { id: 'phone', label: 'Phone' },
-            { id: 'joiningDate', label: 'Joining Date' },
-            { id: 'photo', label: 'Staff Photo', type: 'image' },
-            { id: 'logo', label: 'School Logo', type: 'image' },
-            { id: 'signature', label: 'Auth. Signature', type: 'image' }
+            { id: 'name', label: 'Name', icon: Type },
+            { id: 'role', label: 'Designation', icon: Type },
+            { id: 'email', label: 'Email', icon: Type },
+            { id: 'phone', label: 'Phone', icon: Type },
+            { id: 'joiningDate', label: 'Joined Date', icon: Type },
+            { id: 'photo', label: 'Photo', type: 'image', icon: ImageIcon },
+            { id: 'logo', label: 'Logo', type: 'image', icon: ImageIcon },
+            { id: 'signature', label: 'Auth. Sig', type: 'image', icon: ImageIcon }
         ],
-
         report: [
-            { id: 'name', label: 'Student Name' },
-            { id: 'rollNum', label: 'Roll Number' },
-            { id: 'class', label: 'Class' },
-            { id: 'section', label: 'Section' },
-            { id: 'admissionId', label: 'Admission No' },
-            { id: 'examName', label: 'Exam Name' },
-            { id: 'session', label: 'Session/Year' },
-            { id: 'marksTable', label: 'Marks Table', type: 'marksTable' },
-            { id: 'percentage', label: 'Percentage' },
-            { id: 'grade', label: 'Overall Grade' },
-            { id: 'status', label: 'Pass/Fail Status' },
-            { id: 'attendance', label: 'Attendance' },
-            { id: 'remarks', label: 'Remarks' },
-            { id: 'classTeacherSignature', label: 'Class Teacher Sig', type: 'image' },
-            { id: 'principalSignature', label: 'Principal Sig', type: 'image' },
-            { id: 'logo', label: 'School Logo', type: 'image' },
-            { id: 'parentSignature', label: 'Parent Signature', type: 'image' }
+            { id: 'name', label: 'Name', icon: Type },
+            { id: 'rollNum', label: 'Roll No', icon: Type },
+            { id: 'class', label: 'Class', icon: Type },
+            { id: 'examName', label: 'Exam', icon: Type },
+            { id: 'session', label: 'Session', icon: Type },
+            { id: 'marksTable', label: 'Marks Sheet', type: 'marksTable', icon: Grid3X3 },
+            { id: 'percentage', label: '% Score', icon: Type },
+            { id: 'grade', label: 'Grade', icon: Type },
+            { id: 'status', label: 'Status', icon: Type },
+            { id: 'remarks', label: 'Remarks', icon: Type },
+            { id: 'classTeacherSignature', label: 'Teacher Sig', type: 'image', icon: ImageIcon },
+            { id: 'principalSignature', label: 'Principal Sig', type: 'image', icon: ImageIcon },
+            { id: 'logo', label: 'School Logo', type: 'image', icon: ImageIcon }
         ]
     };
 
-    // Calculate Editor Dimensions based on Preset & Orientation
+    useEffect(() => { fetchTemplates(); }, []);
+
+    // --- Keyboard Shortcuts ---
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!selectedElementId) return;
+
+            // Ignore if typing in an input
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+            const step = e.shiftKey ? 10 : 1;
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    setElements(prev => prev.map(el => el.id === selectedElementId ? { ...el, y: el.y - step } : el));
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    setElements(prev => prev.map(el => el.id === selectedElementId ? { ...el, y: el.y + step } : el));
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    setElements(prev => prev.map(el => el.id === selectedElementId ? { ...el, x: el.x - step } : el));
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    setElements(prev => prev.map(el => el.id === selectedElementId ? { ...el, x: el.x + step } : el));
+                    break;
+                case 'Delete':
+                case 'Backspace':
+                    removeElement(selectedElementId);
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedElementId]);
+
+    const fetchTemplates = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/CardTemplate/${schoolId}`);
+            setTemplates(res.data);
+        } catch (error) { console.error(error); }
+    };
+
+    // --- Canvas Calculation ---
     const getCanvasDimensions = () => {
         let w, h;
         if (preset === 'custom') {
-            w = Number(customWidth);
-            h = Number(customHeight);
+            w = Number(customWidth); h = Number(customHeight);
         } else {
             const p = CARD_PRESETS[preset];
-            w = p.width;
-            h = p.height;
+            w = p.width; h = p.height;
         }
-
-        if (orientation === 'horizontal' && preset !== 'custom') { // Auto swap for presets only
-            return { w: Math.max(w, h), h: Math.min(w, h) };
-        } else if (orientation === 'vertical' && preset !== 'custom') {
-            return { w: Math.min(w, h), h: Math.max(w, h) };
-        }
+        if (orientation === 'horizontal' && preset !== 'custom') return { w: Math.max(w, h), h: Math.min(w, h) };
+        if (orientation === 'vertical' && preset !== 'custom') return { w: Math.min(w, h), h: Math.max(w, h) };
         return { w, h };
     };
 
     const getCanvasStyle = () => {
         const { w, h } = getCanvasDimensions();
-
-        // Scale to fit editor
-        const MAX_DISPLAY = 450;
-        const scale = Math.min(MAX_DISPLAY / w, MAX_DISPLAY / h, 1); // Don't scale up if small
-
-        return {
-            width: `${w * scale}px`,
-            height: `${h * scale}px`,
-            backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            transition: 'all 0.3s ease'
-        };
+        // Adjust scale to fit viewport properly
+        const MAX_W = focusMode ? 1000 : 700;
+        const MAX_H = focusMode ? 800 : 600;
+        const baseScale = Math.min(MAX_W / w, MAX_H / h, 1) * 0.85; // slightly smaller to ensure padding
+        return { w, h, scale: baseScale * zoom };
     };
-
-    // --- Effects ---
-    useEffect(() => {
-        fetchTemplates();
-    }, []);
 
     // --- Actions ---
-    const fetchTemplates = async () => {
-        try {
-            const res = await axios.get(`${API_URL}/CardTemplate/${schoolId}`);
-            setTemplates(res.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setBackgroundImage(URL.createObjectURL(file));
-            setBackgroundFile(file);
-        }
-    };
-
     const addElement = (field) => {
-        const newElement = {
+        setIsDirty(true);
+        // Center the new element roughly
+        const { w, h } = getCanvasDimensions();
+
+        const newEl = {
             id: Date.now(),
             field: field.id,
-            label: field.label, // Display label
+            label: field.label,
             type: field.type || 'text',
-            x: 50,
-            y: 50,
-            fontSize: 14,
+            x: w / 2 - 40, // rough center
+            y: h / 2 - 10,
+            fontSize: 12,
             fontWeight: 'normal',
             color: '#000000',
-            width: field.type === 'image' ? 80 : field.type === 'marksTable' ? 300 : undefined,
-            height: field.type === 'image' ? 100 : field.type === 'marksTable' ? 200 : undefined
+            width: field.type === 'marksTable' ? 250 : field.type === 'image' ? 80 : undefined,
+            height: field.type === 'marksTable' ? 150 : field.type === 'image' ? 80 : undefined,
+            textAlign: 'left'
         };
-        setElements([...elements, newElement]);
-        setSelectedElementId(newElement.id);
+        setElements([...elements, newEl]);
+        setSelectedElementId(newEl.id);
     };
 
     const updateElement = (id, updates) => {
+        setIsDirty(true);
         setElements(elements.map(el => el.id === id ? { ...el, ...updates } : el));
     };
 
     const removeElement = (id) => {
-        setElements(elements.filter(el => el.id !== id));
+        setIsDirty(true);
+        setElements(elements.filter(e => e.id !== id));
         if (selectedElementId === id) setSelectedElementId(null);
-    };
-
-    const navigateToPrint = (template) => {
-        switch (template.cardType) {
-            case 'student':
-                navigate('/admin/card-management/student');
-                break;
-            case 'staff':
-                navigate('/admin/card-management/staff');
-                break;
-            case 'report':
-                navigate('/admin/report-card');
-                break;
-            default:
-                showToast('Unknown card type', 'error');
-        }
-    };
+    }
 
     const saveDetails = async () => {
-        if (!templateName || !backgroundImage) {
-            showToast('Please provide a name and background image', 'error');
-            return;
-        }
-
+        if (!templateName) { showToast('Please name your template', 'error'); return; }
         setSaving(true);
         try {
             const formData = new FormData();
             formData.append('school', schoolId);
             formData.append('name', templateName);
             formData.append('cardType', cardType);
-            
             const dims = getCanvasDimensions();
-            // Send as JSON string to handle object structure
             formData.append('dimensions', JSON.stringify({ width: dims.w, height: dims.h }));
             formData.append('orientation', orientation);
-
             formData.append('elements', JSON.stringify(elements));
+            if (backgroundFile) formData.append('backgroundImage', backgroundFile);
+            else if (backgroundImage && !backgroundImage.startsWith('blob:')) formData.append('backgroundImage', backgroundImage);
 
-            if (backgroundFile) {
-                formData.append('backgroundImage', backgroundFile);
-            } else if (backgroundImage) {
-                formData.append('backgroundImage', backgroundImage);
-            }
-
-            await axios.post(`${API_URL}/CardTemplate/save`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            await axios.post(`${API_URL}/CardTemplate/save`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
             showToast('Template Saved Successfully!', 'success');
+            setIsDirty(false); // Reset dirty state on save
             fetchTemplates();
             setView('list');
         } catch (error) {
-            console.error(error);
-            showToast('Failed to save template: ' + (error.response?.data?.message || error.message), 'error');
+            console.error(error); 
+            showToast('Failed to save', 'error');
         } finally {
-            setSaving(false);
+            setSaving(false); 
         }
     };
 
-    // --- Render Helpers ---
-    const renderElementEditor = () => {
-        const el = elements.find(e => e.id === selectedElementId);
-
-        if (!el) {
-            return (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6 text-center">
-                    <IconArrowsMove className="w-12 h-12 mb-3 opacity-20" />
-                    <p className="text-sm">Select an element on the canvas to edit its properties</p>
-                </div>
-            );
-        }
-
-        return (
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                    <h4 className="font-bold text-gray-800">{el.label}</h4>
-                    <button
-                        onClick={() => removeElement(el.id)}
-                        className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded-lg transition"
-                        title="Delete Element"
-                    >
-                        <IconX size={16} />
-                    </button>
-                </div>
-                
-                {el.type === 'text' && (
-                    <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Font Size</label>
-                            <div className="flex items-center gap-3">
-                                <input 
-                                    type="range"
-                                    min="8"
-                                    max="48"
-                                    value={el.fontSize}
-                                    onChange={(e) => updateElement(el.id, { fontSize: parseInt(e.target.value) })}
-                                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                />
-                                <span className="text-sm font-medium w-8 text-right">{el.fontSize}</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <ColorPicker
-                                label="Color"
-                                value={el.color}
-                                onChange={(color) => updateElement(el.id, { color })}
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Font Weight</label>
-                            <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-                                <button
-                                    onClick={() => updateElement(el.id, { fontWeight: 'normal' })}
-                                    className={`py-1.5 text-sm rounded ${el.fontWeight === 'normal' ? 'bg-white shadow text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-100'}`}
-                                >
-                                    Normal
-                                </button>
-                                <button
-                                    onClick={() => updateElement(el.id, { fontWeight: 'bold' })}
-                                    className={`py-1.5 text-sm rounded ${el.fontWeight === 'bold' ? 'bg-white shadow text-gray-900 font-bold' : 'text-gray-500 hover:bg-gray-100'}`}
-                                >
-                                    Bold
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {(el.type === 'image' || el.type === 'marksTable') && (
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Width</label>
-                                <input 
-                                    type="number" 
-                                    value={el.width} 
-                                    onChange={(e) => updateElement(el.id, { width: parseInt(e.target.value) })}
-                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                             </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Height</label>
-                                <input 
-                                    type="number" 
-                                    value={el.height} 
-                                    onChange={(e) => updateElement(el.id, { height: parseInt(e.target.value) })}
-                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                             </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
+    const loadTemplate = (t) => {
+        setTemplateName(t.name);
+        setCardType(t.cardType);
+        const { width, height } = t.dimensions || { width: 323, height: 204 };
+        const isStandard = (width === 323 || width === 204);
+        setPreset(isStandard ? 'cr80' : 'custom');
+        if (!isStandard) { setCustomWidth(width); setCustomHeight(height); }
+        setOrientation(width > height ? 'horizontal' : 'vertical');
+        setBackgroundImage(t.backgroundImage);
+        setElements(t.elements);
+        setIsDirty(false); // Reset dirty state after loading
+        setView('design');
     };
 
+    const handleBackClick = () => {
+        if (isDirty) {
+            setDiscardDialogOpen(true);
+        } else {
+            setView('list');
+        }
+    };
+
+    const handleDiscard = () => {
+        setDiscardDialogOpen(false);
+        setIsDirty(false);
+        setView('list');
+    };
+
+    const confirmDelete = (id) => {
+        setTemplateToDelete(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!templateToDelete) return;
+        try {
+            await axios.delete(`${API_URL}/CardTemplate/${templateToDelete}`);
+            showToast("Template deleted successfully", "success");
+            fetchTemplates();
+        } catch (error) {
+            showToast("Failed to delete template", "error");
+        } finally {
+            setDeleteDialogOpen(false);
+            setTemplateToDelete(null);
+        }
+    };
+
+    const selectedEl = elements.find(e => e.id === selectedElementId);
+    const canvas = getCanvasStyle();
+
+    // --- Render: List View ---
+    if (view === 'list') {
     return (
-        <div className={`flex flex-col h-screen overflow-hidden transition-all duration-300 ${focusMode ? 'fixed inset-0 z-[100] w-screen h-screen bg-white' : 'min-h-screen bg-gray-50/50'}`}>
-
-            {/* Header */}
-            <div className="h-16 bg-white border-b rounded-lg border-gray-200 px-6 flex items-center justify-between shrink-0 z-20">
-                <div className="flex items-center gap-4">
-                    <div className="bg-indigo-600 p-2 rounded-lg">
-                        <IconLayoutCards className="w-5 h-5 text-white" />
-                    </div>
+        <div className="flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl font-bold text-gray-900">Card Designer</h1>
-                            {view === 'design' && (
-                                <button
-                                    onClick={() => setFocusMode(!focusMode)}
-                                    className={`p-1.5 rounded-lg transition ${focusMode ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
-                                >
-                                    {focusMode ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
-                                </button>
-                            )}
-                        </div>
-                    </div>
+                    <h1 className="text-4xl font-bold tracking-tight text-foreground">Design Studio</h1>
+                    <p className="text-muted-foreground mt-2 text-lg">Create bespoke ID cards and certificates</p>
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="bg-gray-100 rounded-lg p-1 flex">
-                        <button 
-                             onClick={() => setView('list')}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${view === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            My Templates
-                        </button>
-                        <button 
-                            onClick={() => { setView('design'); setBackgroundImage(null); setElements([]); setTemplateName(''); }}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${view === 'design' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Create New
-                        </button>
-                    </div>
-
-                    {view === 'design' && (
-                        <>
-                            <div className="h-8 w-px bg-gray-200 mx-2"></div>
-                            <button
-                                onClick={saveDetails}
-                                disabled={saving}
-                                className="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 shadow-lg hover:shadow-indigo-500/30 transition flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <IconDeviceFloppy className="w-4 h-4" />}
-                                Save Template
-                            </button>
-                        </>
-                    )}
-                </div>
+                <Button onClick={() => {
+                    setTemplateName(''); setElements([]); setBackgroundImage(null); setIsDirty(false); setView('design');
+                }} size="lg" className="shadow-lg hover:shadow-primary/25 transition-all">
+                    <Plus className="w-5 h-5 mr-2" /> New Template
+                </Button>
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 overflow-hidden relative">
-                {view === 'list' ? (
-                    <div className="h-full overflow-y-auto p-8">
-                        <div className="max-w-7xl mx-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {/* Create New Card */}
-                                <div
-                                    onClick={() => { setView('design'); setBackgroundImage(null); setElements([]); }}
-                                    className="bg-white rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition group h-64"
-                                >
-                                    <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <IconPlus className="w-8 h-8 text-indigo-500" />
-                                    </div>
-                                    <h3 className="font-bold text-gray-800">Create New</h3>
-                                    <p className="text-sm text-gray-500 mt-1">Design from scratch</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {/* Create New Card */}
+                <div 
+                    onClick={() => { setTemplateName(''); setElements([]); setBackgroundImage(null); setIsDirty(false); setView('design'); }}
+                    className="group relative flex flex-col items-center justify-center p-8 border-2 border-dashed border-muted-foreground/20 rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all duration-300 h-[280px]"
+                >
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                        <Plus className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-xl text-foreground">Start Fresh</h3>
+                    <p className="text-sm text-muted-foreground text-center mt-2 px-4">Create a new design from a blank canvas</p>
+                </div>
+
+                {templates.map(t => (
+                    <Card key={t._id} className="overflow-hidden group border-muted hover:border-primary/20 hover:shadow-xl transition-all duration-300 h-[280px] flex flex-col cursor-pointer" onClick={() => loadTemplate(t)}>
+                        <div className="h-40 bg-muted/30 relative overflow-hidden flex items-center justify-center">
+                            {t.backgroundImage ? (
+                                <img src={t.backgroundImage} alt={t.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                            ) : (
+                                <LayoutTemplate className="w-12 h-12 text-muted-foreground/20" />
+                            )}
+                            <div className="absolute top-3 right-3">
+                                <Badge variant="outline" className="bg-background/80 backdrop-blur-sm border-0 shadow-sm uppercase text-[10px] font-bold tracking-wider">
+                                    {t.cardType}
+                                </Badge>
+                            </div>
+                            {/* Actions Overlay */}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                                <Button size="icon" variant="secondary" className="h-9 w-9 rounded-full shadow-lg" onClick={(e) => { e.stopPropagation(); loadTemplate(t) }} title="Edit">
+                                    <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button size="icon" variant="destructive" className="h-9 w-9 rounded-full shadow-lg" onClick={(e) => { e.stopPropagation(); confirmDelete(t._id); }} title="Delete">
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                        <CardContent className="p-5 flex-1 flex flex-col justify-end">
+                            <h3 className="font-semibold text-lg truncate mb-1">{t.name || "Untitled Template"}</h3>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                                <span className="flex items-center gap-1.5">
+                                    <Layers className="w-3 h-3" /> {t.elements?.length || 0} Layers
+                                </span>
+                                <span>{new Date(t.createdAt).toLocaleDateString()}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <div className="col-span-full py-12 text-center text-muted-foreground hidden only:block">
+                {/* Fallback if no templates - 'only:block' depends on siblings, logic here is slightly off for React list */}
+            </div>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the template
+                            from your gallery.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete Template
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+        );
+    }
+
+    // --- Render: Design View ---
+    return (
+        <div className="flex h-screen w-full bg-background overflow-hidden font-sans fixed inset-0 z-50">
+
+            {/* LEFT SIDEBAR: CONFIGURATION */}
+            <div className={`w-80 border-r bg-card flex flex-col z-20 shrink-0 transition-transform duration-300 ease-in-out ${focusMode ? '-translate-x-full absolute' : 'translate-x-0'}`}>
+                <div className="h-14 border-b flex items-center px-4 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={handleBackClick} className="gap-2 text-muted-foreground hover:text-foreground">
+                        <Undo2 className="w-4 h-4" /> Back to Gallery
+                    </Button>
+                </div>
+
+                <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Discard Changes
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                <ScrollArea className="flex-1">
+                    <div className="p-5 space-y-6">
+
+                        {/* 1. Project Settings */}
+                        <div className="space-y-4">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Template Details</Label>
+                            <div className="space-y-3">
+                                <Input
+                                    value={templateName}
+                                    onChange={(e) => { setTemplateName(e.target.value); setIsDirty(true); }}
+                                    placeholder="Template Name"
+                                    className="h-9"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Select value={cardType} onValueChange={(val) => { setCardType(val); setIsDirty(true); }}>
+                                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="student">Student ID</SelectItem>
+                                            <SelectItem value="staff">Staff ID</SelectItem>
+                                            <SelectItem value="report">Report Card</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={preset} onValueChange={(val) => { setPreset(val); setIsDirty(true); }}>
+                                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(CARD_PRESETS).map(([k, v]) => (
+                                                <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
-                                {templates.map(t => (
-                                    <div key={t._id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group flex flex-col h-64 z-0 hover:z-10 relative">
-                                        <div className="h-32 bg-gray-100 relative overflow-hidden rounded-t-xl">
-                                            {t.backgroundImage ? (
-                                                <img src={t.backgroundImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                        <IconPhoto className="w-8 h-8" />
-                                                </div>
-                                            )}
-                                            <div className="absolute top-2 right-2 flex gap-1">
-                                                <span className="bg-black/60 backdrop-blur-md text-white px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wide border border-white/10">
-                                                    {t.cardType}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 flex flex-col flex-1">
-                                            <h3 className="font-bold text-gray-900 truncate" title={t.name}>{t.name}</h3>
-                                            <div className="text-xs text-gray-500 mt-1 flex justify-between items-center">
-                                                <span>{new Date(t.createdAt).toLocaleDateString()}</span>
-                                                <span className="flex items-center gap-1"><IconLayoutCards size={10} /> {t.elements.length} items</span>
-                                            </div>
-                                            <div className="mt-auto pt-3 flex justify-end gap-2">
-                                                <Tooltip text="Edit Template" position="top">
-                                                    <button
-                                                        onClick={() => loadTemplate(t)}
-                                                        className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition"
-                                                    >
-                                                        <IconEdit size={16} />
-                                                    </button>
-                                                </Tooltip>
-                                                <Tooltip text="Print Cards" position="top">
-                                                    <button
-                                                        onClick={() => navigateToPrint(t)}
-                                                        className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition"
-                                                    >
-                                                        <IconPrinter size={16} />
-                                                    </button>
-                                                </Tooltip>
-                                                <Tooltip text="Delete Template" position="top">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); deleteTemplate(t._id); }}
-                                                        className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
-                                                    >
-                                                        <IconTrash size={16} />
-                                                    </button>
-                                                </Tooltip>
-                                            </div>
-                                        </div>
+                                <div className="flex bg-muted p-1 rounded-md">
+                                    <button
+                                        onClick={() => setOrientation('horizontal')}
+                                        className={`flex-1 py-1 text-xs font-medium rounded-sm transition-all ${orientation === 'horizontal' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >Horizontal</button>
+                                    <button
+                                        onClick={() => setOrientation('vertical')}
+                                        className={`flex-1 py-1 text-xs font-medium rounded-sm transition-all ${orientation === 'vertical' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >Vertical</button>
+                                </div>
+
+                                {preset === 'custom' && (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1"><Label className="text-[10px]">W</Label><Input type="number" className="h-8 text-xs" value={customWidth} onChange={(e) => { setCustomWidth(e.target.value); setIsDirty(true); }} /></div>
+                                        <div className="space-y-1"><Label className="text-[10px]">H</Label><Input type="number" className="h-8 text-xs" value={customHeight} onChange={(e) => { setCustomHeight(e.target.value); setIsDirty(true); }} /></div>
                                     </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* 2. Background */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Background</Label>
+                            <div className="relative group cursor-pointer border-2 border-dashed border-border rounded-lg h-28 bg-muted/20 hover:bg-muted/40 transition-colors overflow-hidden flex flex-col items-center justify-center text-center">
+                                <Input
+                                    type="file" accept="image/*"
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    onChange={(e) => { const file = e.target.files[0]; if (file) { setBackgroundImage(URL.createObjectURL(file)); setBackgroundFile(file); setIsDirty(true); } }}
+                                />
+                                {backgroundImage ? (
+                                    <>
+                                        <img src={backgroundImage} className="w-full h-full object-cover opacity-80" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="text-xs text-white font-medium">Change Image</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                        <div className="flex flex-col items-center gap-1.5 p-2">
+                                            <Upload className="w-5 h-5 text-muted-foreground/70" />
+                                            <span className="text-xs text-muted-foreground">Click to upload</span>
+                                        </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* 3. Elements */}
+                        <div className="space-y-3">
+                            <Label className="text-xs font-semibold uppercase text-muted-foreground">Add Elements</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {availableFields[cardType].map(field => (
+                                    <Button key={field.id} variant="outline" size="sm" onClick={() => addElement(field)} className="justify-start h-8 text-xs px-2 font-normal">
+                                        <field.icon className="w-3.5 h-3.5 mr-2 opacity-70" />
+                                        <span className="truncate">{field.label}</span>
+                                    </Button>
                                 ))}
                             </div>
+                        </div>
 
-                            {templates.length === 0 && (
-                                <div className="text-center py-12">
-                                    <p className="text-gray-400">No templates found besides 'Create New'</p>
-                                </div>
-                            )}
+                    </div>
+                </ScrollArea>
+
+                <div className="p-4 border-t bg-card">
+                    <Button onClick={saveDetails} className="w-full" disabled={saving}>
+                        {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save Template
+                    </Button>
+                </div>
+            </div>
+
+            {/* MAIN CANVAS AREA */}
+            <div className="flex-1 flex flex-col relative bg-muted/10 h-full overflow-hidden">
+                {/* Toolbar */}
+                <div className="h-14 border-b bg-background flex items-center justify-between px-6 z-10 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedElementId(null)} disabled={!selectedElementId} className="h-8 text-xs">
+                            Deselect
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} title="Zoom Out">
+                                <ZoomOut className="w-4 h-4" />
+                            </Button>
+                            <span className="text-xs text-muted-foreground min-w-[3rem] text-center select-none">
+                                {Math.round(canvas.scale * 100)}%
+                            </span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setZoom(z => Math.min(3, z + 0.1))} title="Zoom In">
+                                <ZoomIn className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setZoom(1)} title="Reset Zoom">
+                                <RotateCcw className="w-3 h-3" />
+                            </Button>
+                            <Separator orientation="vertical" className="h-6 mx-1" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setFocusMode(!focusMode)} title={focusMode ? "Exit Focus Mode" : "Focus Mode"}>
+                                {focusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                            </Button>
                         </div>
                     </div>
-                ) : (
-                    <div className="flex h-full">
+                </div>
 
-                            {/* 1. Left Sidebar - Config & Tools */}
-                            <div className="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 z-10">
-                                {/* Scrollable Area */}
-                                <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
+                {/* Canvas Scroll Area */}
+                <div className="flex-1 overflow-auto flex items-center justify-center p-10 bg-dot-pattern">
+                    <div 
+                        className="bg-white shadow-xl relative transition-all duration-300 ring-1 ring-black/5"
+                        onClick={() => setSelectedElementId(null)}
+                        style={{
+                            width: canvas.w,
+                            height: canvas.h,
+                            transform: `scale(${canvas.scale})`,
+                            // Center transformation logic
+                            backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                        }}
+                    >
+                        {/* Empty State Hint */}
+                        {!backgroundImage && elements.length === 0 && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/30 pointer-events-none">
+                                <LayoutTemplate className="w-16 h-16 mb-2" />
+                                <span className="text-sm font-medium uppercase tracking-widest">Canvas Ready</span>
+                            </div>
+                        )}
 
-                                    <div className="mb-8">
-                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                                            Setup
-                                        </h3>
+                        {elements.map(el => (
+                            <DraggableElement
+                                key={el.id}
+                                element={el}
+                                isSelected={selectedElementId === el.id}
+                                onSelect={setSelectedElementId}
+                                onUpdate={updateElement}
+                                scale={canvas.scale}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT SIDEBAR: PROPERTIES */}
+            <div className={`w-72 border-l bg-card flex flex-col z-20 shrink-0 transition-transform duration-300 ease-in-out ${focusMode ? 'translate-x-full absolute right-0' : 'translate-x-0'}`}>
+                {selectedElementId && selectedEl ? (
+                    <>
+                        <div className="h-14 border-b flex items-center justify-between px-4 bg-muted/5 shrink-0">
+                            <span className="text-sm font-semibold">Properties</span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => removeElement(selectedEl.id)}>
+                                <Trash2 className="w-4 h-4" />
+                            </Button>
+                        </div>
+
+                        <ScrollArea className="flex-1 p-5">
+                            <div className="space-y-6">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs uppercase text-muted-foreground">Content</Label>
+                                    <Input value={selectedEl.label} disabled className="h-8 bg-muted text-xs" />
+                                </div>
+
+                                {selectedEl.type === 'text' && (
+                                    <>
+                                        <Separator />
                                         <div className="space-y-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-sm font-medium text-gray-700">Template Name</label>
-                                                <input
-                                                    type="text" 
-                                                    placeholder="e.g. Standard ID Card"
-                                                    value={templateName}
-                                                    onChange={(e) => setTemplateName(e.target.value)}
-                                                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                                            <Label className="text-xs uppercase text-muted-foreground">Typography</Label>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-xs">
+                                                    <span>Size</span>
+                                                    <span className="text-muted-foreground">{selectedEl.fontSize}px</span>
+                                                </div>
+                                                <Slider
+                                                    min={8} max={72} step={1}
+                                                    value={[selectedEl.fontSize]}
+                                                    onValueChange={(val) => updateElement(selectedEl.id, { fontSize: val[0] })}
+                                                    className="py-1"
                                                 />
                                             </div>
 
-                                            <div className="space-y-1.5">
-                                                <label className="text-sm font-medium text-gray-700">Card Type</label>
-                                                <div className="relative">
-                                                    <select
-                                                        value={cardType}
-                                                        onChange={(e) => setCardType(e.target.value)}
-                                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
-                                                    >
-                                                        <option value="student">Student ID Card</option>
-                                                        <option value="staff">Staff ID Card</option>
-                                                        <option value="report">Result / Report Card</option>
-                                                    </select>
-                                                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Dimensions/Preset Selection */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-sm font-medium text-gray-700">Dimensions</label>
-                                                <div className="space-y-2">
-                                                    <div className="relative">
-                                                        <select
-                                                            value={preset}
-                                                            onChange={(e) => setPreset(e.target.value)}
-                                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm appearance-none focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer"
-                                                        >
-                                                            {Object.entries(CARD_PRESETS).map(([key, val]) => (
-                                                                <option key={key} value={key}>{val.label} {key !== 'custom' && `(${val.width} x ${val.height} ${val.unit})`}</option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                                                            <IconChevronDown size={16} className="text-gray-400" />
-                                                        </div>
-                                                    </div>
-
-                                                    {preset === 'custom' && (
-                                                        <div className="grid grid-cols-2 gap-2 animate-fade-in">
-                                                            <div>
-                                                                <label className="text-xs text-center block text-gray-500 mb-1">W (px)</label>
-                                                                <input
-                                                                    type="number"
-                                                                    value={customWidth}
-                                                                    onChange={(e) => setCustomWidth(parseInt(e.target.value) || 0)}
-                                                                    className="w-full text-sm border p-1.5 rounded"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-xs text-center block text-gray-500 mb-1">H (px)</label>
-                                                                <input
-                                                                    type="number"
-                                                                    value={customHeight}
-                                                                    onChange={(e) => setCustomHeight(parseInt(e.target.value) || 0)}
-                                                                    className="w-full text-sm border p-1.5 rounded"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <div className="grid grid-cols-2 gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-                                                        <button
-                                                            onClick={() => setOrientation('vertical')}
-                                                            className={`flex items-center justify-center gap-1 py-1.5 text-xs rounded transition ${orientation === 'vertical' ? 'bg-white shadow text-indigo-600 font-bold' : 'text-gray-500 hover:bg-gray-100'}`}
-                                                        >
-                                                            <div className="w-3 h-4 border border-current rounded-sm"></div> Portrait
-                                                        </button>
-                                                        <button
-                                                            onClick={() => setOrientation('horizontal')}
-                                                            className={`flex items-center justify-center gap-1 py-1.5 text-xs rounded transition ${orientation === 'horizontal' ? 'bg-white shadow text-indigo-600 font-bold' : 'text-gray-500 hover:bg-gray-100'}`}
-                                                        >
-                                                            <div className="w-4 h-3 border border-current rounded-sm"></div> Landscape
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-1.5">
-                                                <label className="text-sm font-medium text-gray-700">Background</label>
-                                                <div className="relative group cursor-pointer">
-                                                    <input type="file" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" />
-                                                    <div className="w-full h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center bg-gray-50 group-hover:bg-indigo-50 group-hover:border-indigo-400 transition-all overflow-hidden relative">
-                                                        {backgroundImage ? (
-                                                            <>
-                                                                <img src={backgroundImage} className="w-full h-full object-cover" />
-                                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <span className="text-white text-xs font-bold flex items-center gap-1"><IconUpload size={12} /> Change</span>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                                                        <IconUpload className="w-5 h-5 text-gray-400 group-hover:text-indigo-500" />
-                                                                </div>
-                                                                <span className="text-xs text-gray-500 font-medium group-hover:text-indigo-600">Upload Image</span>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-gray-100 pt-6">
-                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                            Add Elements
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {availableFields[cardType].map(field => (
-                                                <button
-                                                    key={field.id}
-                                                    onClick={() => addElement(field)}
-                                                    className="flex flex-col items-center justify-center p-3 bg-white border border-gray-200 rounded-lg hover:border-indigo-500 hover:shadow-md hover:-translate-y-0.5 transition-all group"
+                                            <div className="space-y-2">
+                                                <Button
+                                                    size="sm" variant={selectedEl.fontWeight === 'bold' ? 'secondary' : 'outline'}
+                                                    onClick={() => updateElement(selectedEl.id, { fontWeight: selectedEl.fontWeight === 'bold' ? 'normal' : 'bold' })}
+                                                    className="w-full h-8 text-xs"
                                                 >
-                                                    <span className="text-xs font-medium text-gray-600 text-center group-hover:text-indigo-600">{field.label}</span>
-                                                </button>
-                                            ))}
+                                                    Bold
+                                                </Button>
+                                                <ColorPicker
+                                                    value={selectedEl.color}
+                                                    onChange={(val) => updateElement(selectedEl.id, { color: val })}
+                                                />
+                                            </div>
+
+                                            <div className="flex bg-muted p-1 rounded-md">
+                                                {['left', 'center', 'right'].map(align => (
+                                                    <button key={align} onClick={() => updateElement(selectedEl.id, { textAlign: align })} className={`flex-1 py-1 rounded-sm text-xs capitalize transition-all ${selectedEl.textAlign === align ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                                                        {align}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {['image', 'marksTable'].includes(selectedEl.type) && (
+                                    <div className="space-y-4">
+                                        <Label className="text-xs uppercase text-muted-foreground">Size (px)</Label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1"><Label className="text-[10px]">W</Label><Input type="number" className="h-8 text-xs" value={selectedEl.width} onChange={(e) => updateElement(selectedEl.id, { width: parseInt(e.target.value) })} /></div>
+                                            <div className="space-y-1"><Label className="text-[10px]">H</Label><Input type="number" className="h-8 text-xs" value={selectedEl.height} onChange={(e) => updateElement(selectedEl.id, { height: parseInt(e.target.value) })} /></div>
                                         </div>
                                     </div>
+                                )}
 
-                                </div>
-                            </div>
-
-                            {/* 2. Center - Canvas */}
-                            <div className="flex-1 bg-gray-100 relative overflow-hidden flex flex-col">
-                                {/* Toolbar/Ruler placeholder could go here */}
-                                <div className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-xs font-mono text-gray-500 border border-gray-200 shadow-sm">
-                                    {elements.length} Elements
-                                </div>
-
-                                <div className="flex-1 flex items-center justify-center p-10 overflow-auto">
-                                    <div 
-                                        className="relative bg-white shadow-2xl transition-all duration-300 ring-1 ring-gray-900/5"
-                                        onClick={() => setSelectedElementId(null)}
-                                        style={{
-                                            ...getCanvasStyle(),
-                                            // Override scale in render
-                                        }}
-                                    >
-                                        {!backgroundImage && (
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
-                                                <IconPhoto className="w-16 h-16 mb-2 opacity-20" />
-                                                <span className="text-sm font-medium">Card Preview Area</span>
-                                            </div>
-                                        )}
-
-                                        {elements.map(el => (
-                                            <DraggableElement
-                                                key={el.id} 
-                                                element={el}
-                                                isSelected={selectedElementId === el.id}
-                                                onSelect={setSelectedElementId}
-                                                onUpdate={updateElement}
-                                            />
-                                        ))}
+                                <Separator />
+                                <div className="space-y-3">
+                                    <Label className="text-xs uppercase text-muted-foreground">Position</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="relative"><span className="absolute left-2 top-2 text-[10px] text-muted-foreground">X</span><Input type="number" className="h-8 pl-6 text-xs" value={Math.round(selectedEl.x)} onChange={(e) => updateElement(selectedEl.id, { x: parseInt(e.target.value) })} /></div>
+                                        <div className="relative"><span className="absolute left-2 top-2 text-[10px] text-muted-foreground">Y</span><Input type="number" className="h-8 pl-6 text-xs" value={Math.round(selectedEl.y)} onChange={(e) => updateElement(selectedEl.id, { y: parseInt(e.target.value) })} /></div>
                                     </div>
                                 </div>
-                        </div>
-
-                            {/* 3. Right Sidebar - Properties */}
-                            <div className="w-72 bg-white border-l border-gray-200 flex flex-col shrink-0 z-10 transition-all duration-300">
-                                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
-                                        Properties
-                                    </h3>
-                                </div>
-                                <div className="p-5 flex-1 overflow-y-auto">
-                                    {renderElementEditor()}
-                                </div>
                             </div>
-
+                        </ScrollArea>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6 text-center">
+                        <MousePointer2 className="w-10 h-10 mb-4 opacity-20" />
+                        <p className="text-sm font-medium">No Element Selected</p>
+                        <p className="text-xs mt-1 text-muted-foreground/70">Click on any element in the canvas to edit its properties.</p>
                     </div>
                 )}
             </div>

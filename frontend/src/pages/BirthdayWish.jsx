@@ -2,11 +2,26 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import SearchBar from '../components/SearchBar';
 import { 
-    Cake, Send, Gift, Calendar, Users, CheckCircle2, 
-    MessageCircle, ChevronDown, PartyPopper, Star
+    Cake, Gift, Calendar, PartyPopper, Star, Search, MessageCircle, Send
 } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -132,22 +147,37 @@ const BirthdayWish = () => {
 
     const filteredStudents = getFilteredStudents();
 
+    // Reset selection when filter changes
+    useEffect(() => {
+        setSelectedStudents([]);
+        setSelectAll(false);
+    }, [dateFilter]);
+
     // Handle Select All
-    const handleSelectAll = () => {
-        if (selectAll) {
-            setSelectedStudents([]);
-        } else {
+    const handleSelectAll = (checked) => {
+        setSelectAll(checked);
+        if (checked) {
             setSelectedStudents(filteredStudents.map(s => s._id));
+        } else {
+            setSelectedStudents([]);
         }
-        setSelectAll(!selectAll);
     };
 
-    // Handle Individual Selection
-    const handleStudentSelect = (studentId) => {
-        if (selectedStudents.includes(studentId)) {
-            setSelectedStudents(selectedStudents.filter(id => id !== studentId));
+    // Check if all are selected
+    useEffect(() => {
+        if (filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length) {
+            setSelectAll(true);
         } else {
-            setSelectedStudents([...selectedStudents, studentId]);
+            setSelectAll(false);
+        }
+    }, [selectedStudents, filteredStudents]);
+
+    // Handle Individual Selection
+    const handleStudentSelect = (studentId, checked) => {
+        if (checked) {
+            setSelectedStudents(prev => [...prev, studentId]);
+        } else {
+            setSelectedStudents(prev => prev.filter(id => id !== studentId));
         }
     };
 
@@ -218,269 +248,235 @@ const BirthdayWish = () => {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                        <Cake className="w-10 h-10 text-pink-500" />
+                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                         Birthday Wishes
                     </h1>
-                    <p className="text-gray-600 mt-2">Send birthday greetings to your students</p>
+                    <p className="text-muted-foreground mt-1">Send birthday greetings to your students</p>
                 </div>
-                <button 
-                    onClick={handleSendWishes}
-                    disabled={sending || selectedStudents.length === 0}
-                    className="flex items-center px-6 py-3 bg-linear-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition duration-200 font-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {sending ? (
-                        <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                            Sending...
-                        </>
-                    ) : (
-                        <>
-                            <Gift className="w-5 h-5 mr-2" />
-                            Send Wishes ({selectedStudents.length})
-                        </>
-                    )}
-                </button>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                <div 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${dateFilter === 'today' ? 'border-primary ring-1 ring-primary' : ''}`}
                     onClick={() => setDateFilter('today')}
-                    className={`bg-white rounded-xl shadow-lg p-6 border-2 cursor-pointer transition ${
-                        dateFilter === 'today' ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-pink-300'
-                    }`}
                 >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">Today's Birthdays</p>
-                            <p className="text-3xl font-bold text-pink-600 mt-1">{stats.today}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
-                            <PartyPopper className="w-6 h-6 text-pink-600" />
-                        </div>
-                    </div>
-                </div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Today's Birthdays</CardTitle>
+                        <Cake className="h-4 w-4 text-pink-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.today}</div>
+                    </CardContent>
+                </Card>
                 
-                <div 
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${dateFilter === 'week' ? 'border-primary ring-1 ring-primary' : ''}`}
                     onClick={() => setDateFilter('week')}
-                    className={`bg-white rounded-xl shadow-lg p-6 border-2 cursor-pointer transition ${
-                        dateFilter === 'week' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'
-                    }`}
                 >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">This Week</p>
-                            <p className="text-3xl font-bold text-purple-600 mt-1">{stats.thisWeek}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <Calendar className="w-6 h-6 text-purple-600" />
-                        </div>
-                    </div>
-                </div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">This Week</CardTitle>
+                        <Calendar className="h-4 w-4 text-purple-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.thisWeek}</div>
+                    </CardContent>
+                </Card>
                 
-                <div 
+                <Card
+                    className={`cursor-pointer transition-all hover:shadow-md ${dateFilter === 'month' ? 'border-primary ring-1 ring-primary' : ''}`}
                     onClick={() => setDateFilter('month')}
-                    className={`bg-white rounded-xl shadow-lg p-6 border-2 cursor-pointer transition ${
-                        dateFilter === 'month' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'
-                    }`}
                 >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">This Month</p>
-                            <p className="text-3xl font-bold text-indigo-600 mt-1">{stats.thisMonth}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <Star className="w-6 h-6 text-indigo-600" />
-                        </div>
-                    </div>
-                </div>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                        <Star className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.thisMonth}</div>
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* Left Side - Birthday Students */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                        
-                        {/* Search */}
-                        <div className="p-4 border-b border-gray-200 bg-gray-50">
-                            <SearchBar 
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by student name..."
-                            />
-                        </div>
-
-                        {/* Select All Header */}
-                        <div className="px-6 py-3 bg-pink-50 border-b border-pink-100 flex items-center">
-                            <input
-                                type="checkbox"
-                                checked={selectAll}
-                                onChange={handleSelectAll}
-                                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
-                            />
-                            <span className="ml-3 font-500 text-gray-700">
-                                Select All ({filteredStudents.length} birthdays)
-                            </span>
-                        </div>
-
-                        {/* Student List */}
-                        <div className="max-h-[500px] overflow-y-auto">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-12">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
-                                </div>
-                            ) : filteredStudents.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 px-4">
-                                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                        <Cake className="w-8 h-8 text-gray-400" />
-                                    </div>
-                                    <p className="text-gray-600 text-lg font-500">No birthdays found</p>
-                                    <p className="text-gray-500 text-sm mt-1">
-                                        {dateFilter === 'today' && 'No students have birthday today'}
-                                        {dateFilter === 'week' && 'No birthdays this week'}
-                                        {dateFilter === 'month' && 'No birthdays this month'}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="divide-y divide-gray-100">
-                                    {filteredStudents.map(student => (
-                                        <div 
-                                            key={student._id}
-                                            className={`flex items-center px-6 py-4 hover:bg-pink-50 cursor-pointer transition ${
-                                                selectedStudents.includes(student._id) ? 'bg-pink-50' : ''
-                                            }`}
-                                            onClick={() => handleStudentSelect(student._id)}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedStudents.includes(student._id)}
-                                                onChange={() => handleStudentSelect(student._id)}
-                                                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                            <div className="ml-4 flex-1">
-                                                <p className="font-600 text-gray-900 flex items-center gap-2">
-                                                    {student.name}
-                                                    {new Date(student.dateOfBirth).getMonth() === new Date().getMonth() && 
-                                                     new Date(student.dateOfBirth).getDate() === new Date().getDate() && (
-                                                        <span className="bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                                            Today! 🎂
-                                                        </span>
-                                                    )}
-                                                </p>
-                                                <p className="text-sm text-gray-500">
-                                                    {student.class?.className} | Father: {student.fatherName}
-                                                </p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-600 text-pink-600">
-                                                    {formatBirthday(student.dateOfBirth)}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    Turning {calculateAge(student.dateOfBirth)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by student name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-8"
+                        />
                     </div>
+
+                    <Card className="flex flex-col h-[600px]">
+                        <CardHeader className="bg-muted/30 py-3 border-b">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="select-all"
+                                    checked={selectAll}
+                                    onCheckedChange={handleSelectAll}
+                                />
+                                <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                                    Select All ({filteredStudents.length} birthdays)
+                                </Label>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="p-0 flex-1">
+                            <ScrollArea className="h-full">
+                                {loading ? (
+                                    <div className="flex items-center justify-center h-48">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    </div>
+                                ) : filteredStudents.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                                            <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                                                <PartyPopper className="w-6 h-6 text-muted-foreground" />
+                                            </div>
+                                            <h3 className="text-lg font-semibold">No birthdays found</h3>
+                                            <p className="text-muted-foreground text-sm mt-1">
+                                                {dateFilter === 'today' && 'No students have birthday today'}
+                                                {dateFilter === 'week' && 'No birthdays this week'}
+                                                {dateFilter === 'month' && 'No birthdays this month'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                            <div className="divide-y">
+                                                {filteredStudents.map(student => (
+                                                    <div
+                                                        key={student._id}
+                                                className={`flex items-center px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${selectedStudents.includes(student._id) ? 'bg-primary/5' : ''
+                                                    }`}
+                                                onClick={() => handleStudentSelect(student._id, !selectedStudents.includes(student._id))}
+                                            >
+                                                <Checkbox
+                                                    id={`student-${student._id}`}
+                                                    checked={selectedStudents.includes(student._id)}
+                                                    onCheckedChange={(checked) => handleStudentSelect(student._id, checked)}
+                                                    className="mr-4"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Label
+                                                            htmlFor={`student-${student._id}`}
+                                                            className="font-medium cursor-pointer"
+                                                        >
+                                                            {student.name}
+                                                        </Label>
+                                                        {new Date(student.dateOfBirth).getMonth() === new Date().getMonth() &&
+                                                            new Date(student.dateOfBirth).getDate() === new Date().getDate() && (
+                                                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
+                                                                Today! 🎂
+                                                                </Badge>
+                                                            )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground truncate">
+                                                        {student.class?.sclassName || student.class?.className || 'N/A'} | Father: {student.fatherName}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-medium text-primary">
+                                                        {formatBirthday(student.dateOfBirth)}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Turning {calculateAge(student.dateOfBirth)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Right Side - Message Composition */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 sticky top-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5 text-pink-600" />
-                            Compose Birthday Message
-                        </h3>
+                <div className="lg:col-span-1 space-y-6">
+                    <Card className="sticky top-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <MessageCircle className="w-5 h-5 text-primary" />
+                                Compose Message
+                            </CardTitle>
+                            <CardDescription>Send customized wishes</CardDescription>
+                        </CardHeader>
 
-                        {/* Template Selection */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Select Template (Optional)
-                            </label>
-                            <select
-                                value={selectedTemplate}
-                                onChange={(e) => handleTemplateSelect(e.target.value)}
-                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Select Template (Optional)</Label>
+                                <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="-- Custom Message --" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="custom">-- Custom Message --</SelectItem>
+                                        {templates.filter(t => t.category === 'other' || t.category === 'general').map(template => (
+                                            <SelectItem key={template._id} value={template._id}>
+                                                {template.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Message Content</Label>
+                                <Textarea
+                                    value={customMessage}
+                                    onChange={(e) => setCustomMessage(e.target.value)}
+                                    placeholder="Write your birthday message here..."
+                                    className="min-h-[150px] font-normal"
+                                />
+                                <div className="text-xs text-muted-foreground text-right">
+                                    {customMessage.length} characters
+                                </div>
+                            </div>
+
+                            <div className="p-3 bg-muted/40 rounded-lg space-y-2">
+                                <Label className="text-xs uppercase text-muted-foreground">Available Tags</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    <Badge variant="outline" className="font-mono text-xs">{'{{name}}'}</Badge>
+                                    <Badge variant="outline" className="font-mono text-xs">{'{{age}}'}</Badge>
+                                    <Badge variant="outline" className="font-mono text-xs">{'{{class}}'}</Badge>
+                                </div>
+                            </div>
+
+                            <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Recipients:</span>
+                                    <span className="font-medium">{selectedStudents.length}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+
+                        <CardFooter>
+                            <Button
+                                onClick={handleSendWishes} 
+                                className="w-full"
+                                disabled={sending || selectedStudents.length === 0 || !customMessage}
                             >
-                                <option value="">-- Custom Message --</option>
-                                {templates.filter(t => t.category === 'other' || t.category === 'general').map(template => (
-                                    <option key={template._id} value={template._id}>
-                                        {template.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Message Text Area */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Birthday Message
-                            </label>
-                            <textarea
-                                value={customMessage}
-                                onChange={(e) => setCustomMessage(e.target.value)}
-                                placeholder="Write your birthday message here... Use {{name}} for student name, {{age}} for age"
-                                rows={6}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                                {customMessage.length} characters
-                            </p>
-                        </div>
-
-                        {/* Dynamic Tags Info */}
-                        <div className="mb-4 p-3 bg-pink-50 rounded-lg">
-                            <p className="text-sm font-600 text-pink-700 mb-2">Available Tags:</p>
-                            <div className="flex flex-wrap gap-2">
-                                <span className="bg-white px-2 py-1 rounded text-xs font-mono text-pink-600">{'{{name}}'}</span>
-                                <span className="bg-white px-2 py-1 rounded text-xs font-mono text-pink-600">{'{{age}}'}</span>
-                                <span className="bg-white px-2 py-1 rounded text-xs font-mono text-pink-600">{'{{class}}'}</span>
-                                <span className="bg-white px-2 py-1 rounded text-xs font-mono text-pink-600">{'{{father}}'}</span>
-                            </div>
-                        </div>
-
-                        {/* Quick Stats */}
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">Selected Students</span>
-                                <span className="font-600 text-gray-900">{selectedStudents.length}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">Message Length</span>
-                                <span className="font-600 text-gray-900">{customMessage.length} chars</span>
-                            </div>
-                        </div>
-
-                        {/* Send Button */}
-                        <button
-                            onClick={handleSendWishes}
-                            disabled={sending || selectedStudents.length === 0 || !customMessage}
-                            className="w-full flex items-center justify-center px-6 py-3 bg-linear-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 shadow-lg transition duration-200 font-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {sending ? (
-                                <>
-                                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
-                                    Sending...
-                                </>
-                            ) : (
-                                <>
-                                    <Gift className="w-5 h-5 mr-2" />
-                                    Send Birthday Wishes
-                                </>
-                            )}
-                        </button>
-                    </div>
+                                {sending ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Sending...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Gift className="w-4 h-4 mr-2" />
+                                        Send Wishes
+                                    </>
+                                )}
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 </div>
             </div>
         </div>

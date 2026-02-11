@@ -144,10 +144,10 @@ const ExamGroup = () => {
   const StatusBadge = ({ status }) => {
     let classes = "";
     switch(status) {
-        case 'Active': classes = "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200"; break;
-        case 'Inactive': classes = "bg-slate-100 text-slate-800 hover:bg-slate-200 border-slate-200"; break;
-        case 'Completed': classes = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200"; break;
-        default: classes = "bg-gray-100 text-gray-800";
+      case 'Active': classes = "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"; break;
+      case 'Inactive': classes = "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"; break;
+      case 'Completed': classes = "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"; break;
+      default: classes = "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
     
     return (
@@ -169,7 +169,7 @@ const ExamGroup = () => {
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Exam Groups</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Exam Groups</h1>
           <p className="text-muted-foreground mt-1">Organize exams by term, semester, or academic year</p>
         </div>
         
@@ -257,12 +257,12 @@ const ExamGroup = () => {
       </div>
 
       {groups.length === 0 ? (
-        <Card className="border-dashed border-2 bg-slate-50/50">
+        <Card className="border-dashed border-2 bg-muted/50">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                    <BookOpen className="h-8 w-8 text-slate-400" />
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <BookOpen className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">No exam groups yet</h3>
+            <h3 className="text-lg font-semibold">No exam groups yet</h3>
                 <p className="text-muted-foreground max-w-sm mt-2 mb-6">
                     Create your first exam group to start scheduling exams and managing results.
                 </p>
@@ -274,10 +274,10 @@ const ExamGroup = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <Card key={group._id} className="group hover:shadow-md transition-all duration-200 border-slate-200">
+            <Card key={group._id} className="group hover:shadow-md transition-all duration-200">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
-                  <div className="h-10 w-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <StatusBadge status={group.status} />
@@ -289,21 +289,21 @@ const ExamGroup = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-600 line-clamp-2 min-h-[2.5rem]">
+                <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
                     {group.description || "No description provided."}
                 </p>
               </CardContent>
-              <CardFooter className="pt-2 flex gap-2 border-t bg-slate-50/50 px-6 py-4 rounded-b-xl">
+              <CardFooter className="pt-2 flex gap-2 border-t bg-muted/40 px-6 py-4 rounded-b-xl">
                 <Button 
                     variant="outline" 
-                    className="flex-1 bg-white hover:bg-slate-50 border-slate-200"
+                  className="flex-1 hover:bg-background"
                     onClick={() => handleEdit(group)}
                 >
                     <Edit className="mr-2 h-3.5 w-3.5" /> Edit
                 </Button>
                 <Button 
                     variant="ghost" 
-                    className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="flex-1 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => handleDeleteClick(group._id)}
                 >
                     <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete

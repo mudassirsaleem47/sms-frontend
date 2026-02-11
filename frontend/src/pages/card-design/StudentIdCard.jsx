@@ -1,9 +1,35 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { IconPrinter, IconSearch, IconFilter, IconDownload, IconCreditCard, IconUser, IconChevronDown, IconLoader2, IconSchool, IconSchoolBell } from '@tabler/icons-react';
+import {
+    Printer, Search, Filter, CreditCard, User,
+    Loader2, School, Check, UserCircle, X, CheckSquare
+} from 'lucide-react';
 import CardRenderer from './CardRenderer';
 import API_URL from '../../config/api';
 import { useReactToPrint } from 'react-to-print';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const StudentIdCard = () => {
     const [loading, setLoading] = useState(false);
@@ -56,8 +82,8 @@ const StudentIdCard = () => {
         }
     };
 
-    const handleClassChange = async (e) => {
-        const classId = e.target.value;
+    const handleClassChange = async (value) => {
+        const classId = value;
         setSelectedClass(classId);
         setSelectAll(false);
         setSelectedStudents([]);
@@ -85,13 +111,13 @@ const StudentIdCard = () => {
     );
 
     // Select All
-    const handleSelectAll = () => {
-        if (selectAll) {
+    const handleSelectAll = (checked) => {
+        if (!checked) {
             setSelectedStudents([]);
         } else {
             setSelectedStudents(filteredStudents.map(s => s._id));
         }
-        setSelectAll(!selectAll);
+        setSelectAll(checked);
     };
 
     // Toggle Selection
@@ -106,234 +132,268 @@ const StudentIdCard = () => {
 
     const handlePrint = useReactToPrint({
         content: () => componentRef.current,
+        documentTitle: `Student_ID_Cards_${classes.find(c => c._id === selectedClass)?.sclassName || 'Export'}`,
     });
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12">
+        <div className="flex-1 space-y-6 p-8 pt-6">
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-md sticky top-4 z-10 mx-4 sm:mx-6 lg:mx-8 mt-4">
-                <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-indigo-100 p-2.5 rounded-lg">
-                                <IconSchoolBell className="w-6 h-6 text-indigo-600" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-gray-900">Student ID Cards</h1>
-                                <p className="text-sm text-gray-500">Generate identity cards</p>
-                            </div>
-                        </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Student ID Cards</h1>
+                        <p className="text-muted-foreground mt-1">Generate and print identity cards for your students</p>
+                    </div>
+                </div>
+            </div>
 
-                        {/* Toolbar */}
-                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200 flex-wrap">
+            {/* Controls Card */}
+            <Card className="mb-8 border-border shadow-sm">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-medium flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-primary" />
+                        Configuration
+                    </CardTitle>
+                    <CardDescription>Select template and class to generate cards</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col lg:flex-row items-end gap-6">
 
-                            {/* Template Selector */}
+                        {/* Template Selector */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="template-select" className="text-xs font-semibold uppercase text-muted-foreground">Template</Label>
                             {templates.length > 0 ? (
-                                <div className="relative">
-                                    <IconCreditCard className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                    <select
-                                        value={selectedTemplate?._id || ''}
-                                        onChange={(e) => setSelectedTemplate(templates.find(t => t._id === e.target.value))}
-                                        className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-48 shadow-sm"
-                                    >
+                                <Select
+                                    value={selectedTemplate?._id || ''}
+                                    onValueChange={(val) => setSelectedTemplate(templates.find(t => t._id === val))}
+                                >
+                                    <SelectTrigger id="template-select" className="bg-background">
+                                        <div className="flex items-center gap-2">
+                                            <CreditCard className="w-4 h-4 text-muted-foreground" />
+                                            <SelectValue placeholder="Select Template" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
                                         {templates.map(t => (
-                                            <option key={t._id} value={t._id}>{t.name}</option>
+                                            <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
                                         ))}
-                                    </select>
-                                </div>
+                                    </SelectContent>
+                                </Select>
                             ) : (
-                                <div className="text-xs text-red-500 font-medium px-2">
+                                    <div className="h-10 flex items-center px-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
                                     No Templates Found
                                     </div>
                             )}
+                        </div>
 
-                            <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
-
-                            {/* Class Selector */}
-                            <div className="relative">
-                                <IconFilter className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                <select
-                                    value={selectedClass}
-                                    onChange={handleClassChange}
-                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-40 shadow-sm"
-                                >
-                                    <option value="">Select Class</option>
+                        {/* Class Selector */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="class-select" className="text-xs font-semibold uppercase text-muted-foreground">Class</Label>
+                            <Select
+                                value={selectedClass}
+                                onValueChange={handleClassChange}
+                            >
+                                <SelectTrigger id="class-select" className="bg-background">
+                                    <div className="flex items-center gap-2">
+                                        <School className="w-4 h-4 text-muted-foreground" />
+                                        <SelectValue placeholder="Select Class" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
                                     {classes.map((cls) => (
-                                        <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
+                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
                                     ))}
-                                </select>
-                            </div>
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                            {/* Search */}
+                        {/* Search */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="search-input" className="text-xs font-semibold uppercase text-muted-foreground">Search</Label>
                             <div className="relative">
-                                <IconSearch className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                <input
+                                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    id="search-input"
                                     type="text"
-                                    placeholder="Search..."
+                                    placeholder="Name or Roll No..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-40 shadow-sm"
+                                    className="pl-9 bg-background"
                                 />
                             </div>
+                        </div>
 
-                            {/* Print Button */}
-                            {selectedStudents.length > 0 && (
-                                <>
-                                    <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
-                                    <button
-                                        onClick={handlePrint}
-                                        className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 flex items-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-95"
-                                    >
-                                        <IconPrinter className="w-4 h-4" />
-                                        <span>Print ({selectedStudents.length})</span>
-                                    </button>
-                                </>
-                            )}
+                        {/* Print Button */}
+                        <div className="w-full lg:w-1/4">
+                            <Button
+                                onClick={handlePrint}
+                                disabled={selectedStudents.length === 0}
+                                className="w-full"
+                                size="lg"
+                            >
+                                <Printer />
+                                Print {selectedStudents.length > 0 && `(${selectedStudents.length})`}
+                            </Button>
                         </div>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Content Area */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {selectedClass ? (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between text-sm text-gray-500 bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100">
-                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={selectAll}
-                                    onChange={handleSelectAll}
-                                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <span className="font-medium text-indigo-700">Select All Students</span>
-                            </label>
-                            <span className="flex items-center gap-2">
-                                <IconUser className="w-4 h-4" />
-                                Found {filteredStudents.length} students
-                            </span>
-                        </div>
+            {selectedClass ? (
+                <div className="space-y-6 animate-in fade-in-50 duration-500">
+                    <Card className="border-border shadow-sm">
+                        <CardHeader className="py-4 px-6 flex flex-row items-center justify-between space-y-0 bg-muted/40 border-b">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="select-all"
+                                        checked={selectAll}
+                                        onCheckedChange={handleSelectAll}
+                                    />
+                                    <Label htmlFor="select-all" className="cursor-pointer font-medium">
+                                        Select All
+                                    </Label>
+                                </div>
+                                <Separator orientation="vertical" className="h-4" />
+                                <Badge variant="secondary" className="font-normal text-muted-foreground">
+                                    {filteredStudents.length} Students Found
+                                </Badge>
+                            </div>
+                            {selectedStudents.length > 0 && (
+                                <Badge variant="default" className="bg-primary text-primary-foreground">
+                                    {selectedStudents.length} Selected
+                                </Badge>
+                            )}
+                        </CardHeader>
 
-                        <div className="bg-gray-200/80 p-8 rounded-xl border border-gray-300 overflow-y-auto max-h-[70vh] shadow-inner">
+                        <CardContent className="p-6">
                             {loading ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
-                                    <IconLoader2 className="w-8 h-8 animate-spin mb-3 text-indigo-500" />
-                                    <p className="text-sm">Loading students...</p>
+                                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
+                                    <p>Loading class data...</p>
                                 </div>
                             ) : filteredStudents.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400 py-20">
-                                        <IconUser className="w-12 h-12 mb-3 opacity-20" />
-                                    <p className="text-sm">No students found</p>
+                                    <div className="h-64 flex flex-col items-center justify-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+                                        <UserCircle className="w-12 h-12 mb-2 opacity-50" />
+                                        <p>No students matching your search.</p>
                                 </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {filteredStudents.map(student => (
-                                            <div
-                                                key={student._id}
-                                                onClick={() => toggleSelection(student._id)}
-                                                className={`
-                                                relative p-3 rounded-lg border transition-all cursor-pointer group select-none flex items-center gap-3 shadow-sm
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                                            {filteredStudents.map(student => (
+                                        <Card
+                                            key={student._id}
+                                            onClick={() => toggleSelection(student._id)}
+                                            className={`
+                                                cursor-pointer transition-all duration-200 border group overflow-hidden relative
                                                 ${selectedStudents.includes(student._id)
-                                                    ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
-                                                    : 'border-white hover:border-indigo-300 hover:shadow-md bg-white'
-                                                    }
-                                            `}
-                                            >
-                                                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border border-gray-200 shrink-0">
-                                                {student.studentPhoto ? (
-                                                    <img 
-                                                        src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`} 
-                                                        alt=""
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                                <IconUser size={16} />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-sm font-semibold text-gray-900 truncate">{student.name}</h3>
-                                                <p className="text-xs text-gray-500 truncate">Roll: {student.rollNum}</p>
-                                            </div>
-
-                                            <div className={`
-                                                w-5 h-5 rounded-full border flex items-center justify-center transition-colors
-                                                ${selectedStudents.includes(student._id)
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white'
-                                                    : 'border-gray-300 group-hover:border-indigo-400'
+                                                ? 'border-primary ring-1 ring-primary shadow-md bg-primary/5'
+                                                : 'hover:border-primary/50 hover:shadow-sm'
                                                 }
-                                            `}>
-                                                {selectedStudents.includes(student._id) && (
-                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                )}
-                                            </div>
-                                        </div>
+                                            `}
+                                        >
+                                            <CardContent className="p-4 flex items-center gap-4">
+                                                <div className="relative">
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border bg-muted">
+                                                        {student.studentPhoto ? (
+                                                            <img
+                                                                src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`}
+                                                                alt=""
+                                                                className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user h-6 w-6 text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center">
+                                                                <User className="h-6 w-6 text-muted-foreground" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    {selectedStudents.includes(student._id) && (
+                                                        <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background">
+                                                            <Check className="w-3 h-3" strokeWidth={3} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-sm truncate">{student.name}</h3>
+                                                    <p className="text-xs text-muted-foreground truncate">
+                                                        Roll: <span className="font-mono text-foreground">{student.rollNum}</span>
+                                                    </p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
                                     ))}
                                         </div>
                             )}
-                        </div>
-                    </div>
-                ) : (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-2xl border border-dashed border-gray-300 shadow-xs">
-                            <div className="bg-indigo-50 p-6 rounded-full mb-4">
-                                <IconSchool className="w-12 h-12 text-indigo-400 opacity-80" />
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
+                    <Card className="border-dashed shadow-none bg-muted/30">
+                        <CardContent className="flex flex-col items-center justify-center py-24 text-center">
+                            <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+                                <School className="w-12 h-12 text-muted-foreground/50" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900">Generate Student ID Cards</h3>
-                            <p className="text-gray-500 max-w-sm mt-2 mb-8">Select a class from the options above to view students and generate ID cards.</p>
-                            <div className="h-1 w-24 bg-indigo-100 rounded-full"></div>
-                        </div>
-                )}
+                        <h3 className="text-xl font-semibold mb-2">Ready to Generate Cards</h3>
+                        <p className="text-muted-foreground max-w-sm">
+                            Please select a class from the configuration panel above to start generating student ID cards.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
-                {/* Print Area - Hidden off-screen but rendered for react-to-print */}
-                <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
-                    <div ref={componentRef}>
-                        {selectedStudents.length > 0 && selectedTemplate ? (
-                            <div className="print-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', padding: '20px' }}>
-                                <style>
-                                    {`
-                                        @media print {
-                                            @page { margin: 10mm; size: auto; }
-                                            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                            .print-container { gap: 10px; }
-                                        }
-                                    `}
-                                </style>
-                                {filteredStudents
-                                    .filter(s => selectedStudents.includes(s._id))
-                                    .map(student => (
-                                        <div key={student._id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '10px' }}>
-                                            <CardRenderer
-                                                template={selectedTemplate}
-                                                data={{
-                                                    ...student,
-                                                    class: classes.find(c => c._id === selectedClass)?.sclassName,
-                                                    schoolName: schoolInfo?.schoolName,
-                                                    address: schoolInfo?.address,
-                                                    schoolLogo: schoolInfo?.schoolLogo
-                                                }}
-                                                schoolData={schoolInfo}
-                                            />
-                                        </div>
-                                    ))
-                                }
-                            </div>
-                        ) : (
-                            <div className="p-8 text-center text-red-500 font-bold text-xl">
-                                Please select students and a template to print.
-                                </div>
-                        )}
+            {/* Print Area - Hidden off-screen */}
+            <div className="hidden print:block absolute top-0 left-0 w-full">
+                <div ref={componentRef}>
+                    {selectedStudents.length > 0 && selectedTemplate ? (
+                        <div className="print-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', padding: '20px' }}>
+                            <style>
+                                {`
+                                    @media print {
+                                        @page { margin: 0.5cm; size: auto; }
+                                        body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                        .print-container { gap: 10px; }
+                                    }
+                                `}
+                            </style>
+                            {filteredStudents
+                                .filter(s => selectedStudents.includes(s._id))
+                                .map(student => (
+                                    <div key={student._id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '10px' }}>
+                                        <CardRenderer
+                                            template={selectedTemplate}
+                                            data={{
+                                                ...student,
+                                                class: classes.find(c => c._id === selectedClass)?.sclassName,
+                                                schoolName: schoolInfo?.schoolName,
+                                                address: schoolInfo?.address,
+                                                schoolLogo: schoolInfo?.schoolLogo
+                                            }}
+                                            schoolData={schoolInfo}
+                                        />
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    ) : (
+                        <div className="p-8 text-center text-destructive font-bold text-xl">
+                            Please select students and a template to print.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {!selectedTemplate && selectedStudents.length > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <div className="bg-destructive text-destructive-foreground px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
+                        <X className="w-5 h-5" />
+                        <span className="font-medium">Please select a template to print cards</span>
                     </div>
                 </div>
-
-                {!selectedTemplate && selectedStudents.length > 0 && (
-                    <div className="hidden print:block text-center pt-20">
-                        <p className="text-xl font-bold text-red-600">Please select a Custom Template to print cards.</p>
-                    </div>
-                )}
-            </div>
+            )}
         </div>
     );
 };

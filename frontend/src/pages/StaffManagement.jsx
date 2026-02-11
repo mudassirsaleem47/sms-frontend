@@ -4,9 +4,41 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api.js';
-import { Users, Plus, Edit, Trash2, UserCheck, UserX, Building2, Briefcase, Mail, Phone, Check } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, UserCheck, UserX, Building2, Briefcase, Phone, MoreHorizontal } from 'lucide-react';
 import StaffModal from '../components/form-popup/StaffModal';
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const StaffManagement = () => {
     const { currentUser } = useAuth();
@@ -17,8 +49,11 @@ const StaffManagement = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
-    const [selectedDeleteId, setSelectedDeleteId] = useState(null);
     const [activeTab, setActiveTab] = useState('all');
+
+    // Delete state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     // Fetch staff and designations
     useEffect(() => {
@@ -65,20 +100,14 @@ const StaffManagement = () => {
     };
 
     const handleDeleteClick = (id) => {
-        if (selectedDeleteId === id) {
-            handleDeleteConfirm();
-        } else {
-            setSelectedDeleteId(id);
-            setTimeout(() => {
-                setSelectedDeleteId(prev => prev === id ? null : prev);
-            }, 3000);
-        }
+        setItemToDelete(id);
+        setDeleteDialogOpen(true);
     };
 
     const handleDeleteConfirm = async () => {
-        if (!selectedDeleteId) return;
+        if (!itemToDelete) return;
         try {
-            const response = await axios.delete(`${API_URL}/Staff/${selectedDeleteId}`);
+            const response = await axios.delete(`${API_URL}/Staff/${itemToDelete}`);
             if (response.data.success) {
                 showToast('Staff member deleted successfully', 'success');
                 fetchStaff();
@@ -87,7 +116,8 @@ const StaffManagement = () => {
             const errorMsg = error.response?.data?.message || 'Failed to delete staff member';
             showToast(errorMsg, 'error');
         } finally {
-            setSelectedDeleteId(null);
+            setDeleteDialogOpen(false);
+            setItemToDelete(null);
         }
     };
 
@@ -109,239 +139,220 @@ const StaffManagement = () => {
         ? staff
         : staff.filter(s => s.designation?._id === activeTab);
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
-            <div className="mx-auto">
-                {/* Header with Add Designation Button */}
-                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                <Users className="w-8 h-8 text-indigo-600" />
-                                Staff Management
-                            </h1>
-                            <p className="text-gray-600 mt-1">Manage your staff members and designations</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => navigate('/admin/designations')}
-                                className="px-4 py-2 bg-white border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition flex items-center gap-2"
-                            >
-                                <Briefcase className="w-5 h-5" />
-                                Add Designation
-                            </button>
-                            <button
-                                onClick={handleAddStaff}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
-                            >
-                                <Plus className="w-5 h-5" />
-                                Add Staff
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-500 text-blue-600">Total Staff</p>
-                                    <p className="text-3xl font-bold text-blue-700 mt-1">{totalStaff}</p>
-                                </div>
-                                <Users className="w-12 h-12 text-blue-400" />
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-500 text-green-600">Active Staff</p>
-                                    <p className="text-3xl font-bold text-green-700 mt-1">{activeStaff}</p>
-                                </div>
-                                <UserCheck className="w-12 h-12 text-green-400" />
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-500 text-red-600">Inactive Staff</p>
-                                    <p className="text-3xl font-bold text-red-700 mt-1">{inactiveStaff}</p>
-                                </div>
-                                <UserX className="w-12 h-12 text-red-400" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Designation Tabs */}
-                    <div className="mt-6">
-                        <div className="flex gap-2 overflow-x-auto">
-                            <button
-                                onClick={() => setActiveTab('all')}
-                                className={`px-5 py-2.5 rounded-lg font-medium transition whitespace-nowrap ${activeTab === 'all'
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                                    }`}
-                            >
-                                All Staff ({totalStaff})
-                            </button>
-                            {designations.map(designation => {
-                                const count = staff.filter(s => s.designation?._id === designation._id).length;
-                                return (
-                                    <button
-                                        key={designation._id}
-                                        onClick={() => setActiveTab(designation._id)}
-                                        className={`px-5 py-2.5 rounded-lg font-medium transition whitespace-nowrap flex items-center gap-2 ${activeTab === designation._id
-                                            ? 'bg-indigo-600 text-white shadow-md'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                                            }`}
-                                    >
-                                        <Briefcase className="w-4 h-4" />
-                                        {designation.name} ({count})
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Staff Management</h1>
+                    <p className="text-muted-foreground mt-1">Manage your staff members and designations</p>
                 </div>
+                <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => navigate('/admin/designations')}>
+                        <Briefcase className="mr-2 h-4 w-4" /> Add Designation
+                    </Button>
+                    <Button onClick={handleAddStaff}>
+                        <Plus className="mr-2 h-4 w-4" /> Add Staff
+                    </Button>
+                </div>
+            </div>
 
-                {/* Staff Table */}
-                {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                    </div>
-                ) : filteredStaff.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-                        <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-600 text-gray-900 mb-2">No Staff Members Found</h3>
-                            <p className="text-gray-600 mb-4">
-                                {activeTab === 'all'
-                                    ? 'Start by adding your first staff member'
-                                    : 'No staff members found for this designation'}
-                            </p>
-                            {activeTab === 'all' && (
-                                <button
-                                    onClick={handleAddStaff}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{totalStaff}</div>
+                        <p className="text-xs text-muted-foreground">Registered staff members</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Active Staff</CardTitle>
+                        <UserCheck className="h-4 w-4 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{activeStaff}</div>
+                        <p className="text-xs text-muted-foreground">Currently active</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Inactive Staff</CardTitle>
+                        <UserX className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{inactiveStaff}</div>
+                        <p className="text-xs text-muted-foreground">Currently inactive</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex flex-col space-y-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <ScrollArea className="w-full whitespace-nowrap rounded-md border bg-muted/20 p-1">
+                        <div className="flex w-max space-x-2">
+                            <TabsList className="bg-transparent h-auto p-0 justify-start">
+                                <TabsTrigger
+                                    value="all"
+                                    className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                                 >
-                                    Add Staff
-                                </button>
-                            )}
-                    </div>
-                ) : (
-                            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead className="bg-gray-50 border-b border-gray-200">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Staff Member
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Designation
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Contact
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Campus
-                                                </th>
-                                                <th className="px-6 py-3 text-left text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Status
-                                                </th>
-                                                <th className="px-6 py-3 text-right text-xs font-600 text-gray-700 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {filteredStaff.map((staffMember) => (
-                                                <tr key={staffMember._id} className="hover:bg-gray-50 transition">
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex items-center">
-                                                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
-                                                                {staffMember.name.charAt(0).toUpperCase()}
-                                                            </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-600 text-gray-900">{staffMember.name}</div>
-                                                        <div className="text-sm text-gray-500 flex items-center gap-1">
-                                                            <Mail className="w-3 h-3" />
-                                                            {staffMember.email}
-                                                        </div>
+                                    All Staff ({totalStaff})
+                                </TabsTrigger>
+                                {designations.map(designation => {
+                                    const count = staff.filter(s => s.designation?._id === designation._id).length;
+                                    return (
+                                        <TabsTrigger
+                                            key={designation._id} 
+                                            value={designation._id}
+                                            className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                                        >
+                                            {designation.name} ({count})
+                                        </TabsTrigger>
+                                    );
+                                })}
+                            </TabsList>
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </Tabs>
+
+                <Card>
+                    <CardContent className="p-0">
+                        {filteredStaff.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                                    <Users className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                                <h3 className="text-lg font-semibold">No staff members found</h3>
+                                <p className="text-muted-foreground max-w-sm mt-2 mb-6">
+                                    {activeTab === 'all'
+                                        ? 'Get started by adding your first staff member.'
+                                        : 'No staff members found for this designation.'}
+                                </p>
+                                {activeTab === 'all' && (
+                                    <Button onClick={handleAddStaff}>
+                                        <Plus className="mr-2 h-4 w-4" /> Add Staff
+                                    </Button>
+                                )}
+                            </div>
+                        ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Staff Member</TableHead>
+                                            <TableHead>Designation</TableHead>
+                                            <TableHead>Contact</TableHead>
+                                            <TableHead>Campus</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredStaff.map((staffMember) => (
+                                        <TableRow key={staffMember._id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9">
+                                                        <AvatarImage src="" />
+                                                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                                                            {staffMember.name.charAt(0).toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm">{staffMember.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{staffMember.email}</span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            </TableCell>
+                                            <TableCell>
                                                 {staffMember.designation ? (
-                                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-600 bg-indigo-100 text-indigo-700">
-                                                        <Briefcase className="w-3 h-3" />
+                                                    <Badge variant="outline" className="font-medium">
+                                                        <Briefcase className="mr-1 w-3 h-3" />
                                                         {staffMember.designation.name}
-                                                    </span>
+                                                    </Badge>
                                                 ) : (
-                                                    <span className="text-sm text-gray-400">Not assigned</span>
+                                                        <span className="text-muted-foreground text-sm">-</span>
                                                 )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {staffMember.phone ? (
-                                                    <div className="text-sm text-gray-900 flex items-center gap-1">
-                                                        <Phone className="w-3 h-3 text-gray-400" />
-                                                        {staffMember.phone}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-sm text-gray-400">N/A</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    {staffMember.phone ? (
+                                                        <div className="text-xs flex items-center gap-1 text-muted-foreground">
+                                                            <Phone className="w-3 h-3" />
+                                                            {staffMember.phone}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-sm">-</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
                                                 {staffMember.campus ? (
-                                                    <div className="text-sm text-gray-900 flex items-center gap-1">
-                                                        <Building2 className="w-3 h-3 text-gray-400" />
+                                                    <div className="flex items-center gap-1 text-sm text-foreground">
+                                                        <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
                                                         {staffMember.campus.campusName}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-sm text-gray-400">N/A</span>
+                                                        <span className="text-muted-foreground text-sm">-</span>
                                                 )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {staffMember.status === 'active' ? (
-                                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-600 bg-green-100 text-green-700">
-                                                        <UserCheck className="w-3 h-3" />
-                                                        Active
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-600 bg-red-100 text-red-700">
-                                                        <UserX className="w-3 h-3" />
-                                                        Inactive
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-500">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleEditStaff(staffMember)}
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                                onClick={() => handleDeleteClick(staffMember._id)}
-                                                                className={`p-2 rounded-lg transition inline-flex items-center justify-center h-9 w-9 ${selectedDeleteId === staffMember._id
-                                                                    ? "bg-red-600 text-white hover:bg-red-700"
-                                                                    : "text-red-600 hover:bg-red-50"
-                                                                    }`}
-                                                        title="Delete"
-                                                    >
-                                                                {selectedDeleteId === staffMember._id ? <Check className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={staffMember.status === 'active' ? 'default' : 'secondary'}
+                                                    className={staffMember.status === 'active'
+                                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 border-emerald-200 dark:border-emerald-800'
+                                                        : ''}
+                                                >
+                                                    {staffMember.status === 'active' ? 'Active' : 'Inactive'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => handleEditStaff(staffMember)}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Edit Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={async (e) => {
+                                                                e.preventDefault();
+                                                                handleDeleteClick(staffMember._id);
+                                                            }}
+                                                            className="text-destructive focus:text-destructive"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete Staff
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
                                     ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                    </div>
-                )}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Staff Modal */}
@@ -352,7 +363,26 @@ const StaffManagement = () => {
                 />
             )}
 
-
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the staff member
+                            <span className="font-semibold text-foreground"> {staff.find(s => s._id === itemToDelete)?.name}</span> and remove their data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => {
+                            setDeleteDialogOpen(false);
+                            setItemToDelete(null);
+                        }}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteConfirm()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

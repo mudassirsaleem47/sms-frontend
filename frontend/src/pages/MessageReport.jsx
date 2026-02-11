@@ -2,11 +2,39 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import SearchBar from '../components/SearchBar';
 import { 
     MessageCircle, Send, CheckCircle2, XCircle, Clock, 
-    TrendingUp, Users, Filter, ChevronDown, Eye, Calendar
+    Search, Eye, Calendar, Filter
 } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -20,7 +48,7 @@ const MessageReport = () => {
     
     // Filter State
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [dateFilter, setDateFilter] = useState('all'); // 'today', 'week', 'month', 'all'
     
     // Stats
@@ -71,7 +99,7 @@ const MessageReport = () => {
             message.content?.toLowerCase().includes(searchQuery.toLowerCase());
         
         // Status Filter
-        const matchesStatus = !statusFilter || message.status === statusFilter;
+        const matchesStatus = statusFilter === 'all' || message.status === statusFilter;
         
         // Date Filter
         let matchesDate = true;
@@ -96,22 +124,50 @@ const MessageReport = () => {
         return matchesSearch && matchesStatus && matchesDate;
     });
 
-    // Status Badge
-    const getStatusBadge = (status) => {
-        const badges = {
-            sent: { icon: Send, color: 'bg-blue-100 text-blue-700', label: 'Sent' },
-            delivered: { icon: CheckCircle2, color: 'bg-green-100 text-green-700', label: 'Delivered' },
-            failed: { icon: XCircle, color: 'bg-red-100 text-red-700', label: 'Failed' },
-            pending: { icon: Clock, color: 'bg-yellow-100 text-yellow-700', label: 'Pending' }
-        };
-        const badge = badges[status] || badges.pending;
-        const Icon = badge.icon;
-        
+    // Status Badge Helper
+    const getStatusBadgeVariant = (status) => {
+        switch (status) {
+            case 'sent': return 'default'; // blue-ish usually
+            case 'delivered': return 'success'; // needs custom class if not defining success variant, stick to default or outline with color
+            case 'failed': return 'destructive';
+            case 'pending': return 'secondary';
+            default: return 'outline';
+        }
+    };
+
+    // Custom Badge Component calls for colors
+    const StatusBadge = ({ status }) => {
+        let classes = "";
+        let icon = null;
+        let label = status;
+
+        switch (status) {
+            case 'sent':
+                classes = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200";
+                icon = <Send className="w-3 h-3 mr-1" />;
+                label = "Sent";
+                break;
+            case 'delivered':
+                classes = "bg-green-100 text-green-800 hover:bg-green-200 border-green-200";
+                icon = <CheckCircle2 className="w-3 h-3 mr-1" />;
+                label = "Delivered";
+                break;
+            case 'failed':
+                classes = "bg-red-100 text-red-800 hover:bg-red-200 border-red-200";
+                icon = <XCircle className="w-3 h-3 mr-1" />;
+                label = "Failed";
+                break;
+            default: // pending
+                classes = "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200";
+                icon = <Clock className="w-3 h-3 mr-1" />;
+                label = "Pending";
+                break;
+        }
+
         return (
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-600 ${badge.color}`}>
-                <Icon className="w-3.5 h-3.5" />
-                {badge.label}
-            </span>
+            <Badge variant="outline" className={`${classes} font-medium`}>
+                {icon} {label}
+            </Badge>
         );
     };
 
@@ -122,261 +178,218 @@ const MessageReport = () => {
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            
-            {/* Header Section */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900">Message Reports</h1>
-                <p className="text-gray-600 mt-2">View reports of sent messages</p>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Message Reports</h1>
+                    <p className="text-muted-foreground mt-1">View delivery reports and status of sent messages</p>
+                </div>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">Total Messages</p>
-                            <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <MessageCircle className="w-6 h-6 text-indigo-600" />
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">Sent</p>
-                            <p className="text-3xl font-bold text-blue-600 mt-1">{stats.sent}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Send className="w-6 h-6 text-blue-600" />
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">Delivered</p>
-                            <p className="text-3xl font-bold text-green-600 mt-1">{stats.delivered}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <CheckCircle2 className="w-6 h-6 text-green-600" />
-                        </div>
-                    </div>
-                </div>
-                
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 font-500">Failed</p>
-                            <p className="text-3xl font-bold text-red-600 mt-1">{stats.failed}</p>
-                        </div>
-                        <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <XCircle className="w-6 h-6 text-red-600" />
-                        </div>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Messages</CardTitle>
+                        <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.total}</div>
+                        <p className="text-xs text-muted-foreground">Lifetime volume</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Sent</CardTitle>
+                        <Send className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.sent}</div>
+                        <p className="text-xs text-muted-foreground">Successfully sent</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Delivered</CardTitle>
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.delivered}</div>
+                        <p className="text-xs text-muted-foreground">Confirmed delivery</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                        <XCircle className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.failed}</div>
+                        <p className="text-xs text-muted-foreground">Delivery failed</p>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1">
-                        <SearchBar 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by recipient name, phone or message..."
-                        />
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="relative">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="appearance-none px-4 py-2.5 pr-10 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="">All Status</option>
-                                <option value="sent">Sent</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="failed">Failed</option>
-                                <option value="pending">Pending</option>
-                            </select>
-                            <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                        </div>
-                        <div className="relative">
-                            <select
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
-                                className="appearance-none px-4 py-2.5 pr-10 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                                <option value="all">All Time</option>
-                                <option value="today">Today</option>
-                                <option value="week">Last 7 Days</option>
-                                <option value="month">Last 30 Days</option>
-                            </select>
-                            <Calendar className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                        </div>
-                    </div>
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-96">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search recipient, phone or content..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8"
+                    />
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Status</SelectItem>
+                            <SelectItem value="sent">Sent</SelectItem>
+                            <SelectItem value="delivered">Delivered</SelectItem>
+                            <SelectItem value="failed">Failed</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Date Range" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Time</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">Last 7 Days</SelectItem>
+                            <SelectItem value="month">Last 30 Days</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
             {/* Messages Table */}
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-                            <p className="text-gray-600">Loading messages...</p>
-                        </div>
-                    </div>
-                ) : messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <MessageCircle className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-600 text-lg font-500">No messages sent yet</p>
-                        <p className="text-gray-500 text-sm mt-1">Send messages from the Send Messages page</p>
-                    </div>
-                ) : filteredMessages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                            <Filter className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-600 text-lg font-500">No messages found</p>
-                        <p className="text-gray-500 text-sm mt-1">Try changing your filters</p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-linear-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Recipient</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Message</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date & Time</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {filteredMessages.map((message) => (
-                                    <tr key={message._id} className="hover:bg-indigo-50 transition duration-150">
-                                        <td className="px-6 py-4">
-                                            <div>
-                                                <p className="font-600 text-gray-900">{message.recipient?.name || 'Unknown'}</p>
-                                                <p className="text-sm text-gray-500">{message.recipient?.phone || '-'}</p>
+            <Card>
+                <CardContent className="p-0">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Recipient</TableHead>
+                                <TableHead className="w-[40%]">Message</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Date & Time</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-8">
+                                        <div className="flex justify-center items-center">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredMessages.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            No messages found matching your criteria.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                        filteredMessages.map((message) => (
+                                            <TableRow key={message._id}>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{message.recipient?.name || 'Unknown'}</span>
+                                                        <span className="text-xs text-muted-foreground">{message.recipient?.phone || '-'}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <p className="text-sm text-gray-600 max-w-xs truncate">
-                                                {message.content || '-'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <p className="text-sm text-muted-foreground truncate max-w-[300px]" title={message.content}>
+                                                {message.content}
                                             </p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {getStatusBadge(message.status)}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <div>{new Date(message.createdAt).toLocaleDateString()}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {new Date(message.createdAt).toLocaleTimeString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={message.status} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col text-sm">
+                                                <span>{new Date(message.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-muted-foreground">{new Date(message.createdAt).toLocaleTimeString()}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => viewDetails(message)}
-                                                className="inline-flex items-center justify-center w-9 h-9 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition duration-150"
-                                                title="View details"
                                             >
                                                 <Eye className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
-            {/* Detail Modal */}
-            {isDetailOpen && selectedMessage && (
-                <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-                        
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-linear-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
-                            <h3 className="text-xl font-bold text-white">Message Details</h3>
-                            <button
-                                onClick={() => setIsDetailOpen(false)}
-                                className="text-white/80 hover:text-white transition"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
+            <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Message Details</DialogTitle>
+                        <DialogDescription>
+                            Full details of the selected message log.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-500 text-gray-500">Status</span>
-                                {getStatusBadge(selectedMessage.status)}
+                    {selectedMessage && (
+                        <div className="space-y-4 pt-4">
+                            <div className="flex justify-between items-center bg-muted/30 p-3 rounded-md border">
+                                <span className="text-sm font-medium">Status</span>
+                                <StatusBadge status={selectedMessage.status} />
                             </div>
-                            
-                            <div>
-                                <span className="text-sm font-500 text-gray-500">Recipient</span>
-                                <p className="font-600 text-gray-900 mt-1">{selectedMessage.recipient?.name}</p>
-                                <p className="text-sm text-gray-600">{selectedMessage.recipient?.phone}</p>
-                            </div>
-                            
-                            <div>
-                                <span className="text-sm font-500 text-gray-500">Message</span>
-                                <p className="text-gray-700 mt-1 bg-gray-50 p-4 rounded-lg">
-                                    {selectedMessage.content}
-                                </p>
-                            </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <span className="text-sm font-500 text-gray-500">Sent At</span>
-                                    <p className="text-gray-900 mt-1">
-                                        {new Date(selectedMessage.createdAt).toLocaleString()}
-                                    </p>
+                                <div className="space-y-1">
+                                    <span className="text-xs text-muted-foreground uppercase font-semibold">Recipient</span>
+                                    <p className="font-medium">{selectedMessage.recipient?.name || 'Unknown'}</p>
+                                    <p className="text-sm text-muted-foreground">{selectedMessage.recipient?.phone}</p>
                                 </div>
-                                {selectedMessage.deliveredAt && (
-                                    <div>
-                                        <span className="text-sm font-500 text-gray-500">Delivered At</span>
-                                        <p className="text-gray-900 mt-1">
-                                            {new Date(selectedMessage.deliveredAt).toLocaleString()}
-                                        </p>
-                                    </div>
-                                )}
+                                <div className="space-y-1">
+                                    <span className="text-xs text-muted-foreground uppercase font-semibold">Sent At</span>
+                                    <p className="text-sm">{new Date(selectedMessage.createdAt).toLocaleString()}</p>
+                                </div>
                             </div>
-                            
-                            {selectedMessage.error && (
-                                <div>
-                                    <span className="text-sm font-500 text-red-500">Error</span>
-                                    <p className="text-red-600 mt-1 bg-red-50 p-3 rounded-lg text-sm">
-                                        {selectedMessage.error}
-                                    </p>
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                                <span className="text-xs text-muted-foreground uppercase font-semibold">Message Content</span>
+                                <div className="bg-muted p-3 rounded-md text-sm whitespace-pre-wrap">
+                                    {selectedMessage.content}
+                                </div>
+                            </div>
+
+                            {(selectedMessage.error || selectedMessage.status === 'failed') && (
+                                <div className="space-y-1">
+                                    <span className="text-xs text-red-500 uppercase font-semibold">Error Details</span>
+                                    <div className="bg-red-50 border border-red-100 p-3 rounded-md text-sm text-red-600">
+                                        {selectedMessage.error || 'Unknown error occurred during delivery.'}
+                                    </div>
                                 </div>
                             )}
                         </div>
+                    )}
 
-                        {/* Modal Footer */}
-                        <div className="px-6 py-4 bg-gray-50 rounded-b-2xl">
-                            <button
-                                onClick={() => setIsDetailOpen(false)}
-                                className="w-full px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-600"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    <DialogFooter>
+                        <Button onClick={() => setIsDetailOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

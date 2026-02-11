@@ -1,9 +1,42 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { IconPrinter, IconSearch, IconFilter, IconDownload, IconFileText, IconUser, IconChevronDown, IconLoader2, IconAward, IconEye } from '@tabler/icons-react';
+import {
+    Printer, Search, Filter, FileText, User,
+    Loader2, Award, Eye, CheckCircle2, GraduationCap, X, RotateCcw
+} from 'lucide-react';
 import CardRenderer from './CardRenderer';
 import API_URL from '../../config/api';
 import { useReactToPrint } from 'react-to-print';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogClose,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+    CardFooter
+} from "@/components/ui/card";
 
 const ReportCard = () => {
     const [loading, setLoading] = useState(false);
@@ -60,6 +93,12 @@ const ReportCard = () => {
             ]);
             setExamGroups(groupsRes.data);
             setClasses(classesRes.data);
+
+            // Fetch school info
+            if (user._id) {
+                const adminRes = await axios.get(`${API_URL}/Admin/${user._id}`);
+                setSchoolInfo(adminRes.data);
+            }
         } catch (error) {
             console.error("Error fetching initial data:", error);
         }
@@ -91,31 +130,14 @@ const ReportCard = () => {
             const fetchedStudents = studentsRes.data;
             setStudents(fetchedStudents);
 
-            // Fetch results for all students in this exam group
-            // Ideally backend should provide a bulk endpoint, but for now we might have to fetch individually or use a specialized endpoint if available.
-            // Assuming we have an endpoint to get results by exam group and class or similar.
-            // If not, we will fetch results for each student. To optimize, let's assume we fetch all results for the exam group and filter.
-            
-            // NOTE: Using a hypothetical endpoint or logic based on existing controller.
-            // Existing controller has: router.get('/ExamResults/Exam/:scheduleId', getResultsByExam); 
-            // We need results by Exam Group for a Class. 
-            // Let's iterate students and fetch results (not efficient but safe for now) OR creates a new endpoint.
-            // For now, let's try to fetch all schedules for the group, then results for those schedules.
-            
-            // Alternative: let's modify the backend later if needed. For now, we will simulate or fetch per student if list is small.
-            // actually, let's fetch schedules for the group first.
+            // Fetch schedules for the group first.
             const schedulesRes = await axios.get(`${API_URL}/ExamSchedules/Group/${selectedExamGroup}`);
             const schedules = schedulesRes.data;
 
-            // Now fetch results for these schedules. 
-            // This is getting complex. Let's look for a simpler "Get Student Results" approach.
-            // router.get('/ExamResults/Student/:studentId', getResultsByStudent);
-            
             const resultsMap = {};
             await Promise.all(fetchedStudents.map(async (student) => {
                 const res = await axios.get(`${API_URL}/ExamResults/Student/${student._id}`);
                 // Filter results that belong to the selected Exam Group
-                // We need to know which schedules belong to the selected group.
                 const relevantResults = res.data.filter(r => 
                     schedules.some(s => s._id === r.examSchedule._id)
                 );
@@ -124,12 +146,6 @@ const ReportCard = () => {
             }));
 
             setResultsData(resultsMap);
-            
-            // Also get school info
-            if (user._id) {
-                 const adminRes = await axios.get(`${API_URL}/Admin/${user._id}`);
-                 setSchoolInfo(adminRes.data);
-            }
 
         } catch (error) {
             console.error("Error fetching report card data:", error);
@@ -144,17 +160,17 @@ const ReportCard = () => {
         (student.rollNum && student.rollNum.toString().includes(searchQuery))
     );
 
-     // Select All
-    const handleSelectAll = () => {
-        if (selectAll) {
+    // Select All
+    const handleSelectAll = (checked) => {
+        if (!checked) {
             setSelectedStudents([]);
         } else {
             setSelectedStudents(filteredStudents.map(s => s._id));
         }
-        setSelectAll(!selectAll);
+        setSelectAll(checked);
     };
 
-     // Toggle Selection
+    // Toggle Selection
     const toggleSelection = (id) => {
         if (selectedStudents.includes(id)) {
             setSelectedStudents(selectedStudents.filter(sid => sid !== id));
@@ -175,7 +191,7 @@ const ReportCard = () => {
     // Helper to calculate totals
     const calculateStats = (studentId) => {
         const results = resultsData[studentId] || [];
-        if (results.length === 0) return { total: 0, obtained: 0, percentage: 0, grade: 'N/A', status: 'N/A' };
+        if (results.length === 0) return { total: 0, obtained: 0, percentage: 0, grade: 'N/A', status: 'N/A', results: [] };
 
         const total = results.reduce((acc, curr) => acc + (curr.examSchedule?.totalMarks || 0), 0);
         const obtained = results.reduce((acc, curr) => acc + curr.marksObtained, 0);
@@ -194,313 +210,375 @@ const ReportCard = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12">
+        <div className="flex-1 space-y-6 p-8 pt-6">
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-md sticky top-4 z-10 mx-4 sm:mx-6 lg:mx-8 mt-4">
-                <div className="mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between py-4 gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-orange-100 p-2.5 rounded-lg">
-                                <IconAward className="w-6 h-6 text-orange-600" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-gray-900">Result / Report Cards</h1>
-                                <p className="text-sm text-gray-500">Generate academic reports</p>
-                            </div>
-                        </div>
-
-                        {/* Toolbar */}
-                        <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-lg border border-gray-200 flex-wrap">
-
-                            {/* Template Selector */}
-                            {templates.length > 0 ? (
-                                <div className="relative">
-                                    <IconFileText className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                    <select
-                                        value={selectedTemplate?._id || ''}
-                                        onChange={(e) => setSelectedTemplate(templates.find(t => t._id === e.target.value))}
-                                        className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-orange-500 outline-none w-48 shadow-sm"
-                                    >
-                                        <option value="">{templates.length === 0 ? "No Report Templates" : "Select Template"}</option>
-                                        {templates.map(t => (
-                                            <option key={t._id} value={t._id}>{t.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            ) : (
-                                <div className="text-xs text-red-500 font-medium px-2">
-                                    No Templates
-                                    </div>
-                            )}
-
-                            <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
-
-                            {/* Exam Group */}
-                            <div className="relative">
-                                <IconFilter className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                <select
-                                    value={selectedExamGroup}
-                                    onChange={(e) => setSelectedExamGroup(e.target.value)}
-                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-orange-500 outline-none w-40 shadow-sm"
-                                >
-                                    <option value="">Select Exam</option>
-                                    {examGroups.map((g) => (
-                                        <option key={g._id} value={g._id}>{g.groupName}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Class Filter */}
-                            <div className="relative">
-                                <Filter className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                                <select
-                                    value={selectedClass}
-                                    onChange={(e) => setSelectedClass(e.target.value)}
-                                    className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-orange-500 outline-none w-32 shadow-sm"
-                                >
-                                    <option value="">Class</option>
-                                    {classes.map((cls) => (
-                                        <option key={cls._id} value={cls._id}>{cls.sclassName}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <button
-                                onClick={handleGenerate}
-                                disabled={!selectedExamGroup || !selectedClass || loading}
-                                className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-95"
-                            >
-                                {loading ? <IconLoader2 className="animate-spin w-4 h-4" /> : <IconSearch className="w-4 h-4" />}
-                                Generate
-                            </button>
-
-                            {filteredStudents.length > 0 && (
-                                <>
-                                    <div className="h-6 w-px bg-gray-300 mx-1 hidden md:block"></div>
-                                    <button
-                                        onClick={handlePrint}
-                                        disabled={selectedStudents.length === 0}
-                                        className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-all shadow-sm active:scale-95"
-                                    >
-                                        <IconPrinter className="w-4 h-4" />
-                                        <span>Print ({selectedStudents.length})</span>
-                                    </button>
-                                </>
-                            )}
-                        </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-foreground">Report Cards</h1>
+                        <p className="text-muted-foreground mt-1">Generate and print academic report cards</p>
                     </div>
                 </div>
             </div>
 
-            {/* Content & List */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {filteredStudents.length > 0 ? (
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between text-sm text-gray-500 bg-orange-50 px-4 py-2 rounded-lg border border-orange-100">
-                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={selectAll}
-                                    onChange={handleSelectAll}
-                                    className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
-                                />
-                                <span className="font-medium text-orange-700">Select All Students</span>
-                            </label>
-                            <span className="flex items-center gap-2">
-                                <IconUser className="w-4 h-4" />
-                                Found {filteredStudents.length} students
-                            </span>
+            {/* Controls Section */}
+            <Card className="mb-8 border-border shadow-sm">
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-medium flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-primary" />
+                        Report Configuration
+                    </CardTitle>
+                    <CardDescription>Select exam group and class to generate reports</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col lg:flex-row items-end gap-6">
+
+                        {/* Template Selector */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="template-select" className="text-xs font-semibold uppercase text-muted-foreground">Template</Label>
+                            <Select
+                                value={selectedTemplate?._id || ''}
+                                onValueChange={(val) => setSelectedTemplate(templates.find(t => t._id === val))}
+                            >
+                                <SelectTrigger id="template-select" className="bg-background">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <FileText className="w-4 h-4" />
+                                        <SelectValue placeholder="Select Template">
+                                            <span className="text-foreground">{selectedTemplate?.name || "Select Template"}</span>
+                                        </SelectValue>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {templates.map(t => (
+                                        <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        
-                        <div className="bg-gray-200/80 p-8 rounded-xl border border-gray-300 overflow-y-auto max-h-[70vh] shadow-inner">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+                        {/* Exam Group Selector */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="exam-select" className="text-xs font-semibold uppercase text-muted-foreground">Exam Group</Label>
+                            <Select
+                                value={selectedExamGroup}
+                                onValueChange={setSelectedExamGroup}
+                            >
+                                <SelectTrigger id="exam-select" className="bg-background">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Award className="w-4 h-4" />
+                                        <SelectValue placeholder="Select Exam">
+                                            <span className="text-foreground">
+                                                {examGroups.find(g => g._id === selectedExamGroup)?.groupName || "Select Exam"}
+                                            </span>
+                                        </SelectValue>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {examGroups.map((g) => (
+                                        <SelectItem key={g._id} value={g._id}>{g.groupName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Class Selector */}
+                        <div className="w-full lg:w-1/4 space-y-2">
+                            <Label htmlFor="class-select" className="text-xs font-semibold uppercase text-muted-foreground">Class</Label>
+                            <Select
+                                value={selectedClass}
+                                onValueChange={setSelectedClass}
+                            >
+                                <SelectTrigger id="class-select" className="bg-background">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Filter className="w-4 h-4" />
+                                        <SelectValue placeholder="Select Class">
+                                            <span className="text-foreground">
+                                                {classes.find(cls => cls._id === selectedClass)?.sclassName || "Select Class"}
+                                            </span>
+                                        </SelectValue>
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classes.map((cls) => (
+                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 w-full lg:w-1/4">
+                            <Button
+                                onClick={handleGenerate}
+                                disabled={!selectedExamGroup || !selectedClass || loading}
+                                className="flex-1"
+                                size="lg"
+                            >
+                                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
+                                Generate 
+                            </Button>
+
+                            {filteredStudents.length > 0 && (
+                                <Button
+                                    onClick={handlePrint}
+                                    disabled={selectedStudents.length === 0}
+                                    variant="outline"
+                                    size="lg"
+                                    className="flex-1"
+                                >
+                                    <Printer className="w-4 h-4 mr-2" />
+                                    Print
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Content & List */}
+            {filteredStudents.length > 0 ? (
+                <div className="space-y-6 animate-in slide-in-from-bottom-5 fade-in duration-500">
+                    <Card className="border-border shadow-sm">
+                        <CardHeader className="py-4 px-6 flex flex-row items-center justify-between space-y-0 bg-muted/40 border-b">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        id="select-all"
+                                        checked={selectAll}
+                                        onCheckedChange={handleSelectAll}
+                                    />
+                                    <Label htmlFor="select-all" className="cursor-pointer font-medium">
+                                        Select All
+                                    </Label>
+                                </div>
+                                <Separator orientation="vertical" className="h-4" />
+                                <Badge variant="secondary" className="font-normal text-muted-foreground">
+                                    {filteredStudents.length} Students Found
+                                </Badge>
+                            </div>
+                            {selectedStudents.length > 0 && (
+                                <Badge variant="default" className="bg-primary text-primary-foreground">
+                                    {selectedStudents.length} Selected
+                                </Badge>
+                            )}
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                                 {filteredStudents.map(student => {
                                     const stats = calculateStats(student._id);
+                                    const isSelected = selectedStudents.includes(student._id);
+
                                     return (
-                                        <div
+                                        <Card 
                                             key={student._id}
                                             onClick={() => toggleSelection(student._id)}
                                             className={`
-                                                relative p-3 rounded-lg border transition-all cursor-pointer group select-none flex flex-col gap-3 shadow-sm
-                                                ${selectedStudents.includes(student._id) 
-                                                ? 'border-orange-500 bg-orange-50/50 ring-1 ring-orange-500'
-                                                : 'border-white hover:border-orange-300 hover:shadow-md bg-white'
+                                                cursor-pointer transition-all duration-200 border group overflow-hidden relative flex flex-col justify-between
+                                                ${isSelected
+                                                    ? 'border-primary ring-1 ring-primary shadow-md bg-primary/5'
+                                                    : 'hover:border-primary/50 hover:shadow-lg'
                                                 }
                                             `}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border border-gray-200 shrink-0">
-                                                    {student.studentPhoto ? (
-                                                        <img 
-                                                            src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`} 
-                                                            alt="" 
-                                                            className="w-full h-full object-cover" 
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                                <IconUser size={16} />
+                                            <CardContent className="p-4 space-y-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border bg-muted shrink-0">
+                                                        {student.studentPhoto ? (
+                                                            <img
+                                                                src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`}
+                                                                alt=""
+                                                                className="w-full h-full object-cover" 
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user h-12 w-12 text-muted-foreground p-2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center">
+                                                                <User className="h-6 w-6 text-muted-foreground" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold text-sm truncate">{student.name}</h3>
+                                                        <p className="text-xs text-muted-foreground truncate">
+                                                            Roll: <span className="font-mono text-foreground">{student.rollNum}</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mini Stats Grid - Integrated into Card */}
+                                                <div className="grid grid-cols-3 text-xs bg-card border rounded-md divide-x">
+                                                    <div className="p-2 text-center">
+                                                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">Marks</div>
+                                                        <div className="font-medium">{stats.obtained}/{stats.total}</div>
+                                                    </div>
+                                                    <div className="p-2 text-center">
+                                                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">%</div>
+                                                        <div className="font-medium">{stats.percentage}%</div>
+                                                    </div>
+                                                    <div className="p-2 text-center">
+                                                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">Grade</div>
+                                                        <div className={`font-bold ${stats.grade === 'F' ? 'text-destructive' : 'text-green-600'}`}>
+                                                            {stats.grade}
                                                         </div>
-                                                    )}
+                                                    </div>
                                                 </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <h3 className="text-sm font-semibold text-gray-900 truncate">{student.name}</h3>
-                                                    <p className="text-xs text-gray-500 truncate">Roll: {student.rollNum}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        onClick={(e) => openPreview(e, student)}
-                                                        className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-orange-600 hover:border-orange-300 transition shadow-sm z-10"
-                                                        title="Preview Card"
-                                                    >
-                                                        <IconEye className="w-4 h-4" />
-                                                    </button>
-                                                <div className={`
-                                                    w-5 h-5 rounded-full border flex items-center justify-center transition-colors
-                                                    ${selectedStudents.includes(student._id)
-                                                        ? 'bg-orange-600 border-orange-600 text-white'
-                                                        : 'border-gray-300 group-hover:border-orange-400'
-                                                    }
-                                                `}>
-                                                    {selectedStudents.includes(student._id) && (
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                        </svg>
-                                                    )}
-                                                </div>
+                                            </CardContent>
+
+                                            {/* Footer Actions */}
+                                            <div className="bg-muted/20 p-2 flex justify-end border-t group-hover:bg-muted/40 transition-colors">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-7 rounded-full p-0"
+                                                    onClick={(e) => openPreview(e, student)}
+                                                    title="Preview Card"
+                                                >
+                                                    <Eye className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                </Button>
                                             </div>
-                                            </div>
-                                            
-                                            {/* Mini Result Stats */}
-                                            <div className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded border border-gray-100">
-                                                <div className="text-center">
-                                                    <p className="text-gray-500">Marks</p>
-                                                    <p className="font-bold text-gray-900">{stats.obtained}/{stats.total}</p>
+
+                                            {/* Selection Indicator */}
+                                            {isSelected && (
+                                                <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-0.5 border-2 border-background shadow-sm animate-in zoom-in-50">
+                                                    <CheckCircle2 className="w-3 h-3" strokeWidth={3} />
                                                 </div>
-                                                <div className="text-center">
-                                                    <p className="text-gray-500">%</p>
-                                                    <p className="font-bold text-gray-900">{stats.percentage}%</p>
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-gray-500">Grade</p>
-                                                    <p className={`font-bold ${stats.grade === 'F' ? 'text-red-600' : 'text-green-600'}`}>{stats.grade}</p>
-                                                </div>
-                                            </div>
-                                        </div>
+                                            )}
+                                        </Card>
                                     );
                                 })}
                             </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
+                    <Card className="border-dashed shadow-none bg-muted/30">
+                        <CardContent className="flex flex-col items-center justify-center py-24 text-center">
+                            <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+                                <GraduationCap className="w-12 h-12 text-muted-foreground/50" />
                         </div>
-                    </div>
-                ) : (
-                        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 bg-white rounded-2xl border border-dashed border-gray-300 shadow-xs">
-                            <div className="bg-orange-50 p-6 rounded-full mb-4">
-                                <Award className="w-12 h-12 text-orange-400 opacity-80" />
-                        </div>
-                            <h3 className="text-xl font-bold text-gray-900">Generate Report Cards</h3>
-                            <p className="text-gray-500 max-w-sm mt-2 mb-8">Select Exam and Class from the options above to fetch results and generate reports.</p>
-                            <div className="h-1 w-24 bg-orange-100 rounded-full"></div>
-                    </div>
-                )}
+                        <h3 className="text-xl font-semibold mb-2">Ready to Generate Reports</h3>
+                        <p className="text-muted-foreground max-w-sm">
+                            Select an Exam Group and Class above to fetch results and generate comprehensive student report cards instantly.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
-                {/* Print Area - Hidden off-screen but rendered for react-to-print */}
-                <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
-                    <div ref={componentRef}>
-                        {selectedStudents.length > 0 && selectedTemplate ? (
-                            <div className="print-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', padding: '20px' }}>
-                                <style>
-                                    {`
-                                        @media print {
-                                            @page { margin: 10mm; size: auto; }
-                                            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                                            .print-container { gap: 10px; }
-                                        }
-                                    `}
-                                </style>
-                                {filteredStudents
-                                    .filter(s => selectedStudents.includes(s._id))
-                                    .map(student => {
-                                        const stats = calculateStats(student._id);
-                                        return (
-                                            <div key={student._id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '10px' }}>
-                                                <CardRenderer
-                                                    template={selectedTemplate}
-                                                    data={{
-                                                        ...student,
-                                                        class: classes.find(c => c._id === selectedClass)?.sclassName,
-                                                        schoolName: schoolInfo?.schoolName,
-                                                        address: schoolInfo?.address,
-                                                        schoolLogo: schoolInfo?.schoolLogo,
-                                                        // Result Specifics
-                                                        examName: getExamGroupName(),
-                                                        session: examDetails.session,
-                                                        marksTable: stats.results, // Pass array of results for table rendering
-                                                        percentage: stats.percentage + '%',
-                                                        grade: stats.grade,
-                                                        status: stats.status,
-                                                        totalMarks: stats.total,
-                                                        obtainedMarks: stats.obtained
-                                                    }}
-                                                    schoolData={schoolInfo}
-                                                />
-                                            </div>
-                                        );
-                                    })
-                                }
+            {/* Print Area - Hidden off-screen but rendered for react-to-print */}
+            <div className="hidden print:block absolute top-0 left-0 w-full">
+                <div ref={componentRef}>
+                    {selectedStudents.length > 0 && selectedTemplate ? (
+                        <div className="print-container" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', padding: '20px' }}>
+                            <style>
+                                {`
+                                    @media print {
+                                        @page { margin: 10mm; size: auto; }
+                                        body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                        .print-container { gap: 10px; }
+                                    }
+                                `}
+                            </style>
+                            {filteredStudents
+                                .filter(s => selectedStudents.includes(s._id))
+                                .map(student => {
+                                    const stats = calculateStats(student._id);
+                                    return (
+                                        <div key={student._id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: '10px' }}>
+                                            <CardRenderer
+                                                template={selectedTemplate}
+                                                data={{
+                                                    ...student,
+                                                    class: classes.find(c => c._id === selectedClass)?.sclassName,
+                                                    schoolName: schoolInfo?.schoolName,
+                                                    address: schoolInfo?.address,
+                                                    schoolLogo: schoolInfo?.schoolLogo,
+                                                    // Result Specifics
+                                                    examName: getExamGroupName(),
+                                                    session: examDetails.session,
+                                                    marksTable: stats.results,
+                                                    percentage: stats.percentage + '%',
+                                                    grade: stats.grade,
+                                                    status: stats.status,
+                                                    totalMarks: stats.total,
+                                                    obtainedMarks: stats.obtained
+                                                }}
+                                                schoolData={schoolInfo}
+                                            />
+                                        </div>
+                                    );
+                                })
+                            }
+                        </div>
+                    ) : (
+                        <div className="p-8 text-center text-destructive font-bold text-xl">
+                            Please select students and a template to print.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {!selectedTemplate && selectedStudents.length > 0 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <div className="bg-destructive text-destructive-foreground px-6 py-3 rounded-full shadow-lg flex items-center gap-3">
+                        <X className="w-5 h-5" />
+                        <span className="font-medium">Please select a Report Card Template to print</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Preview Modal */}
+            <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+                <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+                    <DialogHeader className="p-6 border-b bg-background">
+                        <DialogTitle className="flex items-center gap-2">
+                            <Eye className="w-5 h-5 text-primary" />
+                            Report Card Preview
+                        </DialogTitle>
+                        <DialogDescription>
+                            Previewing report for <span className="font-medium text-foreground">{previewStudent?.name}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-auto p-8 bg-muted/40 flex items-center justify-center min-h-[400px]">
+                        {previewStudent && selectedTemplate ? (
+                            <div className="scale-[0.8] origin-center sm:scale-100 shadow-xl bg-white border ring-1 ring-border/50">
+                                <CardRenderer
+                                    template={selectedTemplate}
+                                    data={{
+                                        ...previewStudent,
+                                        class: classes.find(c => c._id === selectedClass)?.sclassName,
+                                        schoolName: schoolInfo?.schoolName,
+                                        address: schoolInfo?.address,
+                                        schoolLogo: schoolInfo?.schoolLogo,
+                                        examName: getExamGroupName(),
+                                        session: examDetails.session,
+                                        marksTable: calculateStats(previewStudent._id).results,
+                                        percentage: calculateStats(previewStudent._id).percentage + '%',
+                                        grade: calculateStats(previewStudent._id).grade,
+                                        status: calculateStats(previewStudent._id).status,
+                                        totalMarks: calculateStats(previewStudent._id).total,
+                                        obtainedMarks: calculateStats(previewStudent._id).obtained
+                                    }}
+                                    schoolData={schoolInfo}
+                                />
                             </div>
                         ) : (
-                            <div className="p-8 text-center text-red-500 font-bold text-xl">
-                                Please select students and a template to print.
+                            <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                <Loader2 className="w-10 h-10 animate-spin mb-2" />
+                                <p>Loading Application Preview...</p>
                             </div>
                         )}
                     </div>
-                </div>
-                
-                {!selectedTemplate && selectedStudents.length > 0 && (
-                    <div className="hidden print:block text-center pt-20">
-                         <p className="text-xl font-bold text-red-600">Please select a Report Card Template to print.</p>
-                    </div>
-                )}
 
-                {/* Preview Modal */}
-                {showPreviewModal && previewStudent && selectedTemplate && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)}>
-                        <div className="bg-white rounded-xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden flex flex-col w-full" onClick={e => e.stopPropagation()}>
-                            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                                <h3 className="font-bold text-gray-900">Card Preview: {previewStudent.name}</h3>
-                                <button onClick={() => setShowPreviewModal(false)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
-                            </div>
-                            <div className="flex-1 overflow-auto p-8 bg-gray-100 flex items-center justify-center">
-                                <div className="scale-[0.8] origin-center sm:scale-100 shadow-xl">
-                                    <CardRenderer
-                                        template={selectedTemplate}
-                                        data={{
-                                            ...previewStudent,
-                                            class: classes.find(c => c._id === selectedClass)?.sclassName,
-                                            schoolName: schoolInfo?.schoolName,
-                                            address: schoolInfo?.address,
-                                            schoolLogo: schoolInfo?.schoolLogo,
-                                            examName: getExamGroupName(),
-                                            session: examDetails.session,
-                                            marksTable: calculateStats(previewStudent._id).results,
-                                            percentage: calculateStats(previewStudent._id).percentage + '%',
-                                            grade: calculateStats(previewStudent._id).grade,
-                                            status: calculateStats(previewStudent._id).status,
-                                            totalMarks: calculateStats(previewStudent._id).total,
-                                            obtainedMarks: calculateStats(previewStudent._id).obtained
-                                        }}
-                                        schoolData={schoolInfo}
-                                    />
-                                </div>
-                            </div>
-                            <div className="p-4 border-t border-gray-100 flex justify-end">
-                                <button onClick={() => setShowPreviewModal(false)} className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">Close Preview</button>
-                            </div>
-                        </div>
+                    <div className="p-4 border-t bg-background flex justify-end gap-2">
+                        <DialogClose asChild>
+                            <Button variant="outline">Close Preview</Button>
+                        </DialogClose>
                     </div>
-                )}
-            </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

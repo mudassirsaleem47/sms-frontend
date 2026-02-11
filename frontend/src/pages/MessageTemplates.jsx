@@ -2,9 +2,40 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import SearchBar from '../components/SearchBar';
-import { Plus, Edit, Trash2, Check, FileText, Copy, Clock } from 'lucide-react';
-import { createPortal } from 'react-dom';
+import { Plus, Edit, Trash2, Copy, Clock, Search, FileText, Tag } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -18,7 +49,6 @@ const MessageTemplates = () => {
     
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
     const [currentTemplate, setCurrentTemplate] = useState(null);
     
     // Form State
@@ -29,6 +59,7 @@ const MessageTemplates = () => {
     });
     
     // Delete State
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedDeleteId, setSelectedDeleteId] = useState(null);
     
     // Search State
@@ -80,13 +111,9 @@ const MessageTemplates = () => {
     };
 
     const closeModal = () => {
-        setIsClosing(true);
-        setTimeout(() => {
-            setIsModalOpen(false);
-            setIsClosing(false);
-            setCurrentTemplate(null);
-            setFormData({ name: '', category: 'general', content: '' });
-        }, 200);
+        setIsModalOpen(false);
+        setCurrentTemplate(null);
+        setFormData({ name: '', category: 'general', content: '' });
     };
 
     // Form Submit
@@ -117,18 +144,12 @@ const MessageTemplates = () => {
     };
 
     // Delete Logic
-    const handleDelete = (id) => {
-        if (selectedDeleteId === id) {
-            confirmDelete();
-        } else {
-            setSelectedDeleteId(id);
-            setTimeout(() => {
-                setSelectedDeleteId(prev => prev === id ? null : prev);
-            }, 3000);
-        }
+    const handleDeleteClick = (id) => {
+        setSelectedDeleteId(id);
+        setDeleteDialogOpen(true);
     };
 
-    const confirmDelete = async () => {
+    const handleDeleteConfirm = async () => {
         if (!selectedDeleteId) return;
         try {
             await axios.delete(`${API_BASE}/MessageTemplate/${selectedDeleteId}`);
@@ -136,8 +157,10 @@ const MessageTemplates = () => {
             showToast('Template deleted successfully!', 'success');
         } catch (err) {
             showToast('Error deleting template!', 'error');
+        } finally {
+            setDeleteDialogOpen(false);
+            setSelectedDeleteId(null);
         }
-        setSelectedDeleteId(null);
     };
 
     // Copy to Clipboard
@@ -157,272 +180,222 @@ const MessageTemplates = () => {
         );
     });
 
-    // Get category color
-    const getCategoryColor = (category) => {
-        const colors = {
-            general: 'bg-gray-100 text-gray-700',
-            fee: 'bg-green-100 text-green-700',
-            attendance: 'bg-blue-100 text-blue-700',
-            exam: 'bg-purple-100 text-purple-700',
-            event: 'bg-orange-100 text-orange-700',
-            holiday: 'bg-pink-100 text-pink-700',
-            other: 'bg-yellow-100 text-yellow-700'
-        };
-        return colors[category] || colors.general;
+    const insertTag = (tag) => {
+        setFormData(prev => ({
+            ...prev,
+            content: prev.content + tag
+        }));
+    };
+
+    // Helper for badge variant
+    const getBadgeVariant = (category) => {
+        switch (category) {
+            case 'fee': return 'destructive';
+            case 'attendance': return 'default';
+            case 'exam': return 'secondary';
+            case 'event': return 'outline';
+            case 'holiday': return 'secondary';
+            default: return 'outline';
+        }
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-4xl font-bold text-gray-900">Message Templates</h1>
-                    <p className="text-gray-600 mt-2">Manage your message templates here</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Message Templates</h1>
+                    <p className="text-muted-foreground mt-1">Manage reusable message templates for your campaigns</p>
                 </div>
-                <button 
-                    onClick={() => openModal()}
-                    className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-lg hover:shadow-xl transition duration-200 font-600"
-                >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Template
-                </button>
+                <Button onClick={() => openModal()}>
+                    <Plus className="w-4 h-4 mr-2" /> Add Template
+                </Button>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-6">
-                <SearchBar 
+            <div className="relative max-w-md">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search templates..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by template name or content..."
-                    className="max-w-md"
+                    className="pl-8"
                 />
             </div>
 
-            {/* Templates Grid */}
             {loading ? (
                 <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-                </div>
-            ) : templates.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                    <div onClick={() => openModal()} className="w-16 h-16 cursor-pointer bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-                        <Plus className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-600 text-lg font-500">No templates yet</p>
-                    <p className="text-gray-500 text-sm mt-1">Click "Add Template" to create a new template</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
             ) : filteredTemplates.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-                        <FileText className="w-8 h-8 text-gray-400" />
+                    <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/10 border-dashed">
+                        <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                            <FileText className="w-6 h-6 text-muted-foreground" />
                     </div>
-                    <p className="text-gray-600 text-lg font-500">No templates found</p>
-                    <p className="text-gray-500 text-sm mt-1">Try changing your search criteria</p>
+                        <h3 className="text-lg font-semibold">No templates found</h3>
+                        <p className="text-muted-foreground mt-1 max-w-sm mb-4">
+                            {templates.length === 0
+                                ? "Get started by creating your first message template."
+                                : "No templates match your search criteria."}
+                        </p>
+                        {templates.length === 0 && (
+                            <Button onClick={() => openModal()}>
+                                <Plus className="w-4 h-4 mr-2" /> Create Template
+                            </Button>
+                        )}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredTemplates.map(template => (
-                        <div 
-                            key={template._id}
-                            className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition"
-                        >
-                            {/* Card Header */}
-                            <div className="p-5 border-b border-gray-100">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-lg text-gray-900">{template.name}</h3>
-                                        <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-600 ${getCategoryColor(template.category)}`}>
+                        <Card key={template._id} className="flex flex-col">
+                            <CardHeader className="pb-3">
+                                <div className="flex justify-between items-start gap-2">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-lg">{template.name}</CardTitle>
+                                        <Badge variant={getBadgeVariant(template.category)}>
                                             {categories.find(c => c.value === template.category)?.label || template.category}
-                                        </span>
+                                        </Badge>
                                     </div>
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground"
                                         onClick={() => copyToClipboard(template.content)}
-                                        className="p-2 hover:bg-gray-100 rounded-lg transition"
-                                        title="Copy message"
+                                        title="Copy content"
                                     >
-                                        <Copy className="w-4 h-4 text-gray-500" />
-                                    </button>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                            </div>
-                            
-                            {/* Card Body */}
-                            <div className="p-5">
-                                <p className="text-gray-600 text-sm line-clamp-4">
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-4">
                                     {template.content}
                                 </p>
-                            </div>
-                            
-                            {/* Card Footer */}
-                            <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                                <div className="flex items-center text-xs text-gray-500">
-                                    <Clock className="w-3.5 h-3.5 mr-1" />
+                            </CardContent>
+                            <CardFooter className="pt-3 border-t bg-muted/20 flex justify-between items-center text-xs text-muted-foreground">
+                                <div className="flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
                                     {new Date(template.createdAt).toLocaleDateString()}
                                 </div>
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => openModal(template)}
-                                        className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition"
-                                        title="Edit"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(template._id)}
-                                        className={`p-2 rounded-lg transition ${
-                                            selectedDeleteId === template._id
-                                                ? 'bg-red-600 text-white'
-                                                : 'bg-red-100 text-red-600 hover:bg-red-200'
-                                        }`}
-                                        title="Delete"
-                                    >
-                                        {selectedDeleteId === template._id ? (
-                                            <Check className="w-4 h-4" />
-                                        ) : (
-                                            <Trash2 className="w-4 h-4" />
-                                        )}
-                                    </button>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openModal(template)}>
+                                        <Edit className="w-3.5 h-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" onClick={() => handleDeleteClick(template._id)}>
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
                                 </div>
-                            </div>
-                        </div>
+                            </CardFooter>
+                        </Card>
                     ))}
                 </div>
             )}
 
-            {/* Add/Edit Modal */}
-            {isModalOpen && createPortal(
-                <div className={`fixed inset-0 z-9999 overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-                    <div className="flex min-h-full items-center justify-center p-4">
-                        <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                            
-                            {/* Modal Header */}
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-linear-to-r from-indigo-600 to-purple-600 rounded-t-2xl">
-                                <h3 className="text-xl font-bold text-white">
-                                    {currentTemplate ? 'Edit Template' : 'New Template'}
-                                </h3>
-                                <button
-                                    onClick={closeModal}
-                                    className="text-white/80 hover:text-white transition"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0 gap-0">
+                    <DialogHeader className="px-6 py-4 border-b">
+                        <DialogTitle>{currentTemplate ? 'Edit Template' : 'New Template'}</DialogTitle>
+                        <DialogDescription>
+                            Create or edit a message template. Use dynamic tags to personalize.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <ScrollArea className="flex-1 p-6">
+                        <form id="template-form" onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Template Name *</Label>
+                                <Input
+                                    id="name"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="e.g., Fee Reminder"
+                                    required
+                                />
                             </div>
 
-                            {/* Modal Body */}
-                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                                
-                                {/* Template Name */}
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Template Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                                        placeholder="e.g., Fee Reminder"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Category */}
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Category
-                                    </label>
-                                    <select
-                                        value={formData.category}
-                                        onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    >
+                            <div className="grid gap-2">
+                                <Label htmlFor="category">Category</Label>
+                                <Select
+                                    value={formData.category} 
+                                    onValueChange={(val) => setFormData({ ...formData, category: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
                                         {categories.map(cat => (
-                                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
                                         ))}
-                                    </select>
-                                </div>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                                {/* Message Content */}
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Message Content *
-                                    </label>
-                                    <textarea
-                                        value={formData.content}
-                                        onChange={(e) => setFormData({...formData, content: e.target.value})}
-                                        placeholder="Write your message here... Use dynamic tags below to personalize"
-                                        rows={6}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                                        required
-                                    />
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {formData.content.length} characters
-                                    </p>
+                            <div className="grid gap-2">
+                                <Label htmlFor="content">Valid Content *</Label>
+                                <Textarea
+                                    id="content"
+                                    value={formData.content}
+                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    placeholder="Write your message here..."
+                                    className="min-h-[150px] font-normal"
+                                    required
+                                />
+                                <div className="text-xs text-muted-foreground text-right">
+                                    {formData.content.length} characters
                                 </div>
+                            </div>
 
-                                {/* Dynamic Tags */}
-                                <div className="bg-indigo-50 rounded-lg p-4">
-                                    <p className="text-sm font-600 text-indigo-700 mb-3">
-                                        Dynamic Tags (click to insert):
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {[
-                                            { tag: '{{name}}', label: 'Student Name' },
-                                            { tag: '{{father}}', label: 'Father Name' },
-                                            { tag: '{{class}}', label: 'Class' },
-                                            { tag: '{{section}}', label: 'Section' },
-                                            { tag: '{{phone}}', label: 'Phone' },
-                                            { tag: '{{roll}}', label: 'Roll No' },
-                                            { tag: '{{fee_amount}}', label: 'Fee Amount' },
-                                            { tag: '{{due_date}}', label: 'Due Date' },
-                                            { tag: '{{attendance}}', label: 'Attendance %' },
-                                            { tag: '{{exam_date}}', label: 'Exam Date' },
-                                            { tag: '{{result}}', label: 'Result' },
-                                            { tag: '{{school}}', label: 'School Name' }
-                                        ].map(item => (
-                                            <button
-                                                key={item.tag}
-                                                type="button"
-                                                onClick={() => setFormData({
-                                                    ...formData, 
-                                                    content: formData.content + item.tag
-                                                })}
-                                                className="bg-white px-3 py-1.5 rounded-lg text-xs font-mono text-indigo-600 border border-indigo-200 hover:bg-indigo-100 hover:border-indigo-400 transition"
-                                                title={`Insert ${item.label}`}
-                                            >
-                                                {item.tag}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-3">
-                                        These tags will be replaced with actual student data when sending messages
-                                    </p>
+                            <div className="space-y-3 pt-2">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">Dynamic Tags (Click to insert)</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { tag: '{{name}}', label: 'Student Name' },
+                                        { tag: '{{father}}', label: 'Father Name' },
+                                        { tag: '{{class}}', label: 'Class' },
+                                        { tag: '{{section}}', label: 'Section' },
+                                        { tag: '{{phone}}', label: 'Phone' },
+                                        { tag: '{{fee_amount}}', label: 'Fee Amount' },
+                                        { tag: '{{due_date}}', label: 'Due Date' },
+                                        { tag: '{{school}}', label: 'School Name' }
+                                    ].map(item => (
+                                        <Badge
+                                            key={item.tag}
+                                            variant="outline"
+                                            className="cursor-pointer hover:bg-secondary transition-colors py-1.5"
+                                            onClick={() => insertTag(item.tag)}
+                                        >
+                                            <Tag className="w-3 h-3 mr-1.5 text-muted-foreground" />
+                                            {item.label}
+                                        </Badge>
+                                    ))}
                                 </div>
+                            </div>
+                        </form>
+                    </ScrollArea>
 
-                                {/* Submit Button */}
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeModal}
-                                        className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-600"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-600"
-                                    >
-                                        {currentTemplate ? 'Update Template' : 'Create Template'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    <DialogFooter className="px-6 py-4 border-t">
+                        <Button variant="outline" onClick={closeModal} type="button">Cancel</Button>
+                        <Button type="submit" form="template-form">
+                            {currentTemplate ? 'Update Template' : 'Create Template'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the message template.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

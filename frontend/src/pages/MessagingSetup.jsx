@@ -8,6 +8,21 @@ import {
     Wifi, WifiOff, AlertCircle, Loader2
 } from 'lucide-react';
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const MessagingSetup = () => {
@@ -207,329 +222,295 @@ const MessagingSetup = () => {
         }
     };
 
-    // Get status badge component
-    const getStatusBadge = (status) => {
-        const badges = {
-            connected: { icon: CheckCircle2, color: 'bg-green-100 text-green-700', label: 'Connected' },
-            disconnected: { icon: XCircle, color: 'bg-red-100 text-red-700', label: 'Disconnected' },
-            connecting: { icon: Loader2, color: 'bg-yellow-100 text-yellow-700', label: 'Connecting...' },
-            qr: { icon: QrCode, color: 'bg-blue-100 text-blue-700', label: 'Scan QR Code' },
-            testing: { icon: Loader2, color: 'bg-yellow-100 text-yellow-700', label: 'Testing...' }
-        };
-        const badge = badges[status] || badges.disconnected;
-        const Icon = badge.icon;
-        
+    // Badge Component
+    const StatusBadge = ({ status }) => {
+        let variant = "outline";
+        let icon = null;
+        let label = status;
+        let className = "";
+
+        switch (status) {
+            case 'connected':
+                variant = "default"; // or success if available, else standard primary
+                className = "bg-green-600 hover:bg-green-700";
+                icon = <CheckCircle2 className="w-3 h-3 mr-1" />;
+                label = "Connected";
+                break;
+            case 'disconnected':
+                variant = "destructive";
+                icon = <XCircle className="w-3 h-3 mr-1" />;
+                label = "Disconnected";
+                break;
+            case 'connecting':
+            case 'testing':
+                variant = "secondary";
+                icon = <Loader2 className="w-3 h-3 mr-1 animate-spin" />;
+                label = status === 'connecting' ? "Connecting..." : "Testing...";
+                break;
+            case 'qr':
+                variant = "secondary";
+                className = "bg-blue-100 text-blue-800 hover:bg-blue-200";
+                icon = <QrCode className="w-3 h-3 mr-1" />;
+                label = "Scan QR Code";
+                break;
+            default:
+                break;
+        }
+
         return (
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-600 ${badge.color}`}>
-                <Icon className={`w-4 h-4 ${status === 'connecting' || status === 'testing' ? 'animate-spin' : ''}`} />
-                {badge.label}
-            </span>
+            <Badge variant={variant} className={className}>
+                {icon} {label}
+            </Badge>
         );
     };
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 md:p-8">
-            
-            {/* Header Section */}
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 flex items-center gap-3">
-                    <Settings className="w-10 h-10 text-indigo-600" />
-                    Messaging Setup
-                </h1>
-                <p className="text-gray-600 mt-2">Configure WhatsApp and Email for sending messages</p>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-4 mb-6">
-                <button
-                    onClick={() => setActiveTab('whatsapp')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-600 transition ${
-                        activeTab === 'whatsapp'
-                            ? 'bg-green-500 text-white shadow-lg'
-                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                    }`}
-                >
-                    <Smartphone className="w-5 h-5" />
-                    WhatsApp
-                </button>
-                <button
-                    onClick={() => setActiveTab('email')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-600 transition ${
-                        activeTab === 'email'
-                            ? 'bg-blue-500 text-white shadow-lg'
-                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                    }`}
-                >
-                    <Mail className="w-5 h-5" />
-                    Email (SMTP)
-                </button>
-            </div>
-
-            {/* WhatsApp Tab */}
-            {activeTab === 'whatsapp' && (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div className="p-6 border-b border-gray-200 bg-linear-to-r from-green-500 to-green-600">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                                    <MessageSquare className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">WhatsApp Connection</h2>
-                                    <p className="text-green-100 text-sm">Connect using Baileys (Web.js Alternative)</p>
-                                </div>
-                            </div>
-                            {getStatusBadge(whatsappStatus)}
-                        </div>
-                    </div>
-
-                    <div className="p-6">
-                        {whatsappStatus === 'connected' ? (
-                            <div className="text-center py-8">
-                                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">WhatsApp Connected!</h3>
-                                <p className="text-gray-600 mb-2">Your WhatsApp is connected and ready to send messages.</p>
-                                {whatsappNumber && (
-                                    <p className="text-green-600 font-600 mb-6">
-                                        Connected Number: {whatsappNumber}
-                                    </p>
-                                )}
-                                <button
-                                    onClick={disconnectWhatsapp}
-                                    disabled={loadingWhatsapp}
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition font-600"
-                                >
-                                    {loadingWhatsapp ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <WifiOff className="w-5 h-5" />
-                                    )}
-                                    Disconnect WhatsApp
-                                </button>
-                            </div>
-                        ) : whatsappStatus === 'qr' ? (
-                            <div className="text-center py-8">
-                                <h3 className="text-xl font-bold text-gray-900 mb-4">Scan QR Code with WhatsApp</h3>
-                                <p className="text-gray-600 mb-6">Open WhatsApp on your phone → Settings → Linked Devices → Link a Device</p>
-                                
-                                <div className="inline-block p-4 bg-white border-4 border-gray-200 rounded-2xl shadow-lg mb-6">
-                                    {qrCode ? (
-                                        <img 
-                                            src={qrCode} 
-                                            alt="WhatsApp QR Code" 
-                                            className="w-64 h-64"
-                                        />
-                                    ) : (
-                                        <div className="w-64 h-64 flex items-center justify-center">
-                                            <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="flex items-center justify-center gap-2 text-yellow-600 bg-yellow-50 p-3 rounded-lg max-w-md mx-auto">
-                                    <AlertCircle className="w-5 h-5" />
-                                    <span className="text-sm">QR code will refresh automatically. Keep this page open.</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <QrCode className="w-10 h-10 text-gray-400" />
-                                </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">WhatsApp Not Connected</h3>
-                                <p className="text-gray-600 mb-6">Connect your WhatsApp to send messages to students and parents.</p>
-                                
-                                <button
-                                    onClick={connectWhatsapp}
-                                    disabled={loadingWhatsapp}
-                                    className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-lg transition font-600"
-                                >
-                                    {loadingWhatsapp ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <Wifi className="w-5 h-5" />
-                                    )}
-                                    Connect WhatsApp
-                                </button>
-                                
-                                <div className="mt-8 p-4 bg-blue-50 rounded-lg max-w-lg mx-auto text-left">
-                                    <h4 className="font-600 text-blue-900 mb-2">How it works:</h4>
-                                    <ul className="text-sm text-blue-700 space-y-1">
-                                        <li>1. Click "Connect WhatsApp" above</li>
-                                        <li>2. Scan the QR code with your WhatsApp app</li>
-                                        <li>3. Your WhatsApp is linked and ready to use</li>
-                                        <li>4. Messages will be sent from your connected number</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Messaging Setup</h1>
+                    <p className="text-muted-foreground mt-1">Configure WhatsApp and Email channels for communication</p>
                 </div>
-            )}
+            </div>
 
-            {/* Email Tab */}
-            {activeTab === 'email' && (
-                <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div className="p-6 border-b border-gray-200 bg-linear-to-r from-blue-500 to-blue-600">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                                    <Mail className="w-6 h-6 text-white" />
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+                    <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4" /> WhatsApp
+                    </TabsTrigger>
+                    <TabsTrigger value="email" className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" /> Email (SMTP)
+                    </TabsTrigger>
+                </TabsList>
+
+                {/* WhatsApp Tab */}
+                <TabsContent value="whatsapp" className="space-y-4">
+                    <Card>
+                        <CardHeader className="bg-muted/10">
+                            <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                    <CardTitle>WhatsApp Connection</CardTitle>
+                                    <CardDescription>Connect using Baileys integration for stable messaging.</CardDescription>
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Email Configuration</h2>
-                                    <p className="text-blue-100 text-sm">Setup SMTP for sending emails (using Nodemailer)</p>
-                                </div>
+                                <StatusBadge status={whatsappStatus} />
                             </div>
-                            {getStatusBadge(emailStatus)}
-                        </div>
-                    </div>
-
-                    <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            {/* SMTP Host */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    SMTP Host *
-                                </label>
-                                <input
-                                    type="text"
-                                    value={emailConfig.smtpHost}
-                                    onChange={(e) => setEmailConfig({...emailConfig, smtpHost: e.target.value})}
-                                    placeholder="smtp.gmail.com"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* SMTP Port */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    SMTP Port
-                                </label>
-                                <select
-                                    value={emailConfig.smtpPort}
-                                    onChange={(e) => setEmailConfig({...emailConfig, smtpPort: e.target.value})}
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="587">587 (TLS)</option>
-                                    <option value="465">465 (SSL)</option>
-                                    <option value="25">25 (No Encryption)</option>
-                                </select>
-                            </div>
-
-                            {/* SMTP Username */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    SMTP Username *
-                                </label>
-                                <input
-                                    type="email"
-                                    value={emailConfig.smtpUser}
-                                    onChange={(e) => setEmailConfig({...emailConfig, smtpUser: e.target.value})}
-                                    placeholder="your-email@gmail.com"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            {/* SMTP Password */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    SMTP Password / App Password *
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={emailConfig.smtpPassword}
-                                        onChange={(e) => setEmailConfig({...emailConfig, smtpPassword: e.target.value})}
-                                        placeholder="••••••••••••••••"
-                                        className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            {whatsappStatus === 'connected' ? (
+                                <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                                        <CheckCircle2 className="w-8 h-8" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl font-semibold">WhatsApp Connected!</h3>
+                                        <p className="text-muted-foreground">Your instance is ready to send messages.</p>
+                                        {whatsappNumber && (
+                                            <p className="font-medium text-primary">Connected: {whatsappNumber}</p>
+                                        )}
+                                    </div>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={disconnectWhatsapp}
+                                        disabled={loadingWhatsapp}
+                                        className="mt-4"
                                     >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
+                                        {loadingWhatsapp ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <WifiOff className="w-4 h-4 mr-2" />}
+                                        Disconnect
+                                    </Button>
+                                </div>
+                            ) : whatsappStatus === 'qr' ? (
+                                    <div className="flex flex-col items-center justify-center py-6 text-center space-y-6">
+                                        <div className="space-y-2">
+                                            <h3 className="text-xl font-semibold">Scan QR Code</h3>
+                                            <p className="text-muted-foreground max-w-sm mx-auto">
+                                                Open WhatsApp on your phone go to <strong>Settings {'>'} Linked Devices {'>'} Link a Device</strong>
+                                            </p>
+                                        </div>
+
+                                        <div className="p-4 bg-white rounded-xl shadow-sm border border-border">
+                                            {qrCode ? (
+                                                <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64 object-contain" />
+                                            ) : (
+                                                <div className="w-64 h-64 flex items-center justify-center">
+                                                    <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <Alert variant="warning" className="max-w-md bg-yellow-50 text-yellow-800 border-yellow-200">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertTitle>Action Required</AlertTitle>
+                                            <AlertDescription>
+                                                Scan the code quickly. The code refreshes automatically every few seconds.
+                                            </AlertDescription>
+                                        </Alert>
+                                    </div>
+                                ) : (
+                                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-6">
+                                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                                                <QrCode className="w-8 h-8 text-muted-foreground" />
+                                            </div>
+                                            <div className="space-y-2 max-w-lg">
+                                                <h3 className="text-xl font-semibold">WhatsApp Not Connected</h3>
+                                                <p className="text-muted-foreground">
+                                                    Connect your WhatsApp account to enable messaging features for students and parents directly from the system.
+                                                </p>
+                                            </div>
+
+                                            <Button
+                                                size="lg"
+                                                onClick={connectWhatsapp}
+                                                disabled={loadingWhatsapp}
+                                                className="gap-2"
+                                            >
+                                                {loadingWhatsapp ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wifi className="w-5 h-5" />}
+                                                Connect Receiver
+                                            </Button>
+
+                                    <div className="text-left bg-muted/30 p-4 rounded-lg text-sm space-y-2 max-w-md w-full">
+                                        <p className="font-semibold">Quick Guide:</p>
+                                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                            <li>Click "Connect Receiver" button above.</li>
+                                            <li>Wait for the QR code to appear.</li>
+                                            <li>Scan code with your phone's WhatsApp app.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Email Tab */}
+                <TabsContent value="email" className="space-y-4">
+                    <Card>
+                        <CardHeader className="bg-muted/10">
+                            <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                    <CardTitle>Email Configuration</CardTitle>
+                                    <CardDescription>Setup SMTP details to enable email notifications using Nodemailer.</CardDescription>
+                                </div>
+                                <StatusBadge status={emailStatus} />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="smtp-host">SMTP Host *</Label>
+                                    <Input
+                                        id="smtp-host"
+                                        placeholder="smtp.gmail.com"
+                                        value={emailConfig.smtpHost}
+                                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpHost: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="smtp-port">SMTP Port</Label>
+                                    <Select
+                                        value={emailConfig.smtpPort} 
+                                        onValueChange={(val) => setEmailConfig({ ...emailConfig, smtpPort: val })}
+                                    >
+                                        <SelectTrigger id="smtp-port">
+                                            <SelectValue placeholder="Select port" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="587">587 (TLS)</SelectItem>
+                                            <SelectItem value="465">465 (SSL)</SelectItem>
+                                            <SelectItem value="25">25 (No Encryption)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="smtp-user">SMTP Username *</Label>
+                                    <Input
+                                        id="smtp-user"
+                                        type="email"
+                                        placeholder="your-email@gmail.com"
+                                        value={emailConfig.smtpUser}
+                                        onChange={(e) => setEmailConfig({ ...emailConfig, smtpUser: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="smtp-pass">SMTP Password / App Password *</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="smtp-pass"
+                                            type={showPassword ? 'text' : 'password'}
+                                            placeholder="••••••••••••••••"
+                                            value={emailConfig.smtpPassword}
+                                            onChange={(e) => setEmailConfig({ ...emailConfig, smtpPassword: e.target.value })}
+                                            className="pr-10"
+                                        />
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="absolute right-0 top-0 h-full w-10 hover:bg-transparent"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            tabIndex="-1"
+                                            type="button"
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="sender-name">Sender Name</Label>
+                                    <Input
+                                        id="sender-name"
+                                        placeholder="Your School Name"
+                                        value={emailConfig.senderName}
+                                        onChange={(e) => setEmailConfig({ ...emailConfig, senderName: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="sender-email">Sender Email *</Label>
+                                    <Input
+                                        id="sender-email"
+                                        type="email"
+                                        placeholder="noreply@yourschool.com"
+                                        value={emailConfig.senderEmail}
+                                        onChange={(e) => setEmailConfig({ ...emailConfig, senderEmail: e.target.value })}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Sender Name */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    Sender Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={emailConfig.senderName}
-                                    onChange={(e) => setEmailConfig({...emailConfig, senderName: e.target.value})}
-                                    placeholder="Your School Name"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
+                            <Alert className="mt-6 bg-blue-50 text-blue-800 border-blue-200">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>For Gmail Users</AlertTitle>
+                                <AlertDescription>
+                                    You must use an <strong>App Password</strong> instead of your regular Gmail password.
+                                    Go to Google Account → Security → 2-Step Verification → App passwords to create one.
+                                </AlertDescription>
+                            </Alert>
 
-                            {/* Sender Email */}
-                            <div>
-                                <label className="block text-sm font-600 text-gray-700 mb-2">
-                                    Sender Email *
-                                </label>
-                                <input
-                                    type="email"
-                                    value={emailConfig.senderEmail}
-                                    onChange={(e) => setEmailConfig({...emailConfig, senderEmail: e.target.value})}
-                                    placeholder="noreply@yourschool.com"
-                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
+                            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+                                <Button
+                                    className="flex-1"
+                                    onClick={saveEmailConfig}
+                                    disabled={savingEmail}
+                                >
+                                    {savingEmail ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                    Save Configuration
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={testEmailConnection}
+                                    disabled={testingEmail || !emailConfig.smtpHost}
+                                >
+                                    {testingEmail ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                                    Test Connection
+                                </Button>
                             </div>
-                        </div>
-
-                        {/* Info Box for Gmail */}
-                        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <div className="flex items-start gap-3">
-                                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                                <div>
-                                    <h4 className="font-600 text-yellow-800">For Gmail Users:</h4>
-                                    <p className="text-sm text-yellow-700 mt-1">
-                                        You need to use an <strong>App Password</strong> instead of your regular Gmail password. 
-                                        Go to Google Account → Security → 2-Step Verification → App passwords to generate one.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-4 mt-6">
-                            <button
-                                onClick={saveEmailConfig}
-                                disabled={savingEmail}
-                                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-600 disabled:opacity-50"
-                            >
-                                {savingEmail ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <CheckCircle2 className="w-5 h-5" />
-                                )}
-                                Save Settings
-                            </button>
-                            <button
-                                onClick={testEmailConnection}
-                                disabled={testingEmail || !emailConfig.smtpHost}
-                                className="flex items-center justify-center gap-2 px-6 py-3 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition font-600 disabled:opacity-50"
-                            >
-                                {testingEmail ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    <Send className="w-5 h-5" />
-                                )}
-                                Test Connection
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };

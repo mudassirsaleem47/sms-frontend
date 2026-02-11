@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useCampus } from '../../context/CampusContext';
 import { useToast } from '../../context/ToastContext';
-import { useModalAnimation } from '../../hooks/useModalAnimation';
 import API_URL from '../../config/api.js';
-import { X, User, Mail, Phone, GraduationCap, Building2, Calendar, Briefcase } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const StaffModal = ({ staff, onClose }) => {
     const { currentUser } = useAuth();
@@ -14,20 +32,17 @@ const StaffModal = ({ staff, onClose }) => {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [designations, setDesignations] = useState([]);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        phone: '',
-        designation: '',
-        campus: '',
-        salary: '',
-        joiningDate: new Date().toISOString().split('T')[0],
-        status: 'active'
-    });
 
-    const isOpen = true;
-    const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, () => onClose(false));
+    // Form state
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [designation, setDesignation] = useState('');
+    const [campus, setCampus] = useState('');
+    const [salary, setSalary] = useState('');
+    const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
+    const [status, setStatus] = useState('active');
 
     // Fetch designations
     useEffect(() => {
@@ -51,32 +66,33 @@ const StaffModal = ({ staff, onClose }) => {
     useEffect(() => {
         if (staff) {
             // Edit mode
-            setFormData({
-                name: staff.name || '',
-                email: staff.email || '',
-                password: '', // Don't populate password
-                phone: staff.phone || '',
-                designation: staff.designation?._id || '',
-                campus: staff.campus?._id || '',
-                salary: staff.salary || '',
-                joiningDate: staff.joiningDate ? staff.joiningDate.split('T')[0] : new Date().toISOString().split('T')[0],
-                status: staff.status || 'active'
-            });
+            setName(staff.name || '');
+            setEmail(staff.email || '');
+            setPassword(''); // Don't populate password
+            setPhone(staff.phone || '');
+            setDesignation(staff.designation?._id || '');
+            setCampus(staff.campus?._id || '');
+            setSalary(staff.salary || '');
+            setJoiningDate(staff.joiningDate ? staff.joiningDate.split('T')[0] : new Date().toISOString().split('T')[0]);
+            setStatus(staff.status || 'active');
+        } else {
+            // Reset for add mode
+            setName('');
+            setEmail('');
+            setPassword('');
+            setPhone('');
+            setDesignation('');
+            setCampus('');
+            setSalary('');
+            setJoiningDate(new Date().toISOString().split('T')[0]);
+            setStatus('active');
         }
     }, [staff]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!formData.name || !formData.email || (!staff && !formData.password) || !formData.designation) {
+        if (!name || !email || (!staff && !password) || !designation) {
             showToast('Please fill all required fields', 'error');
             return;
         }
@@ -84,13 +100,21 @@ const StaffModal = ({ staff, onClose }) => {
         try {
             setLoading(true);
             const payload = {
-                ...formData,
+                name,
+                email,
+                password,
+                phone,
+                designation,
+                campus,
+                salary,
+                joiningDate,
+                status,
                 school: currentUser._id
             };
 
             // Remove empty fields
             Object.keys(payload).forEach(key => {
-                if (!payload[key]) delete payload[key];
+                if (!payload[key] && key !== 'salary') delete payload[key];
             });
 
             if (staff) {
@@ -117,236 +141,144 @@ const StaffModal = ({ staff, onClose }) => {
         }
     };
 
-    if (!isVisible) return null;
+    return (
+        <Dialog open={true} onOpenChange={(open) => !open && onClose(false)}>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col gap-0 p-0 overflow-hidden">
+                <DialogHeader className="px-6 py-4 border-b">
+                    <DialogTitle>{staff ? 'Edit Staff Member' : 'Add Staff Member'}</DialogTitle>
+                    <DialogDescription>
+                        {staff ? 'Update staff member details and assignments.' : 'Enter details to create a new staff account.'}
+                    </DialogDescription>
+                </DialogHeader>
 
-    const getDesignationIcon = () => {
-        return <Briefcase className="w-6 h-6 text-indigo-600" />;
-    };
-
-    return createPortal(
-        <div className={`fixed inset-0 z-9999 overflow-y-auto bg-black/70 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}>
-            <div className="flex min-h-full items-center justify-center p-4">
-                <div className={`bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`}>
-                    
-                    {/* Header */}
-                    <div className="p-7 rounded-t-2xl flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                {getDesignationIcon()}
-                                {staff ? 'Edit Staff Member' : 'Add Staff Member'}
-                            </h2>
-                            <p className="text-gray-600 text-sm mt-2">
-                                {staff ? 'Update staff member details below' : 'Fill in the details to add a new staff member'}
-                            </p>
+                <ScrollArea className="flex-1 p-6">
+                    <form id="staff-form" onSubmit={handleSubmit} className="grid gap-4 py-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name *</Label>
+                                <Input
+                                    id="name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="John Doe"
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email *</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="john@example.com"
+                                    required
+                                />
+                            </div>
                         </div>
-                        <button
-                            onClick={handleClose}
-                            className="text-red-600 bg-gray-50 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition duration-150 shrink-0"
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
 
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="p-6 md:p-8">
-                        <div className="space-y-5">
-                            
-                            {/* Row 1: Name, Email */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Full Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={formData.name}
-                                            onChange={handleChange}
-                                            placeholder="Enter full name"
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Email <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            placeholder="email@example.com"
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Row 2: Password, Phone */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                {!staff && (
-                                    <div>
-                                        <label className="block text-sm font-600 text-gray-700 mb-2">
-                                            Password <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            placeholder="Enter password"
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                            required={!staff}
-                                        />
-                                    </div>
-                                )}
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Phone Number
-                                    </label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            placeholder="+92 300 1234567"
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Row 3: Designation, Campus */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Designation <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <select
-                                            name="designation"
-                                            value={formData.designation}
-                                            onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                            required
-                                        >
-                                            <option value="">Select designation</option>
-                                            {designations.map(designation => (
-                                                <option key={designation._id} value={designation._id}>
-                                                    {designation.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Campus
-                                    </label>
-                                    <div className="relative">
-                                        <Building2 className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <select
-                                            name="campus"
-                                            value={formData.campus}
-                                            onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        >
-                                            <option value="">No campus assigned</option>
-                                            {campuses.map(campus => (
-                                                <option key={campus._id} value={campus._id}>
-                                                    {campus.campusName}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Row 4: Salary, Joining Date, Status */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Salary
-                                    </label>
-                                    <input
-                                        type="number"
-                                        name="salary"
-                                        value={formData.salary}
-                                        onChange={handleChange}
-                                        placeholder="0"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        min="0"
+                        <div className="grid grid-cols-2 gap-4">
+                            {!staff && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password *</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        required
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Joining Date
-                                    </label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                                        <input
-                                            type="date"
-                                            name="joiningDate"
-                                            value={formData.joiningDate}
-                                            onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-600 text-gray-700 mb-2">
-                                        Status
-                                    </label>
-                                    <select
-                                        name="status"
-                                        value={formData.status}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input
+                                    id="phone"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="+1 234 567 890"
+                                />
                             </div>
                         </div>
 
-                        {/* Buttons */}
-                        <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                            <button
-                                type="button"
-                                onClick={handleClose}
-                                className="cursor-pointer px-6 py-2.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-600 transition duration-150"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="cursor-pointer px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-600 transition duration-150 shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Saving...' : (staff ? 'Update Staff' : 'Add Staff')}
-                            </button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="designation">Designation *</Label>
+                                <Select value={designation} onValueChange={setDesignation} required>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select designation" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {designations.map(d => (
+                                            <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="campus">Campus</Label>
+                                <Select value={campus} onValueChange={setCampus}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select campus" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {campuses.map(c => (
+                                            <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="salary">Salary</Label>
+                                <Input
+                                    id="salary"
+                                    type="number"
+                                    value={salary}
+                                    onChange={(e) => setSalary(e.target.value)}
+                                    placeholder="0.00"
+                                    min="0"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="joiningDate">Joining Date</Label>
+                                <Input
+                                    id="joiningDate"
+                                    type="date"
+                                    value={joiningDate}
+                                    onChange={(e) => setJoiningDate(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Status</Label>
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>,
-        document.body
+                </ScrollArea>
+
+                <DialogFooter className="px-6 py-4 border-t">
+                    <Button variant="outline" type="button" onClick={() => onClose(false)}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="staff-form" disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {staff ? 'Update Staff Member' : 'Add Staff Member'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
