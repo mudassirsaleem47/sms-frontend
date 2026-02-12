@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -308,7 +309,7 @@ const AdmissionEnquiry = () => {
                                                 <TableHead>Contact Info</TableHead>
                                                 <TableHead>Class Interest</TableHead>
                                                 <TableHead>Status / Assigned</TableHead>
-                                                <TableHead>Date</TableHead>
+                                                <TableHead>Date/Time</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -369,7 +370,7 @@ const AdmissionEnquiry = () => {
                                             <TableCell>
                                                 <div className="flex items-center text-sm text-muted-foreground">
                                                     <Calendar className="mr-2 h-3 w-3" />
-                                                    {new Date(item.date).toLocaleDateString()}
+                                                    {formatDateTime(item.date)}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -500,7 +501,7 @@ const AdmissionEnquiry = () => {
                                         <div className="font-medium text-gray-500 flex items-center gap-2">
                                             <Calendar className="h-3.5 w-3.5" /> Date
                                         </div>
-                                        <div className="col-span-2">{new Date(selectedEnquiry.date).toLocaleDateString()}</div>
+                                        <div className="col-span-2">{formatDateTime(selectedEnquiry.date)}</div>
                                     </div>
                                 </div>
                             </div>

@@ -88,7 +88,7 @@ const { createSchedule, getScheduleByClassSection, getTeacherSchedule } = requir
 
 router.post('/ScheduleCreate', createSchedule);
 router.get('/Schedule/:classId/:sectionId', getScheduleByClassSection);
-router.get('/TeacherSchedule/:teacherId', getTeacherSchedule);
+
 
 // --- Enquiry Routes ---
 router.post('/EnquiryCreate', enquiryCreate);

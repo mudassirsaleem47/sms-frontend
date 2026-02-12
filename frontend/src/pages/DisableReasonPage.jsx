@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -13,13 +14,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
     Select,
     SelectContent,
@@ -50,7 +60,8 @@ const DisableReasonPage = () => {
     const [filterReason, setFilterReason] = useState('all');
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
-    const [selectedEnableId, setSelectedEnableId] = useState(null);
+    const [studentToEnable, setStudentToEnable] = useState(null);
+    const [enableLoading, setEnableLoading] = useState(false);
 
     const reasons = ['Left School', 'Transferred', 'Expelled', 'Medical', 'Financial', 'Other'];
 
@@ -79,25 +90,19 @@ const DisableReasonPage = () => {
         }
     };
 
-    const handleEnableClick = (id) => {
-        if (selectedEnableId === id) {
-            handleEnableConfirm();
-        } else {
-            setSelectedEnableId(id);
-            setTimeout(() => setSelectedEnableId(prev => prev === id ? null : prev), 3000);
-        }
-    }
-
     const handleEnableConfirm = async () => {
-        if (!selectedEnableId) return;
+        if (!studentToEnable) return;
         try {
-            await axios.put(`${API_URL}/Student/${selectedEnableId}`, { status: 'Active' });
+            setEnableLoading(true);
+            await axios.put(`${API_URL}/Student/${studentToEnable._id}`, { status: 'Active' });
             toast.success("Student enabled successfully!");
             fetchData();
+            setStudentToEnable(null);
         } catch (err) {
+            console.error("Error enabling student:", err);
             toast.error("Error enabling student");
         } finally {
-            setSelectedEnableId(null);
+            setEnableLoading(false);
         }
     };
 
@@ -250,7 +255,7 @@ const DisableReasonPage = () => {
                                             </TableCell>
                                             <TableCell>
                                                 {student.disableInfo?.disabledDate 
-                                                    ? new Date(student.disableInfo.disabledDate).toLocaleDateString()
+                                                    ? formatDateTime(student.disableInfo.disabledDate)
                                                     : '-'}
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -271,20 +276,7 @@ const DisableReasonPage = () => {
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem
-                                                            onClick={async () => {
-                                                                if (window.confirm(`Are you sure you want to re-enable ${student.name}?`)) {
-                                                                    // We can reuse the confirm logic, but we need the ID. 
-                                                                    // Since handleEnableConfirm uses selectedEnableId, we can just call the API directly here 
-                                                                    // or update state. calling axios directly to be safe and clean.
-                                                                    try {
-                                                                        await axios.put(`${API_URL}/Student/${student._id}`, { status: 'Active' });
-                                                                        toast.success("Student enabled successfully!");
-                                                                        fetchData();
-                                                                    } catch (err) {
-                                                                        toast.error("Error enabling student");
-                                                                    }
-                                                                }
-                                                            }}
+                                                            onClick={() => setStudentToEnable(student)}
                                                             className="text-green-600 focus:text-green-600"
                                                         >
                                                             <CheckCircle className="mr-2 h-4 w-4" /> Enable Student
@@ -306,6 +298,31 @@ const DisableReasonPage = () => {
                 onClose={() => setShowDetailsModal(false)}
                 student={selectedStudent}
             />
+
+            <AlertDialog open={!!studentToEnable} onOpenChange={(open) => !open && setStudentToEnable(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Enable Student?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to re-enable <strong>{studentToEnable?.name}</strong>?
+                            They will be moved back to the active students list.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={enableLoading}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleEnableConfirm();
+                            }}
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={enableLoading}
+                        >
+                            {enableLoading ? "Enabling..." : "Enable Student"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

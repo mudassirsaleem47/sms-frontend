@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const TransportPickupPanel = () => {
     const { currentUser } = useAuth();
@@ -17,6 +18,8 @@ const TransportPickupPanel = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [newPoint, setNewPoint] = useState({ pickupPointName: '', latitude: '', longitude: '' });
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (currentUser) fetchPoints();
@@ -53,14 +56,18 @@ const TransportPickupPanel = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this pickup point?')) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/Transport/PickupPoint/${id}`);
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/Transport/PickupPoint/${deletingId}`);
             showToast('Pickup point deleted', 'success');
-            setPoints(points.filter(p => p._id !== id));
+            setPoints(points.filter(p => p._id !== deletingId));
         } catch (err) {
             showToast('Failed to delete pickup point', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -142,7 +149,7 @@ const TransportPickupPanel = () => {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(point._id)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(point._id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -153,8 +160,19 @@ const TransportPickupPanel = () => {
                     )}
                 </CardContent>
             </Card>
+
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleDelete}
+                title="Delete Pickup Point?"
+                description="This will permanently delete this pickup point. This action cannot be undone."
+                confirmText="Delete Point"
+                loading={deleteLoading}
+            />
         </div>
     );
 };
 
 export default TransportPickupPanel;
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
@@ -252,7 +253,7 @@ const VisitorBook = () => {
                                                 <TableHead>Contact Info</TableHead>
                                                 <TableHead>Meeting With</TableHead>
                                                 <TableHead>Status / Time</TableHead>
-                                                <TableHead>Date</TableHead>
+                                                <TableHead>Date/Time</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -334,7 +335,7 @@ const VisitorBook = () => {
                                                     <TableCell>
                                                         <div className="flex items-center text-sm text-muted-foreground">
                                                             <Calendar className="mr-2 h-3.5 w-3.5" />
-                                                            {visitor.date ? new Date(visitor.date).toLocaleDateString() : '-'}
+                                                            {formatDateTime(visitor.date)}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-right">
@@ -434,7 +435,7 @@ const VisitorBook = () => {
                                             <Calendar className="h-3.5 w-3.5" /> Date
                                         </div>
                                         <div className="col-span-2 font-medium">
-                                            {drawerData.date ? new Date(drawerData.date).toLocaleDateString() : 'N/A'}
+                                            {formatDateTime(drawerData.date)}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-sm">

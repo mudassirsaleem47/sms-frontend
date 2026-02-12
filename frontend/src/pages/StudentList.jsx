@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -691,7 +692,7 @@ const StudentList = () => {
                                     <div className="grid grid-cols-3 gap-2 text-sm">
                                         <div className="font-medium text-gray-500">DOB</div>
                                         <div className="col-span-2">
-                                            {drawerData.dob ? new Date(drawerData.dob).toLocaleDateString() : 'N/A'}
+                                            {drawerData.dob ? formatDateTime(drawerData.dob, { dateOnly: true }) : 'N/A'}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-sm">
@@ -735,7 +736,7 @@ const StudentList = () => {
                                     <div className="grid grid-cols-3 gap-2 text-sm">
                                         <div className="font-medium text-gray-500">Admission Date</div>
                                         <div className="col-span-2">
-                                            {drawerData.admissionDate ? new Date(drawerData.admissionDate).toLocaleDateString() : 'N/A'}
+                                            {drawerData.admissionDate ? formatDateTime(drawerData.admissionDate) : 'N/A'}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-sm">

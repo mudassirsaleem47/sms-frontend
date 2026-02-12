@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import API_URL from '../../config/api';
 
 const CardRenderer = ({ template, data, schoolData }) => {
@@ -18,7 +19,7 @@ const CardRenderer = ({ template, data, schoolData }) => {
 
             // Staff specific
             case 'role': return data.designation?.title || data.role || 'Staff';
-            case 'joiningDate': return data.joiningDate ? new Date(data.joiningDate).toLocaleDateString() : '-';
+            case 'joiningDate': return data.joiningDate ? formatDateTime(data.joiningDate, { dateOnly: true }) : '-';
             
             // Student specific
             case 'rollNum': return data.rollNum || '-';
@@ -26,7 +27,7 @@ const CardRenderer = ({ template, data, schoolData }) => {
             case 'section': return data.section?.name || data.section || '-';
             case 'fatherName': return data.fatherName || '-';
             case 'admissionId': return data.admissionId || '-';
-            case 'dob': return data.dob ? new Date(data.dob).toLocaleDateString() : '-';
+            case 'dob': return data.dob ? formatDateTime(data.dob, { dateOnly: true }) : '-';
             case 'examGroup': return data.examGroup || '-';
             case 'examCenter': return data.examCenter || '-';
 

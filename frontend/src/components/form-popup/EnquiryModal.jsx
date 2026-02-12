@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import {
     Dialog,
     DialogContent,
@@ -53,7 +54,7 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
         address: '',
         description: '',
         note: '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(),
         assigned: '',
         reference: '',
         class: '',
@@ -64,7 +65,7 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
         if (initialData) {
             const formattedData = {
                 ...initialData,
-                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : '',
+                date: initialData.date || new Date().toISOString(),
                 class: initialData.class?._id || '',
                 assigned: initialData.assigned?._id || ''
             };
@@ -78,7 +79,7 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
                 address: '',
                 description: '',
                 note: '',
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toISOString(),
                 assigned: '',
                 reference: '',
                 class: '',
@@ -189,7 +190,7 @@ const EnquiryModal = ({ isOpen, onClose, onSubmit, initialData, classesList, tea
                                             <Label className="text-xs text-muted-foreground uppercase tracking-wider">Enquiry Date</Label>
                                             <div className="flex items-center gap-2 text-sm font-medium">
                                                 <CalendarIcon className="w-3.5 h-3.5 text-green-600" />
-                                                {formData.date ? new Date(formData.date).toLocaleDateString() : '-'}
+                                                {formData.date ? formatDateTime(formData.date) : '-'}
                                             </div>
                                         </div>
                                     </div>

@@ -120,7 +120,7 @@ const ExpenseManagement = () => {
     amount: '',
     category: 'Salaries',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString(),
     paymentMethod: 'Cash',
     reference: ''
   });
@@ -198,7 +198,7 @@ const ExpenseManagement = () => {
       amount: expense.amount.toString(),
       category: expense.category,
       description: expense.description,
-      date: new Date(expense.date).toISOString().split('T')[0],
+      date: expense.date || new Date().toISOString(),
       paymentMethod: expense.paymentMethod,
       reference: expense.reference || ''
     });
@@ -228,7 +228,7 @@ const ExpenseManagement = () => {
       amount: '',
       category: 'Salaries',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
       paymentMethod: 'Cash',
       reference: ''
     });
@@ -492,7 +492,7 @@ const ExpenseManagement = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
+                      <TableHead>Date/Time</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead className="w-[300px]">Description</TableHead>
                                 <TableHead>Details</TableHead>

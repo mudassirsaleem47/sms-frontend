@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import Draggable from 'react-draggable';
 import axios from 'axios';
 import {
@@ -449,7 +450,7 @@ const CardDesigner = () => {
                                 <span className="flex items-center gap-1.5">
                                     <Layers className="w-3 h-3" /> {t.elements?.length || 0} Layers
                                 </span>
-                                <span>{new Date(t.createdAt).toLocaleDateString()}</span>
+                                <span>{formatDateTime(t.createdAt)}</span>
                             </div>
                         </CardContent>
                     </Card>

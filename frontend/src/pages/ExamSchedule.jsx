@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -447,7 +448,7 @@ const ExamSchedule = () => {
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                                            {new Date(schedule.examDate).toLocaleDateString()}
+                                    {formatDateTime(schedule.examDate, { dateOnly: true })}
                                         </div>
                                     </TableCell>
                                     <TableCell>

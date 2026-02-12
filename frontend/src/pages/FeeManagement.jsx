@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -334,7 +335,7 @@ const FeeManagement = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="font-bold">Rs. {fee.amount.toLocaleString()}</TableCell>
-                                <TableCell>{new Date(fee.dueDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDateTime(fee.dueDate, { dateOnly: true })}</TableCell>
                                 <TableCell className="text-right">
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

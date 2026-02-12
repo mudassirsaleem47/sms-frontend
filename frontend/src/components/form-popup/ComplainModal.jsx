@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import { X, Upload, FileText, Download, Eye, Trash2 } from 'lucide-react';
 import {
     Dialog,
@@ -22,7 +23,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
     const [formData, setFormData] = useState({
         complainBy: '',
         phone: '',
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(),
         description: '',
         actionTaken: '',
         assigned: '',
@@ -39,7 +40,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
             setFormData({
                 complainBy: initialData.complainBy || '',
                 phone: initialData.phone || '',
-                date: initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                date: initialData.date || new Date().toISOString(),
                 description: initialData.description || '',
                 actionTaken: initialData.actionTaken || '',
                 assigned: initialData.assigned || '',
@@ -51,7 +52,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
             setFormData({
                 complainBy: '',
                 phone: '',
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toISOString(),
                 description: '',
                 actionTaken: '',
                 assigned: '',
@@ -171,7 +172,7 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-muted-foreground text-xs uppercase">Date</Label>
-                                        <div className="font-medium text-base">{new Date(formData.date).toLocaleDateString()}</div>
+                                        <div className="font-medium text-base">{formatDateTime(formData.date)}</div>
                                     </div>
                                 </div>
 

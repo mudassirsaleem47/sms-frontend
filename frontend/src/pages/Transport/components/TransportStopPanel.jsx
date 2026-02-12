@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, MapPin, Clock, DollarSign, Route } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const TransportStopPanel = () => {
     const { currentUser } = useAuth();
@@ -28,6 +29,8 @@ const TransportStopPanel = () => {
         dropTime: '',
         monthlyFee: ''
     });
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (currentUser) {
@@ -88,14 +91,18 @@ const TransportStopPanel = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Remove this stop from route?')) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/Transport/RouteStop/${id}`);
-            setStops(stops.filter(s => s._id !== id));
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/Transport/RouteStop/${deletingId}`);
+            setStops(stops.filter(s => s._id !== deletingId));
             showToast('Stop removed', 'success');
         } catch (err) {
             showToast('Failed to remove stop', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -215,7 +222,7 @@ const TransportStopPanel = () => {
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(stop._id)}>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(stop._id)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </TableCell>
@@ -235,6 +242,16 @@ const TransportStopPanel = () => {
                     )}
                 </CardContent>
             </Card>
+
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleDelete}
+                title="Remove Stop?"
+                description="This will remove this stop from the route. This action cannot be undone."
+                confirmText="Remove Stop"
+                loading={deleteLoading}
+            />
         </div>
     );
 };

@@ -13,7 +13,7 @@ const TeacherModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         qualification: '',
         experience: 0,
         salary: '',
-        joiningDate: new Date().toISOString().split('T')[0]
+        joiningDate: new Date().toISOString()
     });
 
     const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, onClose);
@@ -39,7 +39,7 @@ const TeacherModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 qualification: '',
                 experience: 0,
                 salary: '',
-                joiningDate: new Date().toISOString().split('T')[0]
+                joiningDate: new Date().toISOString()
             });
         }
     }, [initialData]);

@@ -15,6 +15,7 @@ import {
   IconCalendar,
 } from "@tabler/icons-react"
 
+import { Link } from "react-router-dom"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
@@ -24,11 +25,14 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
 } from "@/components/ui/sidebar"
 import { useAuth } from "../context/AuthContext"
 
-// This is sample data.
-const navMainData = [
+// Admin full navigation
+const adminNavData = [
   { 
       title: 'Front Office', 
       icon: IconBriefcase,
@@ -148,19 +152,52 @@ const navMainData = [
       ]
   },
   { title: 'Campuses', url: '/admin/campuses', icon: IconBuildingSkyscraper },
+]
+
+const adminFooterData = [
   { title: 'Reports', url: '/admin/reports', icon: IconFileText },
-  { title: 'Settings', url: '/admin/settings', icon: IconSettings },
+]
+
+
+
+// Teacher limited navigation
+const teacherNavData = [
+  { title: 'Dashboard', url: '/teacher/dashboard', icon: IconSchool },
+  {
+    title: 'Student Information',
+    icon: IconUsers,
+    items: [
+      { title: 'My Students', url: '/teacher/students' },
+    ]
+  },
+  { title: 'Class Schedule', url: '/teacher/class-schedule', icon: IconCalendar },
+  {
+    title: 'Attendance',
+    icon: IconBook,
+    items: [
+      { title: 'Mark Attendance', url: '/teacher/attendance' },
+    ]
+  },
+]
+
+const teacherFooterData = [
+  { title: 'Settings', url: '/teacher/settings', icon: IconSettings },
 ]
 
 export function AppSidebar({
   ...props
 }) {
   const { currentUser } = useAuth();
-  
+  const isTeacher = currentUser?.userType === 'teacher';
+
+  // Select nav data based on role
+  const navData = isTeacher ? teacherNavData : adminNavData;
+  const footerData = isTeacher ? teacherFooterData : adminFooterData;
+
   // Prepare user data for NavUser component
   const userData = {
-    name: currentUser?.name || "Admin",
-    email: currentUser?.email || "admin@school.com",
+    name: currentUser?.name || (isTeacher ? "Teacher" : "Admin"),
+    email: currentUser?.email || (isTeacher ? "teacher@school.com" : "admin@school.com"),
     avatar: currentUser?.avatar || "/avatars/admin.png",
   };
 
@@ -170,12 +207,25 @@ export function AppSidebar({
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMainData} />
+        <NavMain items={navData} />
       </SidebarContent>
       <SidebarFooter>
+        <SidebarMenu>
+          {footerData.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <Link to={item.url}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );
 }
+

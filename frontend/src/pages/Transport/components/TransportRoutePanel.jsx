@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, Route } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const TransportRoutePanel = () => {
     const { currentUser } = useAuth();
@@ -18,6 +19,8 @@ const TransportRoutePanel = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [newRoute, setNewRoute] = useState({ routeTitle: '', fare: '', description: '' });
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (currentUser) fetchRoutes();
@@ -54,14 +57,18 @@ const TransportRoutePanel = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Are you sure you want to delete this route? ALL assigned stops will also become invalid.')) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/Transport/Route/${id}`);
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/Transport/Route/${deletingId}`);
             showToast('Route deleted', 'success');
-            setRoutes(routes.filter(r => r._id !== id));
+            setRoutes(routes.filter(r => r._id !== deletingId));
         } catch (err) {
             showToast('Failed to delete route', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -146,7 +153,7 @@ const TransportRoutePanel = () => {
                                             {route.description || '-'}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(route._id)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(route._id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -157,6 +164,16 @@ const TransportRoutePanel = () => {
                     )}
                 </CardContent>
             </Card>
+
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleDelete}
+                title="Delete Route?"
+                description="This will permanently delete this route. ALL assigned stops will also become invalid. This action cannot be undone."
+                confirmText="Delete Route"
+                loading={deleteLoading}
+            />
         </div>
     );
 };

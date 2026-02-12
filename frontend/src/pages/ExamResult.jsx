@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -314,7 +315,7 @@ const ExamResult = () => {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                         <span className="font-semibold text-muted-foreground">Date:</span>
-                        <span className="font-medium text-foreground">{new Date(currentSchedule.examDate).toLocaleDateString()}</span>
+                <span className="font-medium text-foreground">{formatDateTime(currentSchedule.examDate, { dateOnly: true })}</span>
                     </div>
                 </div>
             )}

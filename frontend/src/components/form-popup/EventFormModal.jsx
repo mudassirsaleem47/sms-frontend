@@ -1,17 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { useModalAnimation } from '../../hooks/useModalAnimation';
-
-
-const API_BASE = import.meta.env.VITE_API_URL;
+import axios from 'axios';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Check, Trash2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import API_URL from '../../config/api';
 
 const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const { isVisible, isClosing, handleClose } = useModalAnimation(isOpen, onClose);
     const [loading, setLoading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -38,10 +55,10 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
 
     useEffect(() => {
         if (event) {
-            // Edit mode
             setFormData({
                 eventTitle: event.eventTitle || '',
                 eventDescription: event.eventDescription || '',
+                // Ensure date format is compatible with datetime-local input (YYYY-MM-DDTHH:mm)
                 eventFrom: event.eventFrom ? new Date(event.eventFrom).toISOString().slice(0, 16) : '',
                 eventTo: event.eventTo ? new Date(event.eventTo).toISOString().slice(0, 16) : '',
                 eventColor: event.eventColor || '#3b82f6',
@@ -49,8 +66,25 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
                 visibility: event.visibility || 'Public'
             });
         } else if (selectedDate) {
-            // Create mode with selected date
-            const dateStr = selectedDate.toISOString().slice(0, 10);
+            // Adjust for local timezone offset manually to prevent UTC date shift
+            const localDate = new Date(selectedDate);
+            localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+            const dateStr = localDate.toISOString().slice(0, 10);
+
+            setFormData({
+                eventTitle: '',
+                eventDescription: '',
+                eventFrom: `${dateStr}T09:00`,
+                eventTo: `${dateStr}T17:00`,
+                eventColor: '#3b82f6',
+                eventType: 'Other',
+                visibility: 'Public'
+            });
+        } else {
+            // Default fallbacks if no date provided
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const dateStr = now.toISOString().slice(0, 10);
             setFormData({
                 eventTitle: '',
                 eventDescription: '',
@@ -61,14 +95,15 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
                 visibility: 'Public'
             });
         }
-    }, [event, selectedDate]);
+    }, [event, selectedDate, isOpen]); // Added isOpen to reset when opening
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSelectChange = (name, value) => {
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -78,21 +113,18 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
         try {
             const payload = {
                 ...formData,
-                schoolId: currentUser._id,
+                schoolId: currentUser.school?._id || currentUser.school || currentUser._id,
                 createdBy: currentUser._id,
-                createdByModel: 'admin'
+                createdByModel: 'admin' // Adjust based on user role if needed
             };
 
             if (event) {
-                // Update existing event
-                await axios.put(`${API_BASE}/Event/${event._id}`, payload);
+                await axios.put(`${API_URL}/Event/${event._id}`, payload);
                 showToast('Event updated successfully!', 'success');
             } else {
-                // Create new event
-                await axios.post(`${API_BASE}/Event`, payload);
+                await axios.post(`${API_URL}/Event`, payload);
                 showToast('Event created successfully!', 'success');
             }
-
             onClose();
         } catch (error) {
             console.error('Error saving event:', error);
@@ -105,13 +137,14 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
     const handleDelete = async () => {
         if (!showDeleteConfirm) {
             setShowDeleteConfirm(true);
+            // Auto reset confirm after 3s
             setTimeout(() => setShowDeleteConfirm(false), 3000);
             return;
         }
 
         setLoading(true);
         try {
-            await axios.delete(`${API_BASE}/Event/${event._id}`);
+            await axios.delete(`${API_URL}/Event/${event._id}`);
             showToast('Event deleted successfully!', 'success');
             setShowDeleteConfirm(false);
             onClose();
@@ -123,187 +156,169 @@ const EventFormModal = ({ isOpen, onClose, selectedDate, event }) => {
         }
     };
 
-    if (!isVisible) return null;
-
     return (
-        <div className={`fixed inset-0 bg-black/60 z-60 flex items-center justify-center p-4 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick={handleClose}>
-            <div className={`bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden ${isClosing ? 'animate-scale-down' : 'animate-scale-up'}`} onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
-                <div className="bg-linear-to-r from-indigo-600 to-blue-600 text-white px-6 py-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold">{event ? 'Edit Event' : 'Add New Event'}</h2>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 hover:bg-white/20 rounded-lg transition"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
+                <DialogHeader>
+                    <DialogTitle>{event ? 'Edit Event' : 'Add New Event'}</DialogTitle>
+                    <DialogDescription>
+                        {event ? 'Make changes to the event details below.' : 'Fill in the details to create a new calendar event.'}
+                    </DialogDescription>
+                </DialogHeader>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-                    <div className="space-y-4">
-                        {/* Event Title */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event Title <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="eventTitle"
-                                value={formData.eventTitle}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                placeholder="Enter event title"
-                            />
+                <form onSubmit={handleSubmit} className="space-y-6 py-4">
+                    {/* Event Title */}
+                    <div className="space-y-2">
+                        <Label htmlFor="eventTitle">Event Title <span className="text-destructive">*</span></Label>
+                        <Input
+                            id="eventTitle"
+                            name="eventTitle"
+                            value={formData.eventTitle}
+                            onChange={handleChange}
+                            required
+                            placeholder="Enter event title"
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="eventDescription">Description</Label>
+                        <Textarea
+                            id="eventDescription"
+                            name="eventDescription"
+                            value={formData.eventDescription}
+                            onChange={handleChange}
+                            placeholder="Enter event description"
+                            rows={3}
+                        />
+                    </div>
+
+                    {/* Date/Time Range */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="eventFrom">From <span className="text-destructive">*</span></Label>
+                            <div className="relative">
+                                <Input
+                                    type="datetime-local"
+                                    id="eventFrom"
+                                    name="eventFrom"
+                                    value={formData.eventFrom}
+                                    onChange={handleChange}
+                                    required
+                                    className="block"
+                                />
+                            </div>
                         </div>
-
-                        {/* Event Description */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event Description
-                            </label>
-                            <textarea
-                                name="eventDescription"
-                                value={formData.eventDescription}
-                                onChange={handleChange}
-                                rows="3"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                placeholder="Enter event description"
-                            />
+                        <div className="space-y-2">
+                            <Label htmlFor="eventTo">To <span className="text-destructive">*</span></Label>
+                            <div className="relative">
+                                <Input
+                                    type="datetime-local"
+                                    id="eventTo"
+                                    name="eventTo"
+                                    value={formData.eventTo}
+                                    onChange={handleChange}
+                                    required
+                                    className="block"
+                                />
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Event From */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event From <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="datetime-local"
-                                name="eventFrom"
-                                value={formData.eventFrom}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Event To */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event To <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="datetime-local"
-                                name="eventTo"
-                                value={formData.eventTo}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Event Color */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event Color
-                            </label>
+                    {/* Color & Type */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                            <Label>Event Color</Label>
                             <div className="flex flex-wrap gap-2">
                                 {eventColors.map((color) => (
                                     <button
                                         key={color.value}
                                         type="button"
-                                        onClick={() => setFormData(prev => ({ ...prev, eventColor: color.value }))}
-                                        className={`w-6 h-6 rounded-full border-2 transition hover:scale-130 ${
-                                            formData.eventColor === color.value ? 'border-gray-900 scale-110' : 'border-gray-300'
+                                        onClick={() => handleSelectChange('eventColor', color.value)}
+                                        className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${formData.eventColor === color.value
+                                                ? 'border-foreground scale-110 shadow-sm'
+                                                : 'border-transparent hover:scale-110'
                                         }`}
                                         style={{ backgroundColor: color.value }}
                                         title={color.name}
-                                    />
+                                    >
+                                        {formData.eventColor === color.value && <Check className="w-4 h-4 text-white drop-shadow-md" />}
+                                    </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Event Type */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Event Type
-                            </label>
-                            <select
-                                name="eventType"
-                                value={formData.eventType}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        <div className="space-y-2">
+                            <Label htmlFor="eventType">Event Type</Label>
+                            <Select
+                                value={formData.eventType} 
+                                onValueChange={(val) => handleSelectChange('eventType', val)}
                             >
-                                <option value="Academic">Academic</option>
-                                <option value="Holiday">Holiday</option>
-                                <option value="Meeting">Meeting</option>
-                                <option value="Exam">Exam</option>
-                                <option value="Other">Other</option>
-                            </select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Academic">Academic</SelectItem>
+                                    <SelectItem value="Holiday">Holiday</SelectItem>
+                                    <SelectItem value="Meeting">Meeting</SelectItem>
+                                    <SelectItem value="Exam">Exam</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
+                    </div>
 
-                        {/* Visibility */}
-                        <div>
-                            <label className="block text-sm font-600 text-gray-700 mb-2">
-                                Visibility
-                            </label>
-                            <div className="space-y-2 flex gap-6 items-center">
-                                {['Public', 'Private','Super Admin'].map((option) => (
-                                    <label key={option} className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="visibility"
-                                            value={option}
-                                            checked={formData.visibility === option}
-                                            onChange={handleChange}
-                                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span className="text-sm text-gray-700">{option}</span>
-                                    </label>
-                                ))}
+                    {/* Visibility */}
+                    <div className="space-y-3">
+                        <Label>Visibility</Label>
+                        <RadioGroup
+                            value={formData.visibility}
+                            onValueChange={(val) => handleSelectChange('visibility', val)}
+                            className="flex gap-6"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Public" id="r1" />
+                                <Label htmlFor="r1" className="cursor-pointer font-normal">Public</Label>
                             </div>
-                        </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Private" id="r2" />
+                                <Label htmlFor="r2" className="cursor-pointer font-normal">Private</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Super Admin" id="r3" />
+                                <Label htmlFor="r3" className="cursor-pointer font-normal">Super Admin</Label>
+                            </div>
+                        </RadioGroup>
                     </div>
 
-                    {/* Buttons */}
-                    <div className="flex items-center justify-between mt-6 pt-4">
-                        {event && (
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                disabled={loading}
-                                className={`px-4 py-2 text-white rounded-lg transition disabled:opacity-50 ${
-                                    showDeleteConfirm 
-                                    ? "bg-red-700 font-bold animate-pulse" 
-                                    : "bg-red-600 hover:bg-red-700"
-                                }`}
-                            >
-                                {showDeleteConfirm ? 'Sure?' : 'Delete Event'}
-                            </button>
-                        )}
-                        <div className={`flex gap-3 ${!event ? 'ml-auto' : ''}`}>
-                            <button
-                                type="button"
-                                onClick={handleClose}
-                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-                            >
-                                {loading ? 'Saving...' : event ? 'Update Event' : 'Create Event'}
-                            </button>
+                    <DialogFooter className="gap-2 sm:justify-between">
+                        <div>
+                            {event && (
+                                <Button
+                                    type="button"
+                                    variant={showDeleteConfirm ? "destructive" : "outline"}
+                                    onClick={handleDelete}
+                                    className={showDeleteConfirm ? "animate-pulse" : "text-destructive hover:bg-destructive/10 border-destructive/20"}
+                                >
+                                    {showDeleteConfirm ? "Click again to confirm" : (
+                                        <>
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete Event
+                                        </>
+                                    )}
+                                </Button>
+                            )}
                         </div>
-                    </div>
+                        <div className="flex gap-2">
+                            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading ? "Saving..." : event ? "Update Changes" : "Create Event"}
+                            </Button>
+                        </div>
+                    </DialogFooter>
                 </form>
-            </div>
-            
-
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 

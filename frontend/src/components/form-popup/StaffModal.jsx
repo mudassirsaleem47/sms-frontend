@@ -41,7 +41,7 @@ const StaffModal = ({ staff, onClose }) => {
     const [designation, setDesignation] = useState('');
     const [campus, setCampus] = useState('');
     const [salary, setSalary] = useState('');
-    const [joiningDate, setJoiningDate] = useState(new Date().toISOString().split('T')[0]);
+    const [joiningDate, setJoiningDate] = useState(new Date().toISOString());
     const [status, setStatus] = useState('active');
 
     // Fetch designations
@@ -73,7 +73,7 @@ const StaffModal = ({ staff, onClose }) => {
             setDesignation(staff.designation?._id || '');
             setCampus(staff.campus?._id || '');
             setSalary(staff.salary || '');
-            setJoiningDate(staff.joiningDate ? staff.joiningDate.split('T')[0] : new Date().toISOString().split('T')[0]);
+            setJoiningDate(staff.joiningDate || new Date().toISOString());
             setStatus(staff.status || 'active');
         } else {
             // Reset for add mode
@@ -84,7 +84,7 @@ const StaffModal = ({ staff, onClose }) => {
             setDesignation('');
             setCampus('');
             setSalary('');
-            setJoiningDate(new Date().toISOString().split('T')[0]);
+            setJoiningDate(new Date().toISOString());
             setStatus('active');
         }
     }, [staff]);

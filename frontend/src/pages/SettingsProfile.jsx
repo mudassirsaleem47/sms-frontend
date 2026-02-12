@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -179,9 +180,16 @@ const SettingsProfile = () => {
         const saved = localStorage.getItem('sms_appPreferences');
         return saved ? JSON.parse(saved) : {
             language: 'en', dateFormat: 'DD/MM/YYYY', timezone: 'Asia/Karachi',
-            academicYearStart: 'April', currency: 'PKR', defaultView: 'grid',
+            timeFormat: '12h', academicYearStart: 'April', currency: 'PKR', defaultView: 'grid',
         };
     });
+    const [previewTime, setPreviewTime] = useState(new Date());
+
+    // Update preview clock every second
+    useEffect(() => {
+        const timer = setInterval(() => setPreviewTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     // --- Effects ---
     useEffect(() => { if (currentUser) fetchSettings(); }, [currentUser]);
@@ -934,7 +942,7 @@ const SettingsProfile = () => {
                                                                     <p className="text-[10px] text-muted-foreground">HSL: {hexToHsl(customColorHex)}</p>
                                                                 </div>
                                                             </div>
-                                            </div>
+                                                        </div>
                                                         <div className="space-y-1.5">
                                                             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Quick Pick</p>
                                                             <div className="flex gap-1.5 flex-wrap">
@@ -945,10 +953,10 @@ const SettingsProfile = () => {
                                                                         onClick={() => setCustomColorHex(hex)}
                                                                         className={`h-6 w-6 rounded-full border-2 transition-all hover:scale-125 ${customColorHex === hex ? 'border-foreground scale-110' : 'border-transparent'}`}
                                                                         style={{ backgroundColor: hex }}
-                                            />
+                                                                    />
                                                                 ))}
-                                        </div>
-                                    </div>
+                                                            </div>
+                                                        </div>
                                                         <Button
                                                             size="sm"
                                                             className="w-full"
@@ -962,10 +970,10 @@ const SettingsProfile = () => {
                                                         >
                                                             <Check className="mr-2 h-4 w-4" /> Apply Color
                                                         </Button>
-                                </div>
+                                                    </div>
                                                 </PopoverContent>
                                             </Popover>
-                            </div>
+                                        </div>
 
                                         {/* Live Preview */}
                                         <div className="mt-5 p-4 border rounded-xl bg-muted/20">
@@ -977,8 +985,8 @@ const SettingsProfile = () => {
                                                 <Badge>Badge</Badge>
                                                 <Badge variant="outline">Outline</Badge>
                                                 <div className="h-3 w-3 rounded-full bg-primary" />
-                                </div>
-                            </div>
+                                            </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
 
@@ -1084,10 +1092,90 @@ const SettingsProfile = () => {
                                     description="Configure language, date format, timezone, and currency."
                                 />
 
+                                {/* Live Preview */}
+                                <Card className="border-primary/20 bg-primary/[0.02]">
+                                    <CardContent className="pt-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                                <Clock className="h-6 w-6 text-primary" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Live Preview</p>
+                                                <p className="text-lg font-bold tracking-tight truncate">{formatDateTime(previewTime)}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                    Timezone: {preferences.timezone} · Format: {preferences.dateFormat} · {preferences.timeFormat === '24h' ? '24-hour' : '12-hour'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-base">Locale & Format</CardTitle>
-                                        <CardDescription>Set your preferred language and formatting options.</CardDescription>
+                                        <CardTitle className="text-base">Date & Time</CardTitle>
+                                        <CardDescription>Set your preferred date format, time format, and timezone.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div className="space-y-2">
+                                                <Label className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-muted-foreground" /> Date Format</Label>
+                                                <Select value={preferences.dateFormat} onValueChange={(v) => handlePrefChange('dateFormat', v)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                                                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                                                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                                                        <SelectItem value="MMM DD, YYYY">MMM DD, YYYY</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" /> Time Format</Label>
+                                                <Select value={preferences.timeFormat || '12h'} onValueChange={(v) => handlePrefChange('timeFormat', v)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="12h">12-hour (4:30 PM)</SelectItem>
+                                                        <SelectItem value="24h">24-hour (16:30)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2 sm:col-span-2">
+                                                <Label className="flex items-center gap-2"><Globe className="h-4 w-4 text-muted-foreground" /> Timezone</Label>
+                                                <Select value={preferences.timezone} onValueChange={(v) => handlePrefChange('timezone', v)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Pacific/Midway">Pacific/Midway (UTC-11:00)</SelectItem>
+                                                        <SelectItem value="Pacific/Honolulu">Pacific/Honolulu (UTC-10:00)</SelectItem>
+                                                        <SelectItem value="America/Anchorage">America/Anchorage (UTC-09:00)</SelectItem>
+                                                        <SelectItem value="America/Los_Angeles">America/Los Angeles (UTC-08:00)</SelectItem>
+                                                        <SelectItem value="America/Denver">America/Denver (UTC-07:00)</SelectItem>
+                                                        <SelectItem value="America/Chicago">America/Chicago (UTC-06:00)</SelectItem>
+                                                        <SelectItem value="America/New_York">America/New York (UTC-05:00)</SelectItem>
+                                                        <SelectItem value="America/Sao_Paulo">America/São Paulo (UTC-03:00)</SelectItem>
+                                                        <SelectItem value="UTC">UTC (UTC+00:00)</SelectItem>
+                                                        <SelectItem value="Europe/London">Europe/London (UTC+00:00)</SelectItem>
+                                                        <SelectItem value="Europe/Paris">Europe/Paris (UTC+01:00)</SelectItem>
+                                                        <SelectItem value="Europe/Istanbul">Europe/Istanbul (UTC+03:00)</SelectItem>
+                                                        <SelectItem value="Asia/Dubai">Asia/Dubai (UTC+04:00)</SelectItem>
+                                                        <SelectItem value="Asia/Karachi">Asia/Karachi (UTC+05:00)</SelectItem>
+                                                        <SelectItem value="Asia/Kolkata">Asia/Kolkata (UTC+05:30)</SelectItem>
+                                                        <SelectItem value="Asia/Dhaka">Asia/Dhaka (UTC+06:00)</SelectItem>
+                                                        <SelectItem value="Asia/Bangkok">Asia/Bangkok (UTC+07:00)</SelectItem>
+                                                        <SelectItem value="Asia/Shanghai">Asia/Shanghai (UTC+08:00)</SelectItem>
+                                                        <SelectItem value="Asia/Tokyo">Asia/Tokyo (UTC+09:00)</SelectItem>
+                                                        <SelectItem value="Australia/Sydney">Australia/Sydney (UTC+10:00)</SelectItem>
+                                                        <SelectItem value="Pacific/Auckland">Pacific/Auckland (UTC+12:00)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-base">Locale & Currency</CardTitle>
+                                        <CardDescription>Set your preferred language and currency.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1103,29 +1191,6 @@ const SettingsProfile = () => {
                                                 </Select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-muted-foreground" /> Date Format</Label>
-                                                <Select value={preferences.dateFormat} onValueChange={(v) => handlePrefChange('dateFormat', v)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                                                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                                                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="flex items-center gap-2"><Clock className="h-4 w-4 text-muted-foreground" /> Timezone</Label>
-                                                <Select value={preferences.timezone} onValueChange={(v) => handlePrefChange('timezone', v)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Asia/Karachi">Asia/Karachi (PKT)</SelectItem>
-                                                        <SelectItem value="Asia/Dubai">Asia/Dubai (GST)</SelectItem>
-                                                        <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                                                        <SelectItem value="UTC">UTC</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
                                                 <Label>Currency</Label>
                                                 <Select value={preferences.currency} onValueChange={(v) => handlePrefChange('currency', v)}>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -1135,6 +1200,8 @@ const SettingsProfile = () => {
                                                         <SelectItem value="AED">AED (د.إ)</SelectItem>
                                                         <SelectItem value="SAR">SAR (﷼)</SelectItem>
                                                         <SelectItem value="INR">INR (₹)</SelectItem>
+                                                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                                                        <SelectItem value="EUR">EUR (€)</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -1229,8 +1296,8 @@ const SettingsProfile = () => {
                             {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
                                 <p className="text-xs text-destructive">Passwords do not match</p>
                             )}
-                </div>
-            </div>
+                        </div>
+                    </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>Cancel</Button>
                         <Button onClick={handlePasswordChange} disabled={!passwordData.currentPassword || !passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}>

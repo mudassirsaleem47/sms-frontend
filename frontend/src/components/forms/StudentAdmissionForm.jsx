@@ -50,12 +50,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
         mobileNumber: '',
         email: '',
 
-        admissionDate: new Date().toISOString().split('T')[0],
+        admissionDate: new Date().toISOString(),
         bloodGroup: '',
         house: '',
         height: '',
         weight: '',
-        measurementDate: new Date().toISOString().split('T')[0],
+        measurementDate: new Date().toISOString(),
 
         religion: '',
         caste: '',

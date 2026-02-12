@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -266,7 +267,7 @@ const FeeAssignment = () => {
                               </div>
                               <div className="flex items-center gap-1.5" title="Due Date">
                                 <CalendarDays className="w-3.5 h-3.5" />
-                                <span>{new Date(fee.dueDate).toLocaleDateString()}</span>
+                                <span>{formatDateTime(fee.dueDate, { dateOnly: true })}</span>
                               </div>
                             </div>
                             <div className="pt-3 mt-1 border-t flex justify-between items-center">

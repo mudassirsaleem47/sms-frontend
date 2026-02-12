@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ export function TeacherLoginForm({
         <CardHeader>
           <CardTitle className="text-2xl">Teacher Login</CardTitle>
           <CardDescription>
-            Enter your email and password to access your teaching dashboard
+                      Enter your email and password to access your teacher account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,9 +60,9 @@ export function TeacherLoginForm({
           <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                              <Label htmlFor="teacher-email">Email</Label>
                 <Input 
-                  id="email" 
+                                  id="teacher-email" 
                   type="email" 
                   placeholder="teacher@school.com" 
                   value={email}
@@ -72,7 +72,7 @@ export function TeacherLoginForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                                  <Label htmlFor="teacher-password">Password</Label>
                   <a
                     href="#"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -81,7 +81,7 @@ export function TeacherLoginForm({
                   </a>
                 </div>
                 <Input 
-                  id="password" 
+                                  id="teacher-password" 
                   type="password"
                   placeholder="Enter your password"
                   value={password}
@@ -96,13 +96,7 @@ export function TeacherLoginForm({
               >
                 {loading ? "Logging in..." : "Login"}
               </Button>
-            </div>
-            <div className="mt-4 text-center text-sm">
-              Are you an admin?{" "}
-              <Link to="/AdminLogin" className="underline underline-offset-4">
-                Login here
-              </Link>
-            </div>
+                      </div>
           </form>
         </CardContent>
       </Card>

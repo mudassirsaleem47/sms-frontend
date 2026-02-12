@@ -6,7 +6,7 @@ import { Shield, GraduationCap } from 'lucide-react';
 
 const LoginPage = () => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-foreground">
       <div className="w-full max-w-md">
         <Tabs defaultValue="admin" className="w-full">
           {/* Navigation Tabs */}

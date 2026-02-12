@@ -177,7 +177,6 @@ const teacherLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find teacher by email
         const teacher = await Teacher.findOne({ email })
             .populate('school', 'schoolName _id')
             .populate('campus', 'name')
@@ -187,13 +186,11 @@ const teacherLogin = async (req, res) => {
             return res.status(404).json({ message: "Teacher not found with this email." });
         }
 
-        // Verify password
         const isPasswordValid = await bcrypt.compare(password, teacher.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
-        // Return teacher data (without password)
         const teacherData = {
             _id: teacher._id,
             name: teacher.name,

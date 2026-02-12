@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useOutletContext } from 'react-router-dom';
@@ -423,7 +424,7 @@ const DisabledStudents = () => {
                                                     <Badge variant={getReasonVariant(student.disableInfo?.reason)}>{student.disableInfo?.reason || 'Unknown'}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-muted-foreground text-sm font-mono">
-                                                    {student.disableInfo?.disabledDate ? new Date(student.disableInfo.disabledDate).toLocaleDateString() : '-'}
+                                                            {student.disableInfo?.disabledDate ? formatDateTime(student.disableInfo.disabledDate) : '-'}
                                                 </TableCell>
                                                 <TableCell className="text-right pr-6">
                                                     <DropdownMenu>
@@ -488,7 +489,7 @@ const DisabledStudents = () => {
                                                 </div>
                                                 <div>
                                                     <span className="text-xs text-muted-foreground block">Date</span>
-                                                    <span className="font-medium">{student.disableInfo?.disabledDate ? new Date(student.disableInfo.disabledDate).toLocaleDateString() : '-'}</span>
+                                                                <span className="font-medium">{student.disableInfo?.disabledDate ? formatDateTime(student.disableInfo.disabledDate) : '-'}</span>
                                                 </div>
                                             </div>
                                         </CardContent>

@@ -1,675 +1,634 @@
-import { Link } from 'react-router-dom';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
-import { Users, BookOpen, Calendar, DollarSign, BarChart3, Shield, ArrowRight, CheckCircle2, Play, Monitor, Smartphone, Cloud, Sparkles, Zap, FileText, UserCheck, Bell, Settings, Mail, Phone, MessageCircle, HelpCircle, Book, Video } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { ModeToggle } from '@/components/mode-toggle';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  GraduationCap, Users, BookOpen, Calendar, DollarSign, BarChart3,
+  Shield, ArrowRight, CheckCircle2, Menu, X, Sparkles,
+  Mail, Phone, MapPin, Github, Linkedin, Twitter, Star, Zap, Globe, Lock
+} from 'lucide-react';
+
+const FadeIn = ({ children, delay = 0, className = "" }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-100px" }}
+    transition={{ duration: 0.5, delay, ease: "easeOut" }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
+
+const Marquee = ({ children, reverse = false }) => (
+  <div className="flex overflow-hidden group">
+    <div className={`flex gap-8 animate-marquee ${reverse ? 'flex-row-reverse' : ''} group-hover:paused`}>
+      {children}
+      {children}
+    </div>
+  </div>
+);
 
 function Home() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [pricingPeriod, setPricingPeriod] = useState('monthly');
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.2], [0.9, 1]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert('Thank you for your message! We will get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+  const scrollTo = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    setMobileOpen(false);
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const navLinks = [
+    { name: 'Features', id: 'features' },
+    { name: 'Benefits', id: 'benefits' },
+    { name: 'Pricing', id: 'pricing' },
+    { name: 'FAQ', id: 'faq' },
+  ];
 
   const features = [
+    { icon: Users, title: 'Student Management', color: "text-blue-500", bg: "bg-blue-500/10", desc: 'Securely manage student records, admissions, attendance, and performance tracking all in one place.' },
+    { icon: DollarSign, title: 'Financial Intelligence', color: "text-green-500", bg: "bg-green-500/10", desc: 'Automated fee structures, instant receipts, and defaulter tracking with comprehensive financial reports.' },
+    { icon: Calendar, title: 'Smart Scheduling', color: "text-purple-500", bg: "bg-purple-500/10", desc: 'Effortlessly create conflict-free timetables, exam schedules, and academic calendars.' },
+    { icon: BookOpen, title: 'Academic Excellence', color: "text-orange-500", bg: "bg-orange-500/10", desc: 'Streamline assignments, syllabus tracking, and grading with our intuitive academic tools.' },
+    { icon: BarChart3, title: 'Advanced Analytics', color: "text-pink-500", bg: "bg-pink-500/10", desc: 'Make data-driven decisions with real-time dashboards and detailed performance insights.' },
+    { icon: Shield, title: 'Enterprise Security', color: "text-red-500", bg: "bg-red-500/10", desc: 'Bank-grade encryption and role-based access control to keep your institutional data safe.' },
+  ];
+
+  const pricingPlans = [
     {
-      icon: <Users className="w-6 h-6" />,
-      title: "Student Management",
-      description: "Complete student records and enrollment tracking"
+      name: "Starter",
+      price: pricingPeriod === 'monthly' ? "$49" : "$490",
+      period: pricingPeriod === 'monthly' ? "/mo" : "/yr",
+      desc: "Perfect for small schools getting started.",
+      features: ["Up to 200 Students", "Basic Reporting", "Attendance Tracking", "Email Support"],
+      cta: "Start Free Trial",
+      popular: false
     },
     {
-      icon: <DollarSign className="w-6 h-6" />,
-      title: "Fee Collection",
-      description: "Automated fee management and tracking"
+      name: "Pro",
+      price: pricingPeriod === 'monthly' ? "$99" : "$990",
+      period: pricingPeriod === 'monthly' ? "/mo" : "/yr",
+      desc: "Comprehensive solution for growing institutions.",
+      features: ["Up to 1000 Students", "Advanced Analytics", "Fee Management", "Priority Support", "Exam Management"],
+      cta: "Get Started",
+      popular: true
     },
     {
-      icon: <Calendar className="w-6 h-6" />,
-      title: "Exam Management",
-      description: "Schedule exams and generate results"
-    },
-    {
-      icon: <BookOpen className="w-6 h-6" />,
-      title: "Class Management",
-      description: "Organize classes and subjects"
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: "Reports & Analytics",
-      description: "Comprehensive insights and reporting"
-    },
-    {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Secure & Reliable",
-      description: "Bank-grade security"
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      desc: "Tailored for large universities & districts.",
+      features: ["Unlimited Students", "Custom Integrations", "Dedicated Account Manager", "SLA Support", "Multi-Campus"],
+      cta: "Contact Sales",
+      popular: false
     }
   ];
 
-  const stats = [
-    { number: "10,000+", label: "Students" },
-    { number: "500+", label: "Schools" },
-    { number: "99.9%", label: "Uptime" },
-    { number: "24/7", label: "Support" }
+  const faqs = [
+    { q: "Is my data secure?", a: "Absolutely. We use industry-standard encryption protocols (SSL/TLS) and secure cloud storage to ensure your institution's data is protected at all times." },
+    { q: "Can I manage multiple campuses?", a: "Yes! Our Enterprise plan supports multi-campus management from a single unified dashboard." },
+    { q: "Do you offer training?", a: "We provide comprehensive video tutorials, documentation, and live onboarding sessions for your staff." },
+    { q: "Is there a mobile app?", a: "Our platform is fully responsive and works seamlessly on all devices, including tablets and smartphones." },
   ];
 
-  const benefits = [
-    "Easy to use interface",
-    "Real-time reporting",
-    "Cloud-based access",
-    "Mobile responsive",
-    "Customizable workflows",
-    "Dedicated support team"
-  ];
-
-  const featureCategories = [
-    {
-      category: "Student Management",
-      icon: <Users className="w-8 h-8" />,
-      features: [
-        "Student admission and enrollment",
-        "Student profiles with photos",
-        "Attendance tracking",
-        "Parent and guardian information",
-        "Student promotion and transfer"
-      ]
-    },
-    {
-      category: "Fee Management",
-      icon: <DollarSign className="w-8 h-8" />,
-      features: [
-        "Fee structure creation",
-        "Online fee collection",
-        "Payment receipts generation",
-        "Fee defaulter reports",
-        "Multiple payment methods"
-      ]
-    },
-    {
-      category: "Exam Management",
-      icon: <Calendar className="w-8 h-8" />,
-      features: [
-        "Exam schedule creation",
-        "Grade management",
-        "Result card generation",
-        "Mark sheets printing",
-        "Performance analytics"
-      ]
-    },
-    {
-      category: "Class Management",
-      icon: <BookOpen className="w-8 h-8" />,
-      features: [
-        "Class and section creation",
-        "Subject assignment",
-        "Teacher allocation",
-        "Timetable management",
-        "Classroom resources"
-      ]
-    },
-    {
-      category: "Reports & Analytics",
-      icon: <BarChart3 className="w-8 h-8" />,
-      features: [
-        "Student performance reports",
-        "Financial reports",
-        "Attendance reports",
-        "Custom report builder",
-        "Data export options"
-      ]
-    },
-    {
-      category: "Security & Access",
-      icon: <Shield className="w-8 h-8" />,
-      features: [
-        "Role-based access control",
-        "Data encryption",
-        "Secure authentication",
-        "Activity logs",
-        "Backup and recovery"
-      ]
-    }
-  ];
-
-  const additionalFeatures = [
-    { icon: <FileText className="w-6 h-6" />, title: "Document Management", desc: "Store and manage all school documents" },
-    { icon: <UserCheck className="w-6 h-6" />, title: "Staff Management", desc: "Complete employee records and payroll" },
-    { icon: <Bell className="w-6 h-6" />, title: "Notifications", desc: "SMS and email notifications" },
-    { icon: <Settings className="w-6 h-6" />, title: "Customizable", desc: "Adapt the system to your needs" }
-  ];
-
-  const releases = [
-    {
-      version: "v2.1.0",
-      date: "December 2025",
-      type: "Latest",
-      changes: [
-        { type: "new", text: "Added monthly recurring fee system" },
-        { type: "new", text: "Improved exam result analytics" },
-        { type: "improvement", text: "Enhanced mobile responsiveness" },
-        { type: "fix", text: "Fixed data isolation issues between schools" }
-      ]
-    },
-    {
-      version: "v2.0.0",
-      date: "November 2025",
-      type: "Major",
-      changes: [
-        { type: "new", text: "Complete UI redesign" },
-        { type: "new", text: "Added expense management module" },
-        { type: "new", text: "Introduced role-based access control" },
-        { type: "improvement", text: "Performance optimizations" }
-      ]
-    },
-    {
-      version: "v1.5.0",
-      date: "October 2025",
-      type: "Update",
-      changes: [
-        { type: "new", text: "Fee collection reports" },
-        { type: "new", text: "Student admission workflow" },
-        { type: "improvement", text: "Improved search functionality" },
-        { type: "fix", text: "Various bug fixes and improvements" }
-      ]
-    }
-  ];
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case "new": return "bg-blue-100 text-blue-700";
-      case "improvement": return "bg-green-100 text-green-700";
-      case "fix": return "bg-orange-100 text-orange-700";
-      default: return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case "new": return <Sparkles className="w-4 h-4" />;
-      case "improvement": return <Zap className="w-4 h-4" />;
-      case "fix": return <CheckCircle2 className="w-4 h-4" />;
-      default: return null;
-    }
-  };
-
-  const getVersionBadgeColor = (type) => {
-    switch (type) {
-      case "Latest": return "bg-blue-600 text-white";
-      case "Major": return "bg-purple-600 text-white";
-      default: return "bg-gray-600 text-white";
-    }
-  };
-
-  const supportOptions = [
-    {
-      icon: <Mail className="w-8 h-8" />,
-      title: "Email Support",
-      description: "Get help via email",
-      contact: "support@schoolms.com",
-      action: "Send Email"
-    },
-    {
-      icon: <Phone className="w-8 h-8" />,
-      title: "Phone Support",
-      description: "Call us directly",
-      contact: "+92 300 1234567",
-      action: "Call Now"
-    },
-    {
-      icon: <MessageCircle className="w-8 h-8" />,
-      title: "Live Chat",
-      description: "Chat with our team",
-      contact: "Available 9 AM - 6 PM",
-      action: "Start Chat"
-    }
-  ];
-
-  const resources = [
-    { icon: <Book className="w-6 h-6" />, title: "Documentation", desc: "Comprehensive guides and tutorials" },
-    { icon: <Video className="w-6 h-6" />, title: "Video Tutorials", desc: "Step-by-step video guides" },
-    { icon: <HelpCircle className="w-6 h-6" />, title: "FAQ", desc: "Frequently asked questions" }
-  ];
+  const trustedLogos = [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+    <div key={i} className="flex items-center gap-2 text-muted-foreground/50 font-bold text-xl mx-8 grayscale opacity-50 hover:opacity-100 transition-opacity cursor-default">
+      <div className="h-8 w-8 rounded bg-current"></div>
+      SCHOOL {i}
+    </div>
+  ));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 overflow-x-hidden">
 
-      {/* Hero Section */}
-      <section id="home" className="relative py-16 md:py-32 px-4 md:px-6 overflow-hidden">
-        {/* Animated Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-purple-600/10"></div>
-        <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-64 md:w-96 h-64 md:h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 bg-blue-100/80   border border-blue-200 rounded-full mb-4 md:mb-6 text-xs md:text-sm">
-              <Sparkles className="w-3 md:w-4 h-3 md:h-4 text-blue-600" />
-              <span className="font-medium text-blue-700">Modern School Management Platform</span>
+      {/* ── Navbar ── */}
+      <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-6">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="bg-primary p-1.5 rounded-lg group-hover:scale-105 transition-transform shadow-lg shadow-primary/20">
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-4 md:mb-6 leading-tight px-2">
-              <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-gray-900 bg-clip-text text-transparent">
-                Transform Your
-              </span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                School Management
-              </span>
-            </h1>
-            <p className="text-base md:text-xl text-gray-600 mb-8 md:mb-12 max-w-2xl mx-auto leading-relaxed px-4">
-              Streamline operations, boost efficiency, and empower education with our comprehensive platform built for modern institutions.
-            </p>
+            <span className="text-xl font-bold tracking-tight">School MS</span>
+          </Link>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mb-12 md:mb-16 px-4">
-              <button
-                onClick={() => document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto group px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold text-base md:text-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105"
-              >
-                View Demo
-                <ArrowRight className="w-4 md:w-5 h-4 md:h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <Link
-                to="/AdminRegister"
-                className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-white/80   border-2 border-gray-200 text-gray-900 rounded-full font-semibold text-base md:text-lg hover:bg-white hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:scale-105 text-center"
-              >
-                Start Free Trial
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-8">
+            <div className="flex gap-6">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => scrollTo(link.id)}
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground relative group py-1"
+                >
+                  {link.name}
+                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 pl-6 border-l">
+              <ModeToggle />
+              <Link to="/AdminLogin">
+                <Button variant="ghost" size="sm" className="font-medium">Log in</Button>
+              </Link>
+              <Link to="/AdminRegister">
+                <Button size="sm" className="shadow-md font-medium px-5">Get Started</Button>
               </Link>
             </div>
+          </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto px-4">
-{stats.map((stat, index) => (
-                <div key={index} className="group p-4 md:p-6 bg-white/60 backdrop-blur-lg rounded-xl md:rounded-2xl border border-white shadow-lg hover:shadow-2xl hover:bg-white/80 transition-all duration-300">
-                  <div className="text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1 md:mb-2">
-                    {stat.number}
+          {/* Mobile Menu Toggle */}
+          <div className="flex items-center gap-2 md:hidden">
+            <ModeToggle />
+            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Nav Content */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden border-b bg-background overflow-hidden absolute top-16 left-0 right-0 shadow-xl"
+            >
+              <div className="container mx-auto px-6 py-4 space-y-4 bg-background">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.id}
+                    onClick={() => scrollTo(link.id)}
+                    className="block w-full text-left text-sm font-medium py-2 hover:text-primary transition-colors border-b border-border/50 last:border-0"
+                  >
+                    {link.name}
+                  </button>
+                ))}
+                <div className="flex flex-col gap-3 pt-4">
+                  <Link to="/AdminLogin" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" className="w-full justify-start">Log in</Button>
+                  </Link>
+                  <Link to="/AdminRegister" onClick={() => setMobileOpen(false)}>
+                    <Button className="w-full justify-start">Get Started</Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* ── Hero Section ── */}
+      <section id="hero" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden bg-dot-pattern">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 -z-10 bg-background">
+          <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px] animate-pulse-slow"></div>
+          <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px] animate-pulse-slow delay-1000"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10 text-center">
+          <FadeIn>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold mb-8 hover:bg-primary/10 transition-colors cursor-pointer">
+              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping block absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              New Feature: AI-Powered Analytics is now live!
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/50 pb-2 leading-[1.1]">
+              Manage Your School <br />
+              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Like a Pro</span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed font-light text-balance">
+              The all-in-one platform that streamlines operations, boosts productivity, and brings your entire institution onto a single, powerful dashboard.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.3} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+            <Link to="/AdminRegister">
+              <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">
+                Start Free Trial
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/AdminLogin">
+              <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full border-muted-foreground/20 hover:bg-muted/50 hover:border-foreground/20 transition-all">
+                View Live Demo
+              </Button>
+            </Link>
+          </FadeIn>
+
+          {/* Dashboard Mockup with Tilt Effect */}
+          <motion.div
+            style={{ scale: heroScale, rotateX: 5 }}
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.4, type: "spring", stiffness: 50 }}
+            className="group relative mx-auto max-w-6xl rounded-2xl border bg-background/50 shadow-2xl backdrop-blur-sm p-2 md:p-3"
+          >
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-blue-600/30 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+            <div className="rounded-xl border bg-card/90 shadow-inner overflow-hidden relative aspect-[16/9] md:aspect-[21/10]">
+              {/* Mock UI Content - Replaced with more detail */}
+              <div className="absolute inset-0 flex flex-col">
+                {/* Mock Window Bar */}
+                <div className="h-8 border-b bg-muted/30 flex items-center px-4 gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-amber-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                  <div className="ml-4 h-4 w-64 bg-muted/50 rounded-full text-[10px] flex items-center px-2 text-muted-foreground">school-ms.com/dashboard/admin</div>
+                </div>
+                <div className="flex-1 flex overflow-hidden">
+                  <div className="w-16 md:w-64 border-r bg-muted/10 p-4 hidden md:flex flex-col gap-4">
+                    <div className="h-8 w-32 bg-primary/20 rounded mb-4"></div>
+                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-8 w-full bg-muted/30 rounded flex items-center px-2 gap-2"><div className="h-4 w-4 rounded bg-muted/50"></div><div className="h-3 w-20 bg-muted/40 rounded"></div></div>)}
                   </div>
-                  <div className="text-xs md:text-sm text-gray-600 font-medium">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Features Section */}
-      <section className="py-20 px-6 bg-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Powerful features to manage your institution efficiently
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group p-8 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="w-12 md:w-14 h-12 md:h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg md:rounded-xl flex items-center justify-center text-white mb-4 md:mb-5 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">{feature.title}</h3>
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-12 md:py-20 px-4 md:px-6 bg-gray-50">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-8 md:mb-12 px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-              Why Choose Us?
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-3 md:gap-4 px-4">
-            {benefits.map((benefit, index) => (
-              <div key={index} className="group flex items-center gap-3 md:gap-4 bg-white/80   p-4 md:p-5 rounded-lg md:rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-300">
-                <div className="w-7 md:w-8 h-7 md:h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <CheckCircle2 className="w-4 md:w-5 h-4 md:h-5 text-white" />
-                </div>
-                <span className="text-sm md:text-base text-gray-700 font-medium">{benefit}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Demo Section */}
-      <section id="demo" className="py-12 md:py-20 px-4 md:px-6 bg-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8 md:mb-12 px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-              See It In Action
-            </h2>
-            <p className="text-gray-600 text-base md:text-lg">
-              Experience our platform with a live demo
-            </p>
-          </div>
-
-          {/* Demo Video */}
-          <div className="max-w-5xl mx-auto mb-12 md:mb-16 px-4">
-            <div className="bg-gray-900 rounded-xl md:rounded-2xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center">
-              <div className="text-center px-4">
-                <Play className="w-12 md:w-20 h-12 md:h-20 text-white mx-auto mb-3 md:mb-4 opacity-80" />
-                <p className="text-white text-sm md:text-lg">Demo Video Coming Soon</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Platforms */}
-          <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-6 md:mb-8 text-center px-4">
-            Available Platforms
-          </h3>
-
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 px-4">
-            <div className="group p-6 md:p-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl md:rounded-2xl text-center border border-blue-100 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 md:mb-5 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
-                <Monitor className="w-6 md:w-8 h-6 md:h-8 text-white" />
-              </div>
-              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Web Dashboard</h4>
-              <p className="text-sm md:text-base text-gray-600">
-                Access from any browser with full features
-              </p>
-            </div>
-
-            <div className="group p-6 md:p-8 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl md:rounded-2xl text-center border border-indigo-100 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4 md:mb-5 group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/30">
-                <Smartphone className="w-6 md:w-8 h-6 md:h-8 text-white" />
-              </div>
-              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Mobile App</h4>
-              <p className="text-sm md:text-base text-gray-600">
-                iOS and Android apps for on-the-go access
-              </p>
-            </div>
-
-            <div className="group p-6 md:p-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl md:rounded-2xl text-center border border-purple-100 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 hover:-translate-y-1 sm:col-span-2 md:col-span-1">
-              <div className="w-12 md:w-16 h-12 md:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-4 md:mb-5 group-hover:scale-110 transition-transform shadow-lg shadow-purple-500/30">
-                <Cloud className="w-6 md:w-8 h-6 md:h-8 text-white" />
-              </div>
-              <h4 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-3">Cloud Sync</h4>
-              <p className="text-sm md:text-base text-gray-600">
-                Real-time synchronization across all devices
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Detailed Features Section */}
-      <section id="features" className="py-20 px-6 bg-gray-50">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Powerful Features
-            </h2>
-            <p className="text-gray-600 text-lg">
-              Everything you need to manage your school efficiently
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            {featureCategories.map((category, index) => (
-              <div key={index} className="bg-white p-8 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-14 h-14 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                    {category.icon}
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900">{category.category}</h3>
-                </div>
-                <ul className="space-y-3">
-                  {category.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-gray-600">
-                      <span className="text-blue-600 mt-1">✓</span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Additional Features */}
-          <h3 className="text-3xl font-bold text-gray-900 mb-12 text-center">
-            And Much More...
-          </h3>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {additionalFeatures.map((feature, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-sm text-center hover:shadow-md transition-all">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mx-auto mb-4">
-                  {feature.icon}
-                </div>
-                <h4 className="font-semibold text-gray-900 mb-2">{feature.title}</h4>
-                <p className="text-sm text-gray-600">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Changelog Section */}
-      <section id="changelog" className="py-12 md:py-20 px-4 md:px-6 bg-white">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center mb-10 md:mb-16 px-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-              Changelog
-            </h2>
-            <p className="text-gray-600 text-base md:text-lg">
-              Track our product updates and improvements
-            </p>
-          </div>
-
-          {/* Vertical Timeline */}
-          <div className="relative px-4">
-            {/* Timeline Line */}
-            <div className="absolute left-4 md:left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-200 via-indigo-200 to-purple-200"></div>
-
-            <div className="space-y-8 md:space-y-12">
-              {releases.map((release, index) => (
-                <div key={index} className="relative pl-12 md:pl-20">
-                  {/* Timeline Dot */}
-                  <div className="absolute left-0 top-2 w-10 h-10 md:w-16 md:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 border-2 md:border-4 border-white">
-                    <span className="text-white font-bold text-xs md:text-sm">v{release.version.slice(1)}</span>
-                  </div>
-
-                  {/* Card */}
-                  <div className="group bg-white border-2 border-gray-100 rounded-xl md:rounded-2xl p-5 md:p-8 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
-                    <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3">
+                  <div className="flex-1 p-6 bg-background/40 overflow-hidden">
+                    <div className="flex justify-between mb-8 items-center">
                       <div>
-                        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
-                          <h3 className="text-xl md:text-2xl font-bold text-gray-900">{release.version}</h3>
-                          <span className={`px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs font-bold ${getVersionBadgeColor(release.type)} shadow-sm`}>
-                            {release.type}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <Calendar className="w-3 md:w-4 h-3 md:h-4" />
-                          <span className="text-xs md:text-sm font-medium">{release.date}</span>
-                        </div>
+                        <div className="h-8 w-48 bg-muted/50 rounded mb-2"></div>
+                        <div className="h-4 w-32 bg-muted/30 rounded"></div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="h-10 w-32 rounded bg-primary/10"></div>
+                        <div className="h-10 w-10 rounded-full bg-muted/30 border"></div>
                       </div>
                     </div>
-
-                    <div className="space-y-2 md:space-y-3">
-                      {release.changes.map((change, idx) => (
-                        <div key={idx} className="flex flex-col sm:flex-row items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                          <span className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 md:gap-1.5 ${getTypeColor(change.type)} shadow-sm shrink-0`}>
-                            {getTypeIcon(change.type)}
-                            {change.type}
-                          </span>
-                          <p className="text-sm md:text-base text-gray-700 flex-1 leading-relaxed">{change.text}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                      {[1, 2, 3, 4].map(i => <div key={i} className="h-32 rounded-xl bg-card border shadow-sm p-4 flex flex-col justify-between">
+                        <div className="h-8 w-8 rounded bg-primary/10 mb-2"></div>
+                        <div><div className="h-6 w-16 bg-muted/40 rounded mb-1"></div><div className="h-3 w-24 bg-muted/20 rounded"></div></div>
+                      </div>)}
+                    </div>
+                    <div className="grid grid-cols-3 gap-6 h-full">
+                      <div className="col-span-2 rounded-xl border bg-card shadow-sm p-4">
+                        <div className="h-6 w-32 bg-muted/30 rounded mb-4"></div>
+                        <div className="flex items-end gap-2 h-40">
+                          {[40, 70, 45, 90, 60, 80, 50, 95, 65, 85].map((h, i) => (
+                            <div key={i} className="flex-1 bg-primary/20 rounded-t hover:bg-primary/40 transition-colors" style={{ height: `${h}%` }}></div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
+                      <div className="col-span-1 rounded-xl border bg-card shadow-sm p-4">
+                        <div className="h-6 w-32 bg-muted/30 rounded mb-4"></div>
+                        {[1, 2, 3, 4].map(i => <div key={i} className="h-12 w-full bg-muted/10 rounded mb-2 flex items-center px-2 gap-2"><div className="h-8 w-8 rounded-full bg-muted/20"></div><div className="flex-1"><div className="h-3 w-full bg-muted/30 rounded mb-1"></div><div className="h-2 w-1/2 bg-muted/20 rounded"></div></div></div>)}
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+              {/* Overlay Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-none">
+                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest animate-pulse">Live Dashboard Preview</p>
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Support Section */}
-      <section id="support" className="py-20 px-6 bg-gray-50">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              How Can We Help?
-            </h2>
-            <p className="text-gray-600 text-lg">
-              We're here to support you every step of the way
-            </p>
-          </div>
+      {/* ── Social Proof (Marquee) ── */}
+      <section className="py-10 border-y bg-muted/20 overflow-hidden">
+        <div className="flex animate-marquee-container gap-12">
+          <Marquee>{trustedLogos}</Marquee>
+          <Marquee reverse>{trustedLogos}</Marquee>
+        </div>
+      </section>
 
-          {/* Contact Options */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {supportOptions.map((option, index) => (
-              <div key={index} className="bg-white border border-gray-200 rounded-xl p-8 text-center hover:border-blue-300 hover:shadow-lg transition-all">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-6">
-                  {option.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{option.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">{option.description}</p>
-                <p className="text-blue-600 font-medium mb-4">{option.contact}</p>
-                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-                  {option.action}
-                </button>
-              </div>
+      {/* ── Features Bento Grid ── */}
+      <section id="features" className="py-24 md:py-32 px-6 bg-gradient-to-b from-background to-muted/20">
+        <div className="container mx-auto max-w-6xl">
+          <FadeIn className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Everything You Need to Succeed</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Our platform offers a complete suite of tools to manage every aspect of your educational institution with ease and precision.
+            </p>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((f, i) => (
+              <FadeIn key={i} delay={i * 0.1}>
+                <Card className="h-full border-muted/60 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 group relative overflow-hidden bg-card/50 backdrop-blur-sm">
+                  <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${f.bg} to-transparent rounded-bl-full opacity-50 transition-opacity group-hover:opacity-100`}></div>
+                  <CardHeader>
+                    <div className={`h-12 w-12 rounded-xl ${f.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                      <f.icon className={`h-6 w-6 ${f.color}`} />
+                    </div>
+                    <CardTitle className="text-xl group-hover:text-primary transition-colors">{f.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-base leading-relaxed">
+                      {f.desc}
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              </FadeIn>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Contact Form */}
-          <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl p-8">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-              Send Us a Message
-            </h3>
+      {/* ── Stats Section ── */}
+      <section className="py-20 bg-primary/5">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-primary/10">
+            {[
+              { label: 'Students Managed', value: '10k+' },
+              { label: 'Schools Trust Us', value: '500+' },
+              { label: 'Uptime Guarantee', value: '99.9%' },
+              { label: 'Expert Support', value: '24/7' }
+            ].map((s, i) => (
+              <FadeIn key={i} delay={i * 0.1} className="p-4">
+                <div className="text-4xl md:text-5xl font-black text-primary mb-2 tabular-nums tracking-tight">{s.value}</div>
+                <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{s.label}</div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Your name"
-                />
+      {/* ── Benefits Section ── */}
+      <section id="benefits" className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <FadeIn>
+              <Badge variant="outline" className="mb-4">Why Choose Us</Badge>
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Designed for the Future of Education</h2>
+              <p className="text-lg text-muted-foreground mb-8 text-balance leading-relaxed">
+                Built with direct input from educators and administrators, School MS focuses on what truly matters: <span className="text-foreground font-semibold">simplicity, reliability, and powerful insights</span>.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  { title: "Cloud-Based Architecture", desc: "Access your data securely from anywhere, anytime." },
+                  { title: "Real-time Notifications", desc: "Keep parents and students updated instantly." },
+                  { title: "Automated Reporting", desc: "Generate complex reports with a single click." }
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                    </div>
+                          <div>
+                            <h3 className="font-semibold mb-1">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
               </div>
 
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="your@email.com"
-                />
-              </div>
+            </FadeIn>
+            <FadeIn delay={0.2} className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-3xl opacity-50"></div>
+              <Card className="relative border bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-500"></div>
+                <CardHeader>
+                  <CardTitle>Why Administrators Love Us</CardTitle>
+                  <CardDescription>Real feedback from our partners</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="p-5 rounded-xl bg-muted/30 border border-muted/50">
+                    <div className="flex gap-1 mb-3 text-amber-500">
+                      {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
+                    </div>
+                    <p className="italic text-muted-foreground mb-4 leading-relaxed">"The reporting tools have completely transformed how we handle our finances. What used to take days now takes minutes. It's simply revolutionized our workflow."</p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
+                      <div>
+                        <p className="text-sm font-bold">Sarah Jenkins</p>
+                        <p className="text-xs text-muted-foreground">Principal, Westview Academy</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-5 rounded-xl bg-muted/30 border border-muted/50">
+                    <div className="flex gap-1 mb-3 text-amber-500">
+                      {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
+                    </div>
+                    <p className="italic text-muted-foreground mb-4 leading-relaxed">"Finally, a system that teachers actually enjoy using. The attendance and grading modules are intuitive, fast, and require zero training."</p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+                      <div>
+                        <p className="text-sm font-bold">Michael Ross</p>
+                        <p className="text-xs text-muted-foreground">Admin, Tech High</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
 
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Subject</label>
-                <input
-                  type="text"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="What is this about?"
-                />
-              </div>
+      {/* ── Pricing Section ── */}
+      <section id="pricing" className="py-24 bg-muted/30">
+        <div className="container mx-auto max-w-6xl px-6">
+          <FadeIn className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+              Choose the plan that fits your institution's needs. No hidden fees.
+            </p>
 
-              <div>
-                <label className="block text-gray-700 font-medium mb-2">Message</label>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  rows="5"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                  placeholder="Your message..."
-                />
-              </div>
-
+            <div className="inline-flex items-center p-1 bg-muted rounded-full border mb-8">
               <button
-                type="submit"
-                className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                onClick={() => setPricingPeriod('monthly')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${pricingPeriod === 'monthly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                Send Message
+                Monthly
               </button>
-            </form>
+              <button
+                onClick={() => setPricingPeriod('yearly')}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${pricingPeriod === 'yearly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Yearly <span className="ml-1 text-[10px] text-green-600 font-bold bg-green-100 px-1.5 py-0.5 rounded-full uppercase">Save 20%</span>
+              </button>
+            </div>
+          </FadeIn>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {pricingPlans.map((plan, i) => (
+              <FadeIn key={i} delay={i * 0.1}>
+                <Card className={`h-full flex flex-col ${plan.popular ? 'border-primary shadow-2xl scale-105 relative z-10' : 'border-muted/60 hover:border-muted-foreground/30'}`}>
+                  {plan.popular && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                      MOST POPULAR
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <div className="mt-4 flex items-baseline">
+                      <span className="text-4xl font-extrabold">{plan.price}</span>
+                      <span className="text-muted-foreground ml-1">{plan.period}</span>
+                    </div>
+                    <CardDescription className="mt-2">{plan.desc}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <ul className="space-y-3 mt-4">
+                      {plan.features.map((feature, j) => (
+                        <li key={j} className="flex items-center gap-3 text-sm">
+                          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant={plan.popular ? "default" : "outline"} className="w-full h-11" asChild>
+                      <Link to="/AdminRegister">{plan.cta}</Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ Section ── */}
+      <section id="faq" className="py-24 px-6 md:px-0">
+        <div className="container mx-auto max-w-3xl">
+          <FadeIn className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-muted-foreground">
+              Everything you need to know about School MS.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.2} className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
+            <Accordion type="single" collapsible className="w-full">
+              {faqs.map((faq, i) => (
+                <AccordionItem key={i} value={`item-${i}`}>
+                  <AccordionTrigger className="text-left text-lg font-medium">{faq.q}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                    {faq.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── CTA Section ── */}
+      <section className="py-24 px-6 relative overflow-hidden bg-primary text-primary-foreground">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-blue-600"></div>
+
+        <div className="container mx-auto max-w-4xl relative z-10 text-center">
+          <FadeIn>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">Ready to Transform Your School?</h2>
+            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto font-light">
+              Join hundreds of forward-thinking institutions streamlining their operations today.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Link to="/AdminRegister">
+                <Button size="lg" variant="secondary" className="h-16 px-10 text-lg rounded-full shadow-2xl shadow-black/20 hover:scale-105 transition-transform text-primary font-bold">
+                  Get Started for Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/contact">
+                <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 backdrop-blur-sm">
+                  Contact Sales
+                </Button>
+              </Link>
+            </div>
+            <p className="mt-8 text-sm text-primary-foreground/60">No credit card required · 14-day free trial · Cancel anytime</p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer id="contact" className="border-t bg-card pt-16 pb-8">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-1 md:col-span-1">
+              <Link to="/" className="flex items-center gap-2 mb-6">
+                <div className="bg-primary p-1.5 rounded-lg">
+                  <GraduationCap className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <span className="text-2xl font-bold tracking-tight">School MS</span>
+              </Link>
+              <p className="text-muted-foreground leading-relaxed mb-6 text-sm">
+                Empowering education through technology. The most comprehensive platform for modern institutional management.
+              </p>
+              <div className="flex gap-4">
+                {[Twitter, Linkedin, Github].map((Icon, i) => (
+                  <a key={i} href="#" className="h-10 w-10 flex items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-6 text-foreground">Product</h4>
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-6 text-foreground">Company</h4>
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-6 text-foreground">Contact Us</h4>
+              <ul className="space-y-4 text-sm text-muted-foreground">
+                <li className="flex items-center gap-3 group cursor-pointer">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="group-hover:text-foreground transition-colors">support@schoolms.com</span>
+                </li>
+                <li className="flex items-center gap-3 group cursor-pointer">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <Phone className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="group-hover:text-foreground transition-colors">+1 (555) 123-4567</span>
+                </li>
+                <li className="flex items-center gap-3 group cursor-pointer">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="group-hover:text-foreground transition-colors">123 Education St, NY</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          {/* Resources */}
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-              Self-Service Resources
-            </h3>
+          <Separator className="mb-8" />
 
-            <div className="grid md:grid-cols-3 gap-8">
-              {resources.map((resource, index) => (
-                <div key={index} className="bg-white p-8 rounded-xl shadow-sm text-center hover:shadow-md transition-all">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mx-auto mb-4">
-                    {resource.icon}
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">{resource.title}</h4>
-                  <p className="text-sm text-gray-600">{resource.desc}</p>
-                </div>
-              ))}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+            <p>© 2025 School Management System. All rights reserved.</p>
+            <div className="flex gap-8">
+              <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+              <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="relative py-16 md:py-24 px-4 md:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600"></div>
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-64 md:w-96 h-64 md:h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="container mx-auto max-w-4xl text-center relative z-10 px-4">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 md:mb-6">Ready to Transform Your School?</h2>
-          <p className="text-blue-100 text-base md:text-xl mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed">
-            Join hundreds of schools using our platform to streamline their operations and enhance education quality
-          </p>
-          <Link
-            to="/AdminLogin"
-            className="inline-flex items-center gap-2 md:gap-3 px-8 md:px-12 py-4 md:py-5 bg-white text-blue-600 rounded-full font-bold text-base md:text-lg hover:bg-gray-50 hover:shadow-2xl hover:scale-105 transition-all duration-300 shadow-2xl shadow-black/20"
-          >
-            Access Your Portal
-            <ArrowRight className="w-4 md:w-5 h-4 md:h-5" />
-          </Link>
-        </div>
-      </section>
-
-      <Footer />
+      </footer>
     </div>
   );
 }

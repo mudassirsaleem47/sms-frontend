@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Trash2, Bus, User, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const TransportVehiclePanel = () => {
     const { currentUser } = useAuth();
@@ -24,6 +25,8 @@ const TransportVehiclePanel = () => {
         vehicleNumber: '', vehicleModel: '', driverName: '',
         driverLicense: '', driverContact: '', capacity: '', assignedRoute: ''
     });
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (currentUser) {
@@ -78,14 +81,18 @@ const TransportVehiclePanel = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Delete this vehicle?')) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/Transport/Vehicle/${id}`);
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/Transport/Vehicle/${deletingId}`);
             showToast('Vehicle deleted', 'success');
-            setVehicles(vehicles.filter(v => v._id !== id));
+            setVehicles(vehicles.filter(v => v._id !== deletingId));
         } catch (err) {
             showToast('Failed to delete vehicle', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -194,7 +201,7 @@ const TransportVehiclePanel = () => {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(vehicle._id)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(vehicle._id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -205,6 +212,15 @@ const TransportVehiclePanel = () => {
                     )}
                 </CardContent>
             </Card>
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleDelete}
+                title="Delete Vehicle?"
+                description="This will permanently remove this vehicle from the fleet. This action cannot be undone."
+                confirmText="Delete Vehicle"
+                loading={deleteLoading}
+            />
         </div>
     );
 };

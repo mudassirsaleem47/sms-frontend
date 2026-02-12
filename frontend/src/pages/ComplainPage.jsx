@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -227,7 +228,7 @@ const ComplainPage = () => {
                                             <TableRow>
                                                 <TableHead>Complain By</TableHead>
                                                 <TableHead>Phone</TableHead>
-                                                <TableHead>Date</TableHead>
+                                                <TableHead>Date/Time</TableHead>
                                                 <TableHead className="max-w-[300px]">Description</TableHead>
                                                 <TableHead>Assigned</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>
@@ -246,7 +247,7 @@ const ComplainPage = () => {
                                                     </TableCell>
                                                     <TableCell>{complain.phone || '-'}</TableCell>
                                                     <TableCell>
-                                                        {new Date(complain.date).toLocaleDateString()}
+                                                        {formatDateTime(complain.date)}
                                                     </TableCell>
                                                     <TableCell className="max-w-[300px]">
                                                         <p className="truncate text-muted-foreground" title={complain.description}>
@@ -363,7 +364,7 @@ const ComplainPage = () => {
                                             <Calendar className="h-3.5 w-3.5" /> Date
                                         </div>
                                         <div className="col-span-2 font-medium">
-                                            {new Date(drawerData.date).toLocaleDateString()}
+                                            {formatDateTime(drawerData.date)}
                                         </div>
                                     </div>
                                 </div>

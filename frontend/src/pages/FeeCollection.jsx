@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -327,7 +328,7 @@ const FeeCollection = () => {
                               </Badge>
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <span>Due: {new Date(fee.dueDate).toLocaleDateString()}</span>
+                              <span>Due: {formatDateTime(fee.dueDate, { dateOnly: true })}</span>
                             </div>
                           </div>
 
@@ -491,8 +492,7 @@ const FeeCollection = () => {
                   <div className="text-right">
                     <span className="text-muted-foreground block text-xs uppercase tracking-wider">Date & Time</span>
                     <span className="font-medium">
-                      {new Date(receiptData.paymentDate).toLocaleDateString()} &nbsp;
-                      {new Date(receiptData.paymentDate).toLocaleTimeString()}
+                      {formatDateTime(receiptData.paymentDate)}
                     </span>
                   </div>
                   <div>

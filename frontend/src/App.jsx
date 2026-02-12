@@ -30,15 +30,11 @@ import CampusManagement from './pages/CampusManagement';
 import StaffManagement from './pages/StaffManagement';
 import DesignationManagement from './pages/DesignationManagement';
 import DisableReasonPage from './pages/DisableReasonPage';
-import TeacherLoginPage from './pages/TeacherLoginPage';
-import TeacherDashboard from './pages/TeacherDashboard';
-import TeacherLayout from './components/TeacherLayout';
-import AttendancePage from './pages/teacher/AttendancePage';
-import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage';
-import SchedulePage from './pages/teacher/SchedulePage';
-import TeacherResultsPage from './pages/teacher/TeacherResultsPage';
+
 import SendMessages from './pages/SendMessages';
 import MessageTemplates from './pages/MessageTemplates';
+import MessageReport from './pages/MessageReport';
+import NotificationsPage from './pages/NotificationsPage';
 import BirthdayWish from './pages/BirthdayWish';
 import TransportPickupPage from './pages/Transport/TransportPickupPage';
 import TransportRoutesPage from './pages/Transport/TransportRoutesPage';
@@ -84,8 +80,7 @@ function App() {
               <Route path="/AdminLogin" element={<AdminLoginPage />} />
               <Route path="/AdminRegister" element={<AdminRegisterPage />} />
 
-              {/* Teacher Auth Routes */}
-              <Route path="/teacher/login" element={<TeacherLoginPage />} />
+
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/admin" element={<AdminLayout />}> {/* <--- Layout Wrapper */}
@@ -147,19 +142,22 @@ function App() {
                   <Route path="card-management/staff" element={<StaffIdCard />} />
                   <Route path="card-management/designer" element={<CardDesigner />} />
                   <Route path="/admin/report-card" element={<ReportCard />} />
+                  <Route path="message-report" element={<MessageReport />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
 
                   {/* Exam Management */}
                 </Route>
 
-                {/* Teacher Protected Routes */}
-                <Route path="/teacher" element={<TeacherLayout />}>
-                  <Route path="dashboard" element={<TeacherDashboard />} />
-                  <Route path="attendance" element={<AttendancePage />} />
-                  <Route path="students" element={<TeacherStudentsPage />} />
-                  <Route path="results" element={<TeacherResultsPage />} />
-                  <Route path="schedule" element={<SchedulePage />} />
+                {/* Teacher Protected Routes - reuses AdminLayout */}
+                <Route path="/teacher" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="students" element={<StudentList />} />
+                  <Route path="class-schedule" element={<ClassSchedule />} />
+                  <Route path="attendance" element={<StudentAttendancePage />} />
                   <Route path="settings" element={<SettingsProfile />} />
                 </Route>
+
               </Route>
             </Routes>
             <Toaster />

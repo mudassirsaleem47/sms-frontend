@@ -8,16 +8,10 @@ import { Shield, GraduationCap } from 'lucide-react';
 const AdminLoginPage = () => {
   const navigate = useNavigate();
 
-  const handleTabChange = (value) => {
-    if (value === 'teacher') {
-      navigate('/teacher/login');
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-foreground">
       <div className="w-full max-w-md">
-        <Tabs defaultValue="admin" onValueChange={handleTabChange} className="w-full">
+        <Tabs defaultValue="admin" className="w-full">
           {/* Navigation Tabs */}
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="admin" className="gap-2">

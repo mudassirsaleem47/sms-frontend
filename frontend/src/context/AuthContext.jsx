@@ -84,11 +84,7 @@ export const AuthContextProvider = ({ children }) => {
         }
 
         setTimeout(() => {
-            if (userType === 'teacher') {
-                window.location.href = '/teacher/login';
-            } else {
-                window.location.href = '/AdminLogin';
-            }
+            window.location.href = '/AdminLogin';
         }, 100);
     };
 

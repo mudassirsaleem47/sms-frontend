@@ -25,11 +25,16 @@ import {
   AreaChart, Area, ResponsiveContainer, RadialBarChart, RadialBar, Legend,
   Tooltip
 } from 'recharts';
+import DashboardCalendar from '@/components/DashboardCalendar';
+
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const { selectedCampus, campuses } = useCampus();
   const navigate = useNavigate();
+  const isTeacher = currentUser?.userType === 'teacher';
+  const schoolId = isTeacher ? (currentUser?.school?._id || currentUser?.school) : currentUser?._id;
+  const basePath = isTeacher ? '/teacher' : '/admin';
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -61,7 +66,23 @@ const AdminDashboard = () => {
       let teacherCount = 0;
       let classCount = 0;
 
-      if (selectedCampus) {
+      if (isTeacher) {
+        // Teacher: count from assigned classes
+        classCount = currentUser?.assignedClasses?.length || 0;
+        // Fetch students for teacher's school
+        try {
+          const studentsRes = await axios.get(`${API_URL}/Students/${schoolId}`);
+          const allStudents = Array.isArray(studentsRes.data) ? studentsRes.data : [];
+          // Filter students by teacher's assigned classes
+          const assignedClassIds = (currentUser?.assignedClasses || []).map(c => c._id || c);
+          const myStudents = allStudents.filter(s => {
+            const sclassId = s.sclass?._id || s.sclass;
+            return assignedClassIds.includes(sclassId?.toString());
+          });
+          studentCount = myStudents.length;
+          setStudents(myStudents);
+        } catch (err) { setStudents([]); }
+      } else if (selectedCampus) {
         const res = await axios.get(`${API_URL}/CampusStats/${selectedCampus._id}`);
         if (res.data.success) {
           const s = res.data.stats;
@@ -84,23 +105,38 @@ const AdminDashboard = () => {
       }
 
       let revenue = 0;
-      try {
-        const incomeRes = await axios.get(`${API_URL}/IncomeStatistics/${currentUser._id}`);
-        revenue = incomeRes.data.totalIncome?.amount || 0;
-      } catch (err) { }
+      if (!isTeacher) {
+        try {
+          const incomeRes = await axios.get(`${API_URL}/IncomeStatistics/${currentUser._id}`);
+          revenue = incomeRes.data.totalIncome?.amount || 0;
+        } catch (err) { }
+      }
 
       setStats({ students: studentCount, teachers: teacherCount, classes: classCount, revenue });
 
-      // Parallel fetch
-      const [notifRes, eventRes, studentsRes, feeStatsRes, incomeStatsRes, expenseStatsRes, classesRes] = await Promise.allSettled([
-        axios.get(`${API_URL}/Notifications/${currentUser._id}`),
-        axios.get(`${API_URL}/Events/${currentUser._id}`),
-        axios.get(`${API_URL}/Students/${currentUser._id}`),
-        axios.get(`${API_URL}/fee-statistics/${currentUser._id}`),
-        axios.get(`${API_URL}/income-statistics/${currentUser._id}`),
-        axios.get(`${API_URL}/expense-statistics/${currentUser._id}`),
-        axios.get(`${API_URL}/Sclasses/${currentUser._id}`),
-      ]);
+      // Parallel fetch - teacher skips financial APIs
+      const fetchPromises = [
+        axios.get(`${API_URL}/Notifications/${schoolId}`),
+        axios.get(`${API_URL}/Events/${schoolId}`),
+        ...(isTeacher ? [] : [axios.get(`${API_URL}/Students/${schoolId}`)]),
+        ...(isTeacher ? [] : [axios.get(`${API_URL}/fee-statistics/${schoolId}`)]),
+        ...(isTeacher ? [] : [axios.get(`${API_URL}/income-statistics/${schoolId}`)]),
+        ...(isTeacher ? [] : [axios.get(`${API_URL}/expense-statistics/${schoolId}`)]),
+        axios.get(`${API_URL}/Sclasses/${schoolId}`),
+      ];
+      const results = await Promise.allSettled(fetchPromises);
+
+      let idx = 0;
+      const notifRes = results[idx++];
+      const eventRes = results[idx++];
+      let studentsRes, feeStatsRes, incomeStatsRes, expenseStatsRes;
+      if (!isTeacher) {
+        studentsRes = results[idx++];
+        feeStatsRes = results[idx++];
+        incomeStatsRes = results[idx++];
+        expenseStatsRes = results[idx++];
+      }
+      const classesRes = results[idx++];
 
       if (notifRes.status === 'fulfilled') {
         setActivities(notifRes.value.data.notifications?.slice(0, 5) || []);
@@ -113,11 +149,13 @@ const AdminDashboard = () => {
           .slice(0, 3);
         setEvents(upcoming);
       }
-      if (studentsRes.status === 'fulfilled') setStudents(Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []);
-      if (feeStatsRes.status === 'fulfilled') setFeeStats(feeStatsRes.value.data);
-      if (incomeStatsRes.status === 'fulfilled') setIncomeStats(incomeStatsRes.value.data);
-      if (expenseStatsRes.status === 'fulfilled') setExpenseStats(expenseStatsRes.value.data);
-      if (classesRes.status === 'fulfilled') setClasses(Array.isArray(classesRes.value.data) ? classesRes.value.data : []);
+      if (!isTeacher) {
+        if (studentsRes?.status === 'fulfilled') setStudents(Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []);
+        if (feeStatsRes?.status === 'fulfilled') setFeeStats(feeStatsRes.value.data);
+        if (incomeStatsRes?.status === 'fulfilled') setIncomeStats(incomeStatsRes.value.data);
+        if (expenseStatsRes?.status === 'fulfilled') setExpenseStats(expenseStatsRes.value.data);
+      }
+      if (classesRes?.status === 'fulfilled') setClasses(Array.isArray(classesRes.value.data) ? classesRes.value.data : []);
 
     } catch (error) {
       console.error("Dashboard data fetch error:", error);
@@ -188,7 +226,28 @@ const AdminDashboard = () => {
     return `PKR ${amount?.toLocaleString() || 0}`;
   };
 
-  const statCards = [
+  const statCards = isTeacher ? [
+    {
+      icon: BookOpen, label: 'My Classes', count: stats.classes,
+      subtitle: `${currentUser?.assignedClasses?.length || 0} assigned`, color: 'text-blue-600',
+      bg: 'bg-blue-500/10', ring: 'ring-blue-500/20'
+    },
+    {
+      icon: GraduationCap, label: 'My Students', count: stats.students,
+      subtitle: 'In your classes', color: 'text-violet-600',
+      bg: 'bg-violet-500/10', ring: 'ring-violet-500/20'
+    },
+    {
+      icon: School, label: 'Subject', count: currentUser?.subject || 'N/A',
+      subtitle: currentUser?.qualification || '', color: 'text-orange-600',
+      bg: 'bg-orange-500/10', ring: 'ring-orange-500/20'
+    },
+    {
+      icon: UserCheck, label: 'Experience', count: `${currentUser?.experience || 0} yrs`,
+      subtitle: 'Teaching experience', color: 'text-emerald-600',
+      bg: 'bg-emerald-500/10', ring: 'ring-emerald-500/20'
+    },
+  ] : [
     {
       icon: GraduationCap, label: 'Total Students', count: stats.students,
       subtitle: `${chartData.activeStudents} active`, color: 'text-blue-600',
@@ -211,7 +270,12 @@ const AdminDashboard = () => {
     },
   ];
 
-  const quickActions = [
+  const quickActions = isTeacher ? [
+    { label: 'My Students', icon: GraduationCap, route: '/teacher/students', color: 'text-blue-600', bg: 'bg-blue-500/10' },
+    { label: 'Class Schedule', icon: Calendar, route: '/teacher/class-schedule', color: 'text-purple-600', bg: 'bg-purple-500/10' },
+    { label: 'Mark Attendance', icon: UserCheck, route: '/teacher/attendance', color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+    { label: 'Settings', icon: Activity, route: '/teacher/settings', color: 'text-orange-600', bg: 'bg-orange-500/10' },
+  ] : [
     { label: 'Add Student', icon: Users, route: '/admin/admission', color: 'text-blue-600', bg: 'bg-blue-500/10' },
     { label: 'Manage Classes', icon: BookOpen, route: '/admin/classes', color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
     { label: 'Class Schedule', icon: Calendar, route: '/admin/class-schedule', color: 'text-purple-600', bg: 'bg-purple-500/10' },
@@ -264,18 +328,24 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
-          <p className="text-muted-foreground mt-0.5">Overview of your institute's performance.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            {isTeacher ? `Welcome, ${currentUser?.name || 'Teacher'}` : 'Dashboard'}
+          </h2>
+          <p className="text-muted-foreground mt-0.5">
+            {isTeacher ? `${currentUser?.subject || ''} Teacher` : "Overview of your institute's performance."}
+          </p>
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" className="hidden sm:flex" onClick={fetchDashboardData}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button onClick={() => navigate('/admin/admission')}>
-            <Users className="mr-2 h-4 w-4" />
-            New Admission
-          </Button>
+          {!isTeacher && (
+            <Button onClick={() => navigate('/admin/admission')}>
+              <Users className="mr-2 h-4 w-4" />
+              New Admission
+            </Button>
+          )}
         </div>
       </div>
 
@@ -441,7 +511,8 @@ const AdminDashboard = () => {
         </motion.div>
       </motion.div>
 
-      {/* Financial Charts Row */}
+      {/* Financial Charts Row - Hidden for Teacher */}
+      {!isTeacher && (
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Financial Summary */}
         <motion.div variants={itemVariants}>
@@ -602,6 +673,7 @@ const AdminDashboard = () => {
           </Card>
         </motion.div>
       </motion.div>
+      )}
 
       {/* Activity + Quick Actions Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -691,46 +763,13 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Upcoming Events */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Upcoming Events</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {loading ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
-                  </div>
-                ) : events.length > 0 ? (
-                  events.map((event, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/30 transition-colors group">
-                      <div className="flex flex-col items-center justify-center h-11 w-11 rounded-lg bg-primary/10 text-primary shrink-0">
-                        <span className="text-[9px] font-bold uppercase leading-none">
-                          {event.eventFrom ? format(new Date(event.eventFrom), 'MMM') : 'EVT'}
-                        </span>
-                        <span className="text-sm font-bold leading-none mt-0.5">
-                          {event.eventFrom ? format(new Date(event.eventFrom), 'dd') : '00'}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-none line-clamp-1">{event.eventName}</p>
-                        <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">{event.description || "No details"}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  ))
-                  ) : (
-                  <p className="text-sm text-center text-muted-foreground py-4">No upcoming events</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Calendar Widget */}
+          <div className="h-[400px]">
+            <DashboardCalendar />
+          </div>
         </div>
+
+
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import {
     Dialog,
     DialogContent,
@@ -49,7 +50,7 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
         phone: '',
         idCard: '',
         numberOfPerson: 1,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(),
         inTime: '',
         outTime: '',
         note: '',
@@ -108,10 +109,10 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
     useEffect(() => {
         if (initialData) {
             // Safe date handling
-            let dateStr = new Date().toISOString().split('T')[0];
+            let dateStr = new Date().toISOString();
             try {
                 if (initialData.date) {
-                    dateStr = new Date(initialData.date).toISOString().split('T')[0];
+                    dateStr = initialData.date || new Date().toISOString();
                 }
             } catch (e) { }
 
@@ -146,7 +147,7 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                 phone: '',
                 idCard: '',
                 numberOfPerson: 1,
-                date: new Date().toISOString().split('T')[0],
+                date: new Date().toISOString(),
                 inTime: '',
                 outTime: '',
                 note: '',
@@ -285,7 +286,7 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                                     <div className="space-y-3 rounded-lg bg-muted/50 p-4 border text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Date:</span>
-                                            <span className="font-medium">{new Date(formData.date).toLocaleDateString()}</span>
+                                            <span className="font-medium">{formatDateTime(formData.date)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">In Time:</span>

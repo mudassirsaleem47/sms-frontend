@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -273,7 +274,7 @@ const MessageTemplates = () => {
                             <CardFooter className="pt-3 border-t bg-muted/20 flex justify-between items-center text-xs text-muted-foreground">
                                 <div className="flex items-center">
                                     <Clock className="w-3 h-3 mr-1" />
-                                    {new Date(template.createdAt).toLocaleDateString()}
+                                    {formatDateTime(template.createdAt)}
                                 </div>
                                 <div className="flex gap-2">
                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openModal(template)}>

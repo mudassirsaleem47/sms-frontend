@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import {
     Dialog,
     DialogContent,
@@ -49,12 +50,12 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                 callerName: initialData.callerName || '',
                 phone: initialData.phone || '',
                 callType: initialData.callType || 'Incoming',
-                callDate: initialData.callDate ? new Date(initialData.callDate).toISOString().split('T')[0] : '',
+                callDate: initialData.callDate || new Date().toISOString(),
                 callTime: initialData.callTime || '',
                 purpose: initialData.purpose || '',
                 callDuration: initialData.callDuration || '',
                 followUpRequired: initialData.followUpRequired || false,
-                followUpDate: initialData.followUpDate ? new Date(initialData.followUpDate).toISOString().split('T')[0] : '',
+                followUpDate: initialData.followUpDate || '',
                 notes: initialData.notes || ''
             });
         } else {
@@ -63,7 +64,7 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                 callerName: '',
                 phone: '',
                 callType: 'Incoming',
-                callDate: new Date().toISOString().split('T')[0],
+                callDate: new Date().toISOString(),
                 callTime: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
                 purpose: '',
                 callDuration: '',
@@ -142,7 +143,7 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                                         <Clock size={18} /> Time & Date
                                     </h4>
                                     <div className="space-y-2 text-sm">
-                                        <div><span className="text-muted-foreground">Date:</span> <span className="font-medium ml-1">{new Date(formData.callDate).toLocaleDateString()}</span></div>
+                                        <div><span className="text-muted-foreground">Date:</span> <span className="font-medium ml-1">{formatDateTime(formData.callDate)}</span></div>
                                         <div><span className="text-muted-foreground">Time:</span> <span className="font-medium ml-1">{formData.callTime}</span></div>
                                     </div>
                                 </div>
@@ -162,7 +163,7 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                                             <AlertCircle size={18} /> Follow-up Required
                                         </h4>
                                         <div className="text-sm text-amber-900">
-                                            <span className="font-medium">Date:</span> {new Date(formData.followUpDate).toLocaleDateString()}
+                                            <span className="font-medium">Date:</span> {formatDateTime(formData.followUpDate)}
                                         </div>
                                     </div>
                                 )}

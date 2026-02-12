@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const LessonList = () => {
     const { currentUser } = useAuth();
@@ -29,6 +30,8 @@ const LessonList = () => {
     const [submitting, setSubmitting] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ title: '', topics: [] }); // topics: [{ title: '' }]
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         if (currentUser) {
@@ -169,14 +172,18 @@ const LessonList = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm('Delete this lesson and all its topics?')) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/LessonPlan/Lesson/${id}`);
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/LessonPlan/Lesson/${deletingId}`);
             showToast('Lesson deleted', 'success');
-            setLessons(lessons.filter(l => l._id !== id));
+            setLessons(lessons.filter(l => l._id !== deletingId));
         } catch (err) {
             showToast('Failed to delete lesson', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -287,7 +294,7 @@ const LessonList = () => {
                                                  <CardDescription>{lesson.topics.length} Topics</CardDescription>
                                              </div>
                                              <div className="flex gap-1">
-                                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(lesson._id)}>
+                                                 <Button variant="ghost" size="icon" onClick={() => setDeletingId(lesson._id)}>
                                                      <Trash2 className="h-4 w-4 text-destructive" />
                                                  </Button>
                                              </div>
@@ -316,6 +323,16 @@ const LessonList = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleDelete}
+                title="Delete Lesson?"
+                description="This will permanently delete this lesson and all its topics. This action cannot be undone."
+                confirmText="Delete Lesson"
+                loading={deleteLoading}
+            />
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { AppSidebar } from "@/components/app-sidebar";
 import {
@@ -22,13 +23,21 @@ import {
   IconChartBar,
 } from "@tabler/icons-react";
 import SearchBar from './SearchBar';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "lucide-react";
+import CalendarDialog from "./CalendarDialog";
+import TaskModal from "./TaskModal";
 
 
 
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const isTeacher = currentUser?.userType === 'teacher';
+  const basePath = isTeacher ? '/teacher' : '/admin';
   const [extraBreadcrumb, setExtraBreadcrumb] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Reset extra breadcrumb on route change
   useEffect(() => {
@@ -38,9 +47,10 @@ const AdminLayout = () => {
   // Generate breadcrumb dari current path
   const generateBreadcrumbs = () => {
     const paths = location.pathname.split('/').filter(Boolean);
+    const basePath = paths[0]; // 'admin' or 'teacher'
 
-    // Skip first 'admin' segment
-    const pathsWithoutAdmin = paths.slice(1);
+    // Skip first segment (admin/teacher)
+    const pathsWithoutBase = paths.slice(1);
 
     // Convert path to readable title
     const toTitle = (str) => {
@@ -50,9 +60,9 @@ const AdminLayout = () => {
         .join(' ');
     };
 
-    return pathsWithoutAdmin.map((path, index) => {
-      const href = `/admin/${pathsWithoutAdmin.slice(0, index + 1).join('/')}`;
-      const isLast = index === pathsWithoutAdmin.length - 1;
+    return pathsWithoutBase.map((path, index) => {
+      const href = `/${basePath}/${pathsWithoutBase.slice(0, index + 1).join('/')}`;
+      const isLast = index === pathsWithoutBase.length - 1;
       const title = toTitle(path);
 
       // Skip "Dashboard" from dynamic crumbs to avoid redundancy with the static root crumb
@@ -86,7 +96,7 @@ const AdminLayout = () => {
               {/* Dashboard Link - Always visible as root */}
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink asChild>
-                  <Link to="/admin/dashboard">Dashboard</Link>
+                  <Link to={`${basePath}/dashboard`}>Dashboard</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
 
@@ -117,17 +127,28 @@ const AdminLayout = () => {
               )}
             </BreadcrumbList>
           </Breadcrumb>
-          <div className="ml-auto w-full max-w-sm">
+          <div className="ml-auto w-full max-w-sm flex items-center gap-2">
             <SearchBar />
+            <TaskModal />
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0"
+              onClick={() => setShowCalendar(true)}
+              title="Open Calendar"
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
           </div>
         </header>
-
 
         {/* Main Content */}
         <div className="flex flex-1 flex-col gap-6 p-4">
           <Outlet context={{ setExtraBreadcrumb }} />
         </div>
       </SidebarInset>
+
+      <CalendarDialog open={showCalendar} onOpenChange={setShowCalendar} />
     </SidebarProvider>
   );
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateTime } from '../../utils/formatDateTime';
 import {
     X, User, BookOpen, Users, Bus, Calendar, Phone, Mail,
     MapPin, Ruler, Activity, School
@@ -89,7 +90,7 @@ const StudentDetailsModal = ({ isOpen, onClose, student }) => {
                                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <InfoItem icon={User} label="Full Name" value={`${student.firstName || ''} ${student.lastName || ''}`} />
                                     <InfoItem icon={Users} label="Gender" value={student.gender} />
-                                    <InfoItem icon={Calendar} label="Date of Birth" value={student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : ''} />
+                                    <InfoItem icon={Calendar} label="Date of Birth" value={student.dateOfBirth ? formatDateTime(student.dateOfBirth, { dateOnly: true }) : ''} />
                                     <InfoItem icon={Activity} label="Blood Group" value={student.bloodGroup} />
                                     <InfoItem icon={Users} label="Category" value={student.category} />
                                     <InfoItem icon={BookOpen} label="Religion/Caste" value={`${student.religion || ''} ${student.caste ? `(${student.caste})` : ''}`} />
@@ -109,7 +110,7 @@ const StudentDetailsModal = ({ isOpen, onClose, student }) => {
                                     <InfoItem icon={Mail} label="Email" value={student.email} />
                                     <InfoItem icon={Ruler} label="Height / Weight" value={student.height || student.weight ? `${student.height || '-'} cm / ${student.weight || '-'} kg` : ''} />
                                     <InfoItem icon={MapPin} label="House" value={student.house} />
-                                    <InfoItem icon={Calendar} label="Admission Date" value={student.admissionDate ? new Date(student.admissionDate).toLocaleDateString() : ''} />
+                                    <InfoItem icon={Calendar} label="Admission Date" value={student.admissionDate ? formatDateTime(student.admissionDate) : ''} />
                                     <InfoItem icon={School} label="Previous School" value={student.previousSchool || 'N/A'} />
                                 </CardContent>
                             </Card>

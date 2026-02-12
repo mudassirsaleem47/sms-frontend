@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
@@ -133,12 +134,12 @@ const FeeReports = () => {
     if (activeTab === 'pending') {
       csv = 'Student Name,Roll Number,Class,Fee Type,Total Amount,Paid Amount,Pending Amount,Due Date,Status\n';
       data.forEach(fee => {
-        csv += `"${fee.student?.name}","${fee.student?.rollNum}","${fee.student?.sclassName?.sclassName} ${fee.student?.section}","${fee.feeStructure?.feeName}","${fee.totalAmount}","${fee.paidAmount}","${fee.pendingAmount}","${new Date(fee.dueDate).toLocaleDateString()}","${fee.status}"\n`;
+        csv += `"${fee.student?.name}","${fee.student?.rollNum}","${fee.student?.sclassName?.sclassName} ${fee.student?.section}","${fee.feeStructure?.feeName}","${fee.totalAmount}","${fee.paidAmount}","${fee.pendingAmount}","${formatDateTime(fee.dueDate, { dateOnly: true })}","${fee.status}"\n`;
       });
     } else {
       csv = 'Date,Receipt Number,Student Name,Roll Number,Fee Type,Amount,Payment Method,Collected By\n';
       data.forEach(txn => {
-        csv += `"${new Date(txn.paymentDate).toLocaleDateString()}","${txn.receiptNumber}","${txn.student?.name}","${txn.student?.rollNum}","${txn.fee?.feeStructure?.feeName || 'N/A'}","${txn.amount}","${txn.paymentMethod}","${txn.collectedBy?.schoolName || 'N/A'}"\n`;
+        csv += `"${formatDateTime(txn.paymentDate)}","${txn.receiptNumber}","${txn.student?.name}","${txn.student?.rollNum}","${txn.fee?.feeStructure?.feeName || 'N/A'}","${txn.amount}","${txn.paymentMethod}","${txn.collectedBy?.schoolName || 'N/A'}"\n`;
       });
     }
     
@@ -331,7 +332,7 @@ const FeeReports = () => {
                           <TableCell>Rs.{fee.totalAmount?.toLocaleString()}</TableCell>
                           <TableCell>Rs.{fee.paidAmount?.toLocaleString()}</TableCell>
                           <TableCell className="text-destructive font-medium">Rs.{fee.pendingAmount?.toLocaleString()}</TableCell>
-                          <TableCell>{new Date(fee.dueDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{formatDateTime(fee.dueDate, { dateOnly: true })}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={cn(
                               "font-normal",
@@ -385,7 +386,7 @@ const FeeReports = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Date/Time</TableHead>
                       <TableHead>Receipt #</TableHead>
                       <TableHead>Student</TableHead>
                       <TableHead>Roll No</TableHead>
@@ -405,7 +406,7 @@ const FeeReports = () => {
                     ) : (
                       transactions.map((txn) => (
                         <TableRow key={txn._id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell>{new Date(txn.paymentDate).toLocaleDateString()}</TableCell>
+                          <TableCell>{formatDateTime(txn.paymentDate)}</TableCell>
                           <TableCell className="font-medium text-primary">{txn.receiptNumber}</TableCell>
                           <TableCell>
                             <span 
@@ -500,7 +501,7 @@ const FeeReports = () => {
                             <TableCell>{fee.student?.sclassName?.sclassName} {fee.student?.section}</TableCell>
                             <TableCell>{fee.feeStructure?.feeName}</TableCell>
                             <TableCell className="text-destructive font-medium">Rs.{fee.pendingAmount?.toLocaleString()}</TableCell>
-                            <TableCell>{new Date(fee.dueDate).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDateTime(fee.dueDate, { dateOnly: true })}</TableCell>
                             <TableCell>
                               <Badge variant="destructive">{daysOverdue} days</Badge>
                             </TableCell>
@@ -585,7 +586,7 @@ const FeeReports = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="font-medium text-gray-500">Date</div>
-                        <div className="col-span-2">{new Date(selectedItem.paymentDate).toLocaleDateString()}</div>
+                      <div className="col-span-2">{formatDateTime(selectedItem.paymentDate)}</div>
                     </div>
                      <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="font-medium text-gray-500">Amount</div>
@@ -642,7 +643,7 @@ const FeeReports = () => {
                      </div>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="font-medium text-gray-500">Due Date</div>
-                        <div className="col-span-2">{new Date(selectedItem.dueDate).toLocaleDateString()}</div>
+                        <div className="col-span-2">{formatDateTime(selectedItem.dueDate, { dateOnly: true })}</div>
                      </div>
                    </div>
                 </div>

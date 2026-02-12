@@ -119,7 +119,7 @@ const IncomeManagement = () => {
     amount: '',
     category: 'Fee Collection',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString(),
     paymentMethod: 'Cash',
     reference: ''
   });
@@ -197,7 +197,7 @@ const IncomeManagement = () => {
       amount: income.amount.toString(),
       category: income.category,
       description: income.description,
-      date: new Date(income.date).toISOString().split('T')[0],
+      date: income.date || new Date().toISOString(),
       paymentMethod: income.paymentMethod,
       reference: income.reference || ''
     });
@@ -227,7 +227,7 @@ const IncomeManagement = () => {
       amount: '',
       category: 'Fee Collection',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
       paymentMethod: 'Cash',
       reference: ''
     });
@@ -494,7 +494,7 @@ const IncomeManagement = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
+                      <TableHead>Date/Time</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead className="w-[300px]">Description</TableHead>
                                 <TableHead>Details</TableHead>

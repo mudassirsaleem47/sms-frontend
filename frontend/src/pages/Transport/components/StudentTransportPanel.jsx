@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, Search, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 
 const StudentTransportPanel = () => {
     const { currentUser } = useAuth();
@@ -29,6 +30,8 @@ const StudentTransportPanel = () => {
     const [selectedStudent, setSelectedStudent] = useState('');
     const [selectedRoute, setSelectedRoute] = useState('');
     const [selectedStop, setSelectedStop] = useState('');
+    const [deletingId, setDeletingId] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     
     useEffect(() => {
         if (currentUser) {
@@ -104,14 +107,18 @@ const StudentTransportPanel = () => {
         }
     };
 
-    const handleRemove = async (id) => {
-        if (!confirm('Remove student from transport?')) return;
+    const handleRemove = async () => {
+        if (!deletingId) return;
         try {
-            await axios.delete(`${API_BASE}/Transport/StudentTransport/${id}`);
+            setDeleteLoading(true);
+            await axios.delete(`${API_BASE}/Transport/StudentTransport/${deletingId}`);
             showToast('Assignment removed', 'success');
-            setAssignments(assignments.filter(a => a._id !== id));
+            setAssignments(assignments.filter(a => a._id !== deletingId));
         } catch (err) {
             showToast('Failed to remove assignment', 'error');
+        } finally {
+            setDeleteLoading(false);
+            setDeletingId(null);
         }
     };
 
@@ -236,7 +243,7 @@ const StudentTransportPanel = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemove(assign._id)}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingId(assign._id)}>
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
@@ -247,6 +254,16 @@ const StudentTransportPanel = () => {
                     )}
                 </CardContent>
             </Card>
+
+            <ConfirmDeleteModal
+                isOpen={!!deletingId}
+                onClose={() => setDeletingId(null)}
+                onConfirm={handleRemove}
+                title="Remove Student?"
+                description="This will remove the student from transport. This action cannot be undone."
+                confirmText="Remove"
+                loading={deleteLoading}
+            />
         </div>
     );
 };
