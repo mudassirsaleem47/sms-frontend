@@ -21,46 +21,14 @@ import {
   IconBook,
   IconChartBar,
 } from "@tabler/icons-react";
+import SearchBar from './SearchBar';
 
 
 
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   const [extraBreadcrumb, setExtraBreadcrumb] = useState(null);
-
-  // Keyboard shortcut for Ctrl+K
-  useEffect(() => {
-    const down = (e) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
-
-  // Navigation items for search
-  const navigationItems = [
-    {
-      group: "Main",
-      items: [
-        { name: "Dashboard", icon: IconChartBar, path: "/admin/dashboard" },
-        { name: "Students", icon: IconUsers, path: "/admin/students" },
-        { name: "Teachers", icon: IconSchool, path: "/admin/teachers" },
-        { name: "Classes", icon: IconBook, path: "/admin/classes" },
-      ]
-    },
-    {
-      group: "Academic",
-      items: [
-        { name: "Subjects", icon: IconBook, path: "/admin/subjects" },
-        { name: "Subject Groups", icon: IconBook, path: "/admin/subject-groups" },
-      ]
-    }
-  ];
 
   // Reset extra breadcrumb on route change
   useEffect(() => {
@@ -149,6 +117,9 @@ const AdminLayout = () => {
               )}
             </BreadcrumbList>
           </Breadcrumb>
+          <div className="ml-auto w-full max-w-sm">
+            <SearchBar />
+          </div>
         </header>
 
 
