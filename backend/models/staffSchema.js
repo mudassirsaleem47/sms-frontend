@@ -22,11 +22,11 @@ const staffSchema = new mongoose.Schema({
         trim: true
     },
     
-    // Designation reference (new dynamic system)
+    // Designation (simplified string-based system)
     designation: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'designation',
-        required: true
+        type: String,
+        required: true,
+        trim: true
     },
 
     // Legacy role field (kept for backward compatibility)

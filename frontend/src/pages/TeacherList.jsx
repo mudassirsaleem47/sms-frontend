@@ -4,9 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 import TeacherModal from '../components/form-popup/TeacherModal';
+import AssignClassModal from '../components/form-popup/AssignClassModal';
 
 import SearchBar from '../components/SearchBar';
-import { Edit, Trash2, Plus, Check } from 'lucide-react';
+import { Edit, Trash2, Plus, Check, BookOpen } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -21,6 +22,10 @@ const TeacherList = () => {
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentTeacher, setCurrentTeacher] = useState(null);
+
+    // Assignment Modal State
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [teacherToAssign, setTeacherToAssign] = useState(null);
 
     // Delete Confirmation State
 
@@ -116,6 +121,16 @@ const TeacherList = () => {
     const handleAdd = () => {
         setCurrentTeacher(null);
         setIsModalOpen(true);
+    };
+
+    // Assign Class Click Logic
+    const handleAssignClass = (teacher) => {
+        setTeacherToAssign(teacher);
+        setIsAssignModalOpen(true);
+    };
+
+    const handleAssignSuccess = (updatedTeacher) => {
+        setTeachers(prev => prev.map(t => t._id === updatedTeacher._id ? updatedTeacher : t));
     };
 
     // Filter teachers based on search query
@@ -214,6 +229,13 @@ const TeacherList = () => {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-3">
                                                     <button 
+                                                        onClick={() => handleAssignClass(teacher)}
+                                                        className="inline-flex items-center justify-center w-9 h-9 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition duration-150"
+                                                        title="Assign Classes"
+                                                    >
+                                                        <BookOpen className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
                                                         onClick={() => handleEdit(teacher)} 
                                                         className="inline-flex items-center justify-center w-9 h-9 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition duration-150"
                                                         title="Edit teacher"
@@ -247,6 +269,13 @@ const TeacherList = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleFormSubmit}
                 initialData={currentTeacher}
+            />
+
+            <AssignClassModal
+                isOpen={isAssignModalOpen}
+                onClose={() => setIsAssignModalOpen(false)}
+                teacher={teacherToAssign}
+                onAssignSuccess={handleAssignSuccess}
             />
 
 

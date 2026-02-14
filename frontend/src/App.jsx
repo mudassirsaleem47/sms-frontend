@@ -58,6 +58,7 @@ import ClassSchedule from './pages/ClassSchedule';
 import TeacherSchedule from './pages/TeacherSchedule';
 import Promotion from './pages/Promotion';
 import ReportsPage from './pages/ReportsPage';
+import TeacherDashboard from './pages/TeacherDashboard';
 
 
 
@@ -117,7 +118,7 @@ function App() {
                   <Route path="campuses" element={<CampusManagement />} />
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="staff" element={<StaffManagement />} />
-                  <Route path="designations" element={<DesignationManagement />} />
+                  {/* <Route path="designations" element={<DesignationManagement />} /> */}
                   <Route path="send-messages" element={<SendMessages />} />
                   <Route path="message-templates" element={<MessageTemplates />} />
                   <Route path="transport/pickup" element={<TransportPickupPage />} />
@@ -150,10 +151,15 @@ function App() {
 
                 {/* Teacher Protected Routes - reuses AdminLayout */}
                 <Route path="/teacher" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route index element={<TeacherDashboard />} />
+                  <Route path="dashboard" element={<TeacherDashboard />} />
                   <Route path="students" element={<StudentList />} />
+                  <Route path="classes" element={<ShowClasses />} />
+                  <Route path="subjects" element={<SubjectManagement />} />
+                  <Route path="subject-groups" element={<SubjectGroupPage />} />
                   <Route path="class-schedule" element={<ClassSchedule />} />
+                  <Route path="teacher-schedule" element={<TeacherSchedule />} />
+                  <Route path="promote" element={<Promotion />} />
                   <Route path="attendance" element={<StudentAttendancePage />} />
                   <Route path="settings" element={<SettingsProfile />} />
                 </Route>

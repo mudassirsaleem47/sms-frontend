@@ -31,7 +31,6 @@ const StaffModal = ({ staff, onClose }) => {
     const { campuses } = useCampus();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
-    const [designations, setDesignations] = useState([]);
 
     // Form state
     const [name, setName] = useState('');
@@ -43,25 +42,18 @@ const StaffModal = ({ staff, onClose }) => {
     const [salary, setSalary] = useState('');
     const [joiningDate, setJoiningDate] = useState(new Date().toISOString());
     const [status, setStatus] = useState('active');
-
-    // Fetch designations
-    useEffect(() => {
-        if (currentUser && currentUser._id) {
-            fetchDesignations();
-        }
-    }, [currentUser]);
-
-    const fetchDesignations = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/Designations/${currentUser._id}`);
-            if (response.data.success) {
-                setDesignations(response.data.designations.filter(d => d.isActive === 'active'));
-            }
-        } catch (error) {
-            console.error('Error fetching designations:', error);
-            showToast('Failed to load designations', 'error');
-        }
-    };
+    const designations = [
+        "Accountant",
+        "Teacher",
+        "Librarian",
+        "Receptionist",
+        "Admin Staff",
+        "Driver",
+        "Security Guard",
+        "Peon",
+        "Sweeper",
+        "Other"
+    ];
 
     useEffect(() => {
         if (staff) {
@@ -70,7 +62,7 @@ const StaffModal = ({ staff, onClose }) => {
             setEmail(staff.email || '');
             setPassword(''); // Don't populate password
             setPhone(staff.phone || '');
-            setDesignation(staff.designation?._id || '');
+            setDesignation(staff.designation || '');
             setCampus(staff.campus?._id || '');
             setSalary(staff.salary || '');
             setJoiningDate(staff.joiningDate || new Date().toISOString());
@@ -211,7 +203,7 @@ const StaffModal = ({ staff, onClose }) => {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {designations.map(d => (
-                                            <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                            <SelectItem key={d} value={d}>{d}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>

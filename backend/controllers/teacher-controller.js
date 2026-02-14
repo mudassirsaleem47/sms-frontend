@@ -77,11 +77,15 @@ const updateTeacher = async (req, res) => {
             updateData.password = await bcrypt.hash(updateData.password, salt);
         }
 
+        if (updateData.assignedClasses && !Array.isArray(updateData.assignedClasses)) {
+            updateData.assignedClasses = [updateData.assignedClasses];
+        }
+
         const updatedTeacher = await Teacher.findByIdAndUpdate(
             id,
             updateData,
             { new: true, runValidators: true }
-        ).select('-password');
+        ).select('-password').populate('assignedClasses', 'sclassName');
 
         if (!updatedTeacher) {
             return res.status(404).json({ message: "Teacher not found." });

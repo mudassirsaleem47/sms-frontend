@@ -25,4 +25,7 @@ export default defineConfig({
       "react-draggable": path.resolve(__dirname, "node_modules/react-draggable/build/cjs/cjs.js").replace(/\\/g, '/'),
     },
   },
+  server: {
+    host: true
+  }
 })

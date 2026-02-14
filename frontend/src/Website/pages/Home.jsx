@@ -198,7 +198,6 @@ function Home() {
         <div className="container mx-auto px-6 relative z-10 text-center">
           <FadeIn>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold mb-8 hover:bg-primary/10 transition-colors cursor-pointer">
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping block absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               New Feature: AI-Powered Analytics is now live!
             </div>

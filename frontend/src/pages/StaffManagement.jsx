@@ -45,7 +45,18 @@ const StaffManagement = () => {
     const { showToast } = useToast();
     const navigate = useNavigate();
     const [staff, setStaff] = useState([]);
-    const [designations, setDesignations] = useState([]);
+    const designations = [
+        "Accountant",
+        "Teacher",
+        "Librarian",
+        "Receptionist",
+        "Admin Staff",
+        "Driver",
+        "Security Guard",
+        "Peon",
+        "Sweeper",
+        "Other"
+    ];
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
@@ -55,11 +66,10 @@ const StaffManagement = () => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
 
-    // Fetch staff and designations
+    // Fetch staff
     useEffect(() => {
         if (currentUser && currentUser._id) {
             fetchStaff();
-            fetchDesignations();
         }
     }, [currentUser]);
 
@@ -75,17 +85,6 @@ const StaffManagement = () => {
             showToast('Failed to load staff', 'error');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchDesignations = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/Designations/${currentUser._id}`);
-            if (response.data.success) {
-                setDesignations(response.data.designations.filter(d => d.isActive === 'active'));
-            }
-        } catch (error) {
-            console.error('Error fetching designations:', error);
         }
     };
 
@@ -137,7 +136,7 @@ const StaffManagement = () => {
     // Filter staff based on active tab
     const filteredStaff = activeTab === 'all'
         ? staff
-        : staff.filter(s => s.designation?._id === activeTab);
+        : staff.filter(s => s.designation === activeTab);
 
     if (loading) {
         return (
@@ -155,9 +154,6 @@ const StaffManagement = () => {
                     <p className="text-muted-foreground mt-1">Manage your staff members and designations</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => navigate('/admin/designations')}>
-                        <Briefcase className="mr-2 h-4 w-4" /> Add Designation
-                    </Button>
                     <Button onClick={handleAddStaff}>
                         <Plus className="mr-2 h-4 w-4" /> Add Staff
                     </Button>
@@ -211,14 +207,14 @@ const StaffManagement = () => {
                                     All Staff ({totalStaff})
                                 </TabsTrigger>
                                 {designations.map(designation => {
-                                    const count = staff.filter(s => s.designation?._id === designation._id).length;
+                                    const count = staff.filter(s => s.designation === designation).length;
                                     return (
                                         <TabsTrigger
-                                            key={designation._id} 
-                                            value={designation._id}
+                                            key={designation}
+                                            value={designation}
                                             className="px-4 py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                                         >
-                                            {designation.name} ({count})
+                                            {designation} ({count})
                                         </TabsTrigger>
                                     );
                                 })}
@@ -280,7 +276,7 @@ const StaffManagement = () => {
                                                 {staffMember.designation ? (
                                                     <Badge variant="outline" className="font-medium">
                                                         <Briefcase className="mr-1 w-3 h-3" />
-                                                        {staffMember.designation.name}
+                                                            {staffMember.designation}
                                                     </Badge>
                                                 ) : (
                                                         <span className="text-muted-foreground text-sm">-</span>

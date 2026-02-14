@@ -1,29 +1,29 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { RegisterForm } from '../components/register-form';
 import { Shield, GraduationCap } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AdminRegisterPage = () => {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-foreground">
             {/* Navigation Tabs */}
             <div className="w-full max-w-md mb-6">
-                <div className="bg-card rounded-lg shadow-md p-2 flex gap-2">
-                    <Link
-                        to="/AdminLogin"
-                        className="flex-1 px-6 py-3 bg-muted text-muted-foreground rounded-lg font-medium text-center transition hover:bg-muted/80 flex items-center justify-center gap-2"
-                    >
-                        <Shield className="w-5 h-5" />
-                        Login
-                    </Link>
-                    <Link
-                        to="/AdminRegister"
-                        className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium text-center transition hover:bg-primary/90 flex items-center justify-center gap-2"
-                    >
-                        <GraduationCap className="w-5 h-5" />
-                        Register
-                    </Link>
-                </div>
+                <Tabs defaultValue="register" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="login" asChild>
+                            <Link to="/AdminLogin" className="flex items-center gap-2">
+                                <Shield className="w-4 h-4" />
+                                Login
+                            </Link>
+                        </TabsTrigger>
+                        <TabsTrigger value="register" asChild>
+                            <Link to="/AdminRegister" className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4" />
+                                Register
+                            </Link>
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </div>
 
             {/* Register Form */}

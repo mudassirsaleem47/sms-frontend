@@ -1,5 +1,4 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LoginForm } from '../components/login-form';
 import { TeacherLoginForm } from '../components/teacher-login-form';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -11,6 +10,7 @@ const AdminLoginPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background text-foreground">
       <div className="w-full max-w-md">
+        {/* Existing Admin/Teacher Tabs */}
         <Tabs defaultValue="admin" className="w-full">
           {/* Navigation Tabs */}
           <TabsList className="grid w-full grid-cols-2 mb-6">

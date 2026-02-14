@@ -116,8 +116,7 @@ const adminNavData = [
       title: 'Staff Management',
       icon: IconUsers,
       items: [
-          { title: 'Staff List', url: '/admin/staff' },
-          { title: 'Designations', url: '/admin/designations' },
+        { title: 'Staff List', url: '/admin/staff' },
       ]
   },
   {
@@ -170,7 +169,18 @@ const teacherNavData = [
       { title: 'My Students', url: '/teacher/students' },
     ]
   },
-  { title: 'Class Schedule', url: '/teacher/class-schedule', icon: IconCalendar },
+  {
+    title: 'Academics',
+    icon: IconBook,
+    items: [
+      { title: 'Classes', url: '/teacher/classes' },
+      { title: 'Subjects', url: '/teacher/subjects' },
+      { title: 'Subject Groups', url: '/teacher/subject-groups' },
+      { title: 'Class Schedule', url: '/teacher/class-schedule' },
+      { title: 'Teacher Schedule', url: '/teacher/teacher-schedule' },
+      { title: 'Promote Students', url: '/teacher/promote' },
+    ]
+  },
   {
     title: 'Attendance',
     icon: IconBook,

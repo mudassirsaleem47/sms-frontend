@@ -1,5 +1,4 @@
 const Staff = require('../models/staffSchema.js');
-const Designation = require('../models/designationSchema.js');
 const bcrypt = require('bcryptjs');
 
 // Create new staff member
@@ -12,15 +11,6 @@ const createStaff = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Name, email, password, designation, and school are required'
-            });
-        }
-
-        // Validate designation exists
-        const designationDoc = await Designation.findById(designation);
-        if (!designationDoc) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid designation'
             });
         }
 
@@ -44,7 +34,7 @@ const createStaff = async (req, res) => {
             password: hashedPassword,
             phone,
             designation,
-            role: designationDoc.name, // Store designation name in role for backward compatibility
+            role: designation, // Store designation in role field directly
             school,
             campus,
             ...otherFields
@@ -58,7 +48,7 @@ const createStaff = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: `${designationDoc.name} created successfully`,
+            message: `${designation} created successfully`,
             staff: staffResponse
         });
     } catch (error) {
@@ -84,7 +74,6 @@ const getStaffBySchool = async (req, res) => {
         const staff = await Staff.find(filter)
             .populate('school', 'schoolName email')
             .populate('campus', 'campusName campusCode')
-            .populate('designation', 'name description')
             .populate('assignedClasses', 'sclassName')
             .select('-password')
             .sort({ createdAt: -1 });
@@ -112,7 +101,6 @@ const getStaffById = async (req, res) => {
         const staff = await Staff.findById(id)
             .populate('school', 'schoolName email')
             .populate('campus', 'campusName campusCode')
-            .populate('designation', 'name description')
             .populate('assignedClasses', 'sclassName')
             .select('-password');
 
@@ -154,7 +142,6 @@ const updateStaff = async (req, res) => {
         )
             .populate('school', 'schoolName email')
             .populate('campus', 'campusName campusCode')
-            .populate('designation', 'name description')
             .select('-password');
 
         if (!staff) {
@@ -266,8 +253,7 @@ const staffLogin = async (req, res) => {
         // Find staff by email
         const staff = await Staff.findOne({ email })
             .populate('school', 'schoolName')
-            .populate('campus', 'campusName')
-            .populate('designation', 'name description');
+            .populate('campus', 'campusName');
 
         if (!staff) {
             return res.status(404).json({

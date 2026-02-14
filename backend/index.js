@@ -16,7 +16,7 @@ app.use(cors({
     origin: [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
-        'http://192.168.10.5:5173',  // Old IP
+        'http://192.168.10.4:5173',  // Current Network IP
         'http://192.168.10.21:5173'  // Your local network IP
     ],
     credentials: true
@@ -46,7 +46,7 @@ mongoose
         console.log("✅ MongoDB Connected Successfully");
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`🚀 Server started on port ${PORT}`);
-            console.log(`📱 Access from other devices: http://192.168.10.21:${PORT}`);
+            console.log(`📱 Access from other devices: http://192.168.10.4:${PORT}`);
         });
     })
     .catch((err) => {
