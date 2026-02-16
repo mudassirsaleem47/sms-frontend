@@ -64,6 +64,8 @@ import ParentAttendance from './pages/Parent/ParentAttendance';
 import ParentFees from './pages/Parent/ParentFees';
 import ParentHomework from './pages/Parent/ParentHomework';
 import ParentReportCard from './pages/Parent/ParentReportCard';
+import AccountantDashboard from './pages/Accountant/AccountantDashboard';
+import ReceptionistDashboard from './pages/ReceptionistDashboard';
 
 
 
@@ -83,8 +85,10 @@ function App() {
               <Route path="/" element={<Home />} />
 
               {/* Admin Auth Routes */}
-              <Route path="/AdminLogin" element={<AdminLoginPage />} />
-              <Route path="/AdminRegister" element={<AdminRegisterPage />} />
+              <Route path="/login" element={<AdminLoginPage />} />
+              <Route path="/AdminLogin" element={<Navigate to="/login" replace />} />
+              <Route path="/register" element={<AdminRegisterPage />} />
+              <Route path="/AdminRegister" element={<Navigate to="/register" replace />} />
 
 
 
@@ -179,6 +183,29 @@ function App() {
                   <Route path="homework" element={<ParentHomework />} />
                   <Route path="fees" element={<ParentFees />} />
                   <Route path="fees/history" element={<ParentFees />} />
+                  <Route path="settings" element={<SettingsProfile />} />
+                </Route>
+
+                {/* Accountant Protected Routes */}
+                <Route path="/accountant" element={<AdminLayout />}>
+                  <Route index element={<AccountantDashboard />} />
+                  <Route path="dashboard" element={<AccountantDashboard />} />
+                  <Route path="fee-collection" element={<FeeCollection />} />
+                  <Route path="fee-reports" element={<FeeReports />} />
+                  <Route path="income" element={<IncomeManagement />} />
+                  <Route path="expense" element={<ExpenseManagement />} />
+                  <Route path="settings" element={<SettingsProfile />} />
+                </Route>
+
+                {/* Receptionist Protected Routes */}
+                <Route path="/receptionist" element={<AdminLayout />}>
+                  <Route index element={<ReceptionistDashboard />} />
+                  <Route path="dashboard" element={<ReceptionistDashboard />} />
+                  <Route path="visitor-book" element={<VisitorBook />} />
+                  <Route path="admission-enquiry" element={<AdmissionEnquiry />} />
+                  <Route path="call-logs" element={<PhoneCallLog />} />
+                  <Route path="complaints" element={<ComplainPage />} />
+                  <Route path="settings" element={<SettingsProfile />} />
                 </Route>
 
               </Route>

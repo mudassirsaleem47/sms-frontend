@@ -96,14 +96,18 @@ const PhoneCallLog = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const schoolId = currentUser._id;
-            setPhoneCalls([]);
-            
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            setPhoneCalls([]); // Clear old list
+
             const response = await axios.get(`${API_BASE}/PhoneCalls/${schoolId}`);
-            setPhoneCalls(Array.isArray(response.data) ? response.data : []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Error loading phone calls");
+            if (response.data && Array.isArray(response.data)) {
+                setPhoneCalls(response.data);
+            } else {
+                setPhoneCalls([]);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Error fetching phone calls');
         } finally {
             setLoading(false);
         }
@@ -117,7 +121,8 @@ const PhoneCallLog = () => {
 
     const handleFormSubmit = async (formData) => {
         try {
-            const dataToSend = { ...formData, school: currentUser._id };
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const dataToSend = { ...formData, school: schoolId };
             
             if (currentCall) {
                 // UPDATE

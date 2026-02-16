@@ -111,7 +111,7 @@ const CampusSelector = () => {
                         <CommandGroup>
                             <CommandItem onSelect={handleAddClick} className="cursor-pointer text-primary font-medium hover:bg-primary/10 hover:text-primary transition-colors">
                                 <Plus className="mr-2 h-4 w-4" />
-                                Add Campus
+                                Add campus
                             </CommandItem>
                         </CommandGroup>
                     </CommandList>

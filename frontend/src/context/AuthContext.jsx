@@ -45,11 +45,12 @@ export const AuthContextProvider = ({ children }) => {
         try {
             const res = await axios.post(LOGIN_URL, credentials);
             const userData = { ...res.data, userType: 'admin' };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
             setCurrentUser(userData);
             setLoading(false);
-            return userData;
+            return userData; // Return full user data including type
         } catch (err) {
-            setError(err.response?.data?.message || "Login failed. Check server status.");
+            setError(err.response?.data?.message || "Login failed");
             setLoading(false);
             throw err;
         }
@@ -62,11 +63,12 @@ export const AuthContextProvider = ({ children }) => {
         try {
             const res = await axios.post(TEACHER_LOGIN_URL, credentials);
             const userData = { ...res.data.teacher, userType: 'teacher' };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
             setCurrentUser(userData);
             setLoading(false);
             return userData; 
         } catch (err) {
-            setError(err.response?.data?.message || "Login failed. Check server status.");
+            setError(err.response?.data?.message || "Login failed");
             setLoading(false);
             throw err; 
         }
@@ -77,36 +79,63 @@ export const AuthContextProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.post(`${API_URL}/StudentLogin`, credentials);
+            const res = await axios.post(STUDENT_LOGIN_URL, credentials);
             const userData = { ...res.data, userType: 'parent' }; // Treat student login as parent view
+            localStorage.setItem('currentUser', JSON.stringify(userData));
             setCurrentUser(userData);
             setLoading(false);
             return userData;
         } catch (err) {
-            setError(err.response?.data?.message || "Login failed. Check server status.");
+            setError(err.response?.data?.message || "Login failed");
+            setLoading(false);
+            throw err;
+        }
+    };
+
+    // Staff Login (Accountant, etc.)
+    const staffLogin = async (credentials) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await axios.post(`${API_URL}/StaffLogin`, credentials);
+            const staff = res.data.staff;
+            const role = staff.role || staff.designation;
+
+            // Determine userType based on role for frontend routing (Case Insensitive)
+            let userType = 'staff';
+            const normalizeRole = role ? role.toLowerCase() : '';
+
+            if (normalizeRole === 'accountant') userType = 'accountant';
+            else if (normalizeRole === 'teacher') userType = 'teacher';
+            else if (normalizeRole === 'receptionist') userType = 'receptionist';
+            else if (normalizeRole === 'admin') userType = 'admin';
+
+            const userData = { ...staff, userType: userType };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            setCurrentUser(userData);
+            setLoading(false);
+            return userData;
+        } catch (err) {
+            setError(err.response?.data?.message || "Login failed");
             setLoading(false);
             throw err;
         }
     };
 
     const logout = () => {
-        const userType = currentUser?.userType;
-        setCurrentUser(null);
-        setError(null);
-
         try {
-            localStorage.clear();
-        } catch (error) {
-            console.warn("LocalStorage clear failed:", error);
+            localStorage.removeItem('currentUser');
+        } catch (e) {
+            console.warn("LocalStorage clear failed:", e);
         }
-
+        setCurrentUser(null);
         setTimeout(() => {
-            window.location.href = '/AdminLogin';
+            window.location.href = '/login';
         }, 100);
     };
 
     return (
-        <AuthContext.Provider value={{ currentUser, setCurrentUser, loading, error, login, teacherLogin, parentLogin, logout }}>
+        <AuthContext.Provider value={{ currentUser, setCurrentUser, loading, error, login, teacherLogin, parentLogin, staffLogin, logout }}>
             {children}
         </AuthContext.Provider>
     );

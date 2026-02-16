@@ -82,7 +82,7 @@ const AdmissionEnquiry = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const schoolId = currentUser._id;
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
 
             const [enqRes, classRes, teachRes] = await Promise.all([
                 axios.get(`${API_BASE}/EnquiryList/${schoolId}`),
@@ -110,7 +110,8 @@ const AdmissionEnquiry = () => {
     // Add/Edit Submit Logic
     const handleFormSubmit = async (formData) => {
         try {
-            const dataToSend = { ...formData, school: currentUser._id };
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const dataToSend = { ...formData, school: schoolId };
             
             // Check if it's an update (has _id) or a new creation (no _id or it's a copy)
             // Note: Copies have undefined _id, so they fall into the 'else' block

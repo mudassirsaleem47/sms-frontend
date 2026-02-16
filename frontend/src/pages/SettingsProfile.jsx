@@ -123,6 +123,18 @@ const SettingsProfile = () => {
     const [loading, setLoading] = useState(false);
     const [activeSection, setActiveSection] = useState('general');
 
+    // Role Helpers
+    const isTeacher = currentUser?.userType === 'teacher';
+    const isParent = currentUser?.userType === 'parent';
+    const isAccountant = currentUser?.userType === 'accountant';
+    const isReceptionist = currentUser?.userType === 'receptionist';
+    const isAdmin = !isTeacher && !isParent && !isAccountant && !isReceptionist;
+
+    // Filter Navigation Items
+    const filteredNavItems = isAdmin
+        ? NAV_ITEMS
+        : NAV_ITEMS.filter(item => ['general', 'security'].includes(item.id));
+
     // --- Messaging State ---
     const [activeMsgTab, setActiveMsgTab] = useState('whatsapp');
     const [whatsappStatus, setWhatsappStatus] = useState('disconnected');
@@ -218,34 +230,59 @@ const SettingsProfile = () => {
     // --- Handlers ---
     const fetchSettings = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Admin/${currentUser._id}`);
-            const data = res.data;
-            setFormData({
-                name: data.name || '', email: data.email || '', schoolName: data.schoolName || '',
-                address: data.address || '', phoneNumber: data.phoneNumber || '', website: data.website || ''
-            });
-            if (data.schoolLogo) {
-                setLogoPreview(data.schoolLogo.startsWith('http') ? data.schoolLogo : `${API_BASE}/${data.schoolLogo}`);
-            }
+            if (isAdmin) {
+                const res = await axios.get(`${API_BASE}/Admin/${currentUser._id}`);
+                const data = res.data;
+                setFormData({
+                    name: data.name || '', email: data.email || '', schoolName: data.schoolName || '',
+                    address: data.address || '', phoneNumber: data.phoneNumber || '', website: data.website || ''
+                });
+                if (data.schoolLogo) {
+                    setLogoPreview(data.schoolLogo.startsWith('http') ? data.schoolLogo : `${API_BASE}/${data.schoolLogo}`);
+                }
 
-            // Fetch Messaging Settings
-            const msgRes = await axios.get(`${API_BASE}/MessagingSettings/${currentUser._id}`);
-            if (msgRes.data) {
-                if (msgRes.data.whatsapp) {
-                    setWhatsappStatus(msgRes.data.whatsapp.connected ? 'connected' : 'disconnected');
-                    setWhatsappNumber(msgRes.data.whatsapp.phoneNumber || '');
+                // Fetch Messaging Settings (Admin Only)
+                const msgRes = await axios.get(`${API_BASE}/MessagingSettings/${currentUser._id}`);
+                if (msgRes.data) {
+                    if (msgRes.data.whatsapp) {
+                        setWhatsappStatus(msgRes.data.whatsapp.connected ? 'connected' : 'disconnected');
+                        setWhatsappNumber(msgRes.data.whatsapp.phoneNumber || '');
+                    }
+                    if (msgRes.data.email) {
+                        setEmailConfig({
+                            smtpHost: msgRes.data.email.smtpHost || '',
+                            smtpPort: msgRes.data.email.smtpPort || '587',
+                            smtpUser: msgRes.data.email.smtpUser || '',
+                            smtpPassword: '', // Don't return password
+                            senderName: msgRes.data.email.senderName || '',
+                            senderEmail: msgRes.data.email.senderEmail || ''
+                        });
+                        setEmailStatus(msgRes.data.email.verified ? 'connected' : 'disconnected');
+                    }
                 }
-                if (msgRes.data.email) {
-                    setEmailConfig({
-                        smtpHost: msgRes.data.email.smtpHost || '',
-                        smtpPort: msgRes.data.email.smtpPort || '587',
-                        smtpUser: msgRes.data.email.smtpUser || '',
-                        smtpPassword: '', // Don't return password
-                        senderName: msgRes.data.email.senderName || '',
-                        senderEmail: msgRes.data.email.senderEmail || ''
-                    });
-                    setEmailStatus(msgRes.data.email.verified ? 'connected' : 'disconnected');
-                }
+            } else if (isTeacher || isParent) {
+                // For Teacher/Parent, we rely on currentUser as GET endpoints might strictly differ 
+                // or we can implement them later. currentUser usually has the latest basic info on login.
+                setFormData({
+                    name: currentUser.name || '',
+                    email: currentUser.email || '',
+                    schoolName: '', // Not applicable
+                    address: '', // Not always available/editable
+                    phoneNumber: currentUser.phone || '',
+                    website: ''
+                });
+            } else if (isAccountant || isReceptionist) {
+                // Staff
+                const res = await axios.get(`${API_BASE}/StaffDetail/${currentUser._id}`);
+                const data = res.data;
+                setFormData({
+                    name: data.name || '',
+                    email: data.email || '',
+                    schoolName: '',
+                    address: '',
+                    phoneNumber: data.phone || '',
+                    website: ''
+                });
             }
         } catch (err) { showToast("Failed to load settings", "error"); }
     };
@@ -348,13 +385,41 @@ const SettingsProfile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const data = new FormData();
-            Object.keys(formData).forEach(key => data.append(key, formData[key]));
-            if (logo) data.append('schoolLogo', logo);
-            const res = await axios.put(`${API_BASE}/Admin/${currentUser._id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
-            setCurrentUser(res.data);
+            // Determine Endpoint based on Role
+            let endpoint = `${API_BASE}/Admin/${currentUser._id}`;
+            if (isTeacher) endpoint = `${API_BASE}/Teacher/${currentUser._id}`;
+            else if (isParent) endpoint = `${API_BASE}/Student/${currentUser._id}`;
+            else if (isAccountant || isReceptionist) endpoint = `${API_BASE}/Staff/${currentUser._id}`;
+
+            if (isAdmin) {
+                const data = new FormData();
+                Object.keys(formData).forEach(key => data.append(key, formData[key]));
+                if (logo) data.append('schoolLogo', logo);
+                const res = await axios.put(endpoint, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+                setCurrentUser({ ...currentUser, ...res.data });
+            } else {
+                // For non-admins, typically simple JSON update or specific fields
+                // Teachers/Staff might use PUT without FormData if no image upload supported yet, 
+                // BUT updateTeacher/Student/Staff supports generic updates.
+                // We'll send JSON for simplicity unless photo upload is required (not implemented in UI for non-admins here yet)
+                const payload = {
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phoneNumber,
+                    // address: formData.address // Add if supported by backend schema
+                };
+                const res = await axios.put(endpoint, payload);
+                // Merge response into currentUser to keep session fresh
+                // Note: response structure might vary (res.data.teacher vs res.data)
+                const refinedUser = res.data.teacher || res.data.student || res.data.staff || res.data;
+                setCurrentUser({ ...currentUser, ...refinedUser });
+            }
+
             showToast("Settings updated!", "success");
-        } catch (err) { showToast("Failed to update settings", "error"); }
+        } catch (err) {
+            console.error(err);
+            showToast("Failed to update settings", "error");
+        }
         finally { setLoading(false); }
     };
 
@@ -415,7 +480,7 @@ const SettingsProfile = () => {
                 {/* Left Navigation */}
                 <nav className="w-64 shrink-0 hidden lg:block self-start sticky top-6">
                     <div className="space-y-1">
-                        {NAV_ITEMS.map((item) => {
+                        {filteredNavItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = activeSection === item.id;
                             return (
@@ -446,7 +511,7 @@ const SettingsProfile = () => {
                 <div className="lg:hidden w-full mb-6">
                     <ScrollArea className="w-full">
                         <div className="flex gap-2 pb-2">
-                            {NAV_ITEMS.map((item) => {
+                            {filteredNavItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = activeSection === item.id;
                                 return (
@@ -478,76 +543,89 @@ const SettingsProfile = () => {
                             />
 
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* School Branding */}
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-base">School Branding</CardTitle>
-                                        <CardDescription>Upload your school logo and identity information.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex flex-col sm:flex-row items-start gap-6">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="relative group">
-                                                    <input type="file" hidden onChange={handleLogoChange} accept="image/*" id="logo-upload" />
-                                                    <label htmlFor="logo-upload" className="cursor-pointer block">
-                                                        <Avatar className="h-24 w-24 border-2 border-dashed border-muted-foreground/25 hover:border-primary transition-colors">
-                                                            <AvatarImage src={logoPreview} alt="School Logo" />
-                                                            <AvatarFallback className="bg-primary/5 text-primary">
-                                                                <Building className="h-8 w-8" />
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Upload className="text-white h-5 w-5" />
-                                                        </div>
-                                                    </label>
+                                {isAdmin && (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-base">School Branding</CardTitle>
+                                            <CardDescription>Upload your school logo and identity information.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="flex flex-col sm:flex-row items-start gap-6">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div className="relative group">
+                                                        <input type="file" hidden onChange={handleLogoChange} accept="image/*" id="logo-upload" />
+                                                        <label htmlFor="logo-upload" className="cursor-pointer block">
+                                                            <Avatar className="h-24 w-24 border-2 border-dashed border-muted-foreground/25 hover:border-primary transition-colors">
+                                                                <AvatarImage src={logoPreview} alt="School Logo" />
+                                                                <AvatarFallback className="bg-primary/5 text-primary">
+                                                                    <Building className="h-8 w-8" />
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Upload className="text-white h-5 w-5" />
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                    <p className="text-[11px] text-muted-foreground">PNG, JPG up to 5MB</p>
                                                 </div>
-                                                <p className="text-[11px] text-muted-foreground">PNG, JPG up to 5MB</p>
-                                            </div>
 
-                                            <div className="flex-1 w-full space-y-4">
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="schoolName">School Name <span className="text-destructive">*</span></Label>
-                                                        <Input id="schoolName" value={formData.schoolName} onChange={(e) => handleChange('schoolName', e.target.value)} placeholder="Your school name" required />
+                                                <div className="flex-1 w-full space-y-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="schoolName">School Name <span className="text-destructive">*</span></Label>
+                                                            <Input id="schoolName" value={formData.schoolName} onChange={(e) => handleChange('schoolName', e.target.value)} placeholder="Your school name" required />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="website">Website</Label>
+                                                            <Input id="website" value={formData.website} onChange={(e) => handleChange('website', e.target.value)} placeholder="https://example.com" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="phone">Phone Number</Label>
+                                                            <Input id="phone" value={formData.phoneNumber} onChange={(e) => handleChange('phoneNumber', e.target.value)} placeholder="+92 300 1234567" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+                                                            <Input id="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="admin@school.com" required />
+                                                        </div>
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label htmlFor="website">Website</Label>
-                                                        <Input id="website" value={formData.website} onChange={(e) => handleChange('website', e.target.value)} placeholder="https://example.com" />
+                                                        <Label htmlFor="address">Address</Label>
+                                                        <Textarea id="address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="Full school address..." rows={2} />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="phone">Phone Number</Label>
-                                                        <Input id="phone" value={formData.phoneNumber} onChange={(e) => handleChange('phoneNumber', e.target.value)} placeholder="+92 300 1234567" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
-                                                        <Input id="email" type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} placeholder="admin@school.com" required />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="address">Address</Label>
-                                                    <Textarea id="address" value={formData.address} onChange={(e) => handleChange('address', e.target.value)} placeholder="Full school address..." rows={2} />
                                                 </div>
                                             </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                        </CardContent>
+                                    </Card>
+                                )}
 
                                 {/* Admin Profile */}
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle className="text-base">Admin Profile</CardTitle>
-                                        <CardDescription>Your personal admin account information.</CardDescription>
+                                        <CardTitle className="text-base">{isAdmin ? "Admin Profile" : "Profile Information"}</CardTitle>
+                                        <CardDescription>{isAdmin ? "Your personal admin account information." : "Update your personal details."}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="adminName">Full Name <span className="text-destructive">*</span></Label>
-                                                <Input id="adminName" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Admin name" required />
+                                                <Input id="adminName" value={formData.name} onChange={(e) => handleChange('name', e.target.value)} placeholder="Full Name" required />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Role</Label>
-                                                <Input value="Administrator" disabled className="bg-muted" />
+                                                <Input value={currentUser?.userType ? (currentUser.userType.charAt(0).toUpperCase() + currentUser.userType.slice(1)) : "User"} disabled className="bg-muted" />
                                             </div>
+                                            {!isAdmin && (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="userEmail">Email</Label>
+                                                        <Input id="userEmail" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} required />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="userPhone">Phone</Label>
+                                                        <Input id="userPhone" value={formData.phoneNumber} onChange={(e) => handleChange('phoneNumber', e.target.value)} />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>

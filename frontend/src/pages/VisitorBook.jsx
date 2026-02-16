@@ -87,12 +87,12 @@ const VisitorBook = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const schoolId = currentUser._id;
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const response = await axios.get(`${API_BASE}/Visitors/${schoolId}`);
-            setVisitors(Array.isArray(response.data) ? response.data : []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Error loading visitors");
+            setVisitors(response.data);
+        } catch (error) {
+            console.error(error);
+            toast.error('Error fetching visitors');
         } finally {
             setLoading(false);
         }
@@ -153,7 +153,8 @@ const VisitorBook = () => {
 
     const handleFormSubmit = async (formData) => {
         try {
-            const payload = { ...formData, adminID: currentUser._id, school: currentUser._id };
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const payload = { ...formData, adminID: currentUser._id, school: schoolId };
 
             if (modalMode === "add") {
                 const res = await axios.post(`${API_BASE}/VisitorCreate`, payload);

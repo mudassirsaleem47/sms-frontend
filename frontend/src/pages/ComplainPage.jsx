@@ -90,7 +90,8 @@ const ComplainPage = () => {
     const fetchComplains = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${API_BASE}/Complains/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/Complains/${schoolId}`);
             setComplains(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error(error);
@@ -100,7 +101,6 @@ const ComplainPage = () => {
         }
     };
 
-    // --- 2. Action Handlers ---
     // --- 2. Action Handlers ---
     const handleAdd = () => {
         setSelectedComplain(null);
@@ -139,7 +139,8 @@ const ComplainPage = () => {
     const handleSubmit = async (formData) => {
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append('school', currentUser._id);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            formDataToSend.append('school', schoolId);
             
             Object.keys(formData).forEach(key => {
                 if (formData[key] !== null && formData[key] !== undefined) {

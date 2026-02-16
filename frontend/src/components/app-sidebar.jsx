@@ -212,6 +212,40 @@ const parentNavData = [
   },
 ]
 
+const accountantNavData = [
+  { title: 'Dashboard', url: '/accountant/dashboard', icon: IconSchool },
+  {
+    title: 'Fees Management',
+    icon: IconCurrencyDollar,
+    items: [
+      { title: 'Collect Fees', url: '/accountant/fee-collection' },
+      { title: 'Fee Reports', url: '/accountant/fee-reports' },
+    ]
+  },
+  {
+    title: 'Finance',
+    icon: IconWallet,
+    items: [
+      { title: 'Income', url: '/accountant/income' },
+      { title: 'Expense', url: '/accountant/expense' },
+    ]
+  },
+]
+
+const receptionistNavData = [
+  { title: 'Dashboard', url: '/receptionist/dashboard', icon: IconSchool },
+  {
+    title: 'Front Office',
+    icon: IconBriefcase,
+    items: [
+      { title: 'Visitor Book', url: '/receptionist/visitor-book' },
+      { title: 'Admission Enquiry', url: '/receptionist/admission-enquiry' },
+      { title: 'Call Logs', url: '/receptionist/call-logs' },
+      { title: 'Complaints', url: '/receptionist/complaints' },
+    ]
+  },
+]
+
 const teacherFooterData = [
   { title: 'Settings', url: '/teacher/settings', icon: IconSettings },
 ]
@@ -222,15 +256,26 @@ export function AppSidebar({
   const { currentUser } = useAuth();
   const isTeacher = currentUser?.userType === 'teacher';
   const isParent = currentUser?.userType === 'parent';
+  const isAccountant = currentUser?.userType === 'accountant';
+  const isReceptionist = currentUser?.userType === 'receptionist';
 
   // Select nav data based on role
-  const navData = isTeacher ? teacherNavData : (isParent ? parentNavData : adminNavData);
-  const footerData = isTeacher ? teacherFooterData : adminFooterData; // Parent can share footer for now
+  let navData = adminNavData;
+  if (isTeacher) navData = teacherNavData;
+  else if (isParent) navData = parentNavData;
+  else if (isAccountant) navData = accountantNavData;
+  else if (isReceptionist) navData = receptionistNavData;
+
+  let footerData = adminFooterData;
+  if (isTeacher) footerData = [{ title: 'Settings', url: '/teacher/settings', icon: IconSettings }];
+  else if (isParent) footerData = [{ title: 'Settings', url: '/parent/settings', icon: IconSettings }];
+  else if (isAccountant) footerData = [{ title: 'Settings', url: '/accountant/settings', icon: IconSettings }];
+  else if (isReceptionist) footerData = [{ title: 'Settings', url: '/receptionist/settings', icon: IconSettings }];
 
   // Prepare user data for NavUser component
   const userData = {
-    name: currentUser?.name || (isTeacher ? "Teacher" : (isParent ? "Parent" : "Admin")),
-    email: currentUser?.email || (isTeacher ? "teacher@school.com" : (isParent ? "parent@school.com" : "admin@school.com")),
+    name: currentUser?.name || (isTeacher ? "Teacher" : (isParent ? "Parent" : (isAccountant ? "Accountant" : (isReceptionist ? "Receptionist" : "Admin")))),
+    email: currentUser?.email || (isTeacher ? "teacher@school.com" : (isParent ? "parent@school.com" : (isAccountant ? "accountant@school.com" : (isReceptionist ? "receptionist@school.com" : "admin@school.com")))),
     avatar: currentUser?.avatar || "/avatars/admin.png",
   };
 

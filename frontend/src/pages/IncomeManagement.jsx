@@ -136,9 +136,10 @@ const IncomeManagement = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const [statsRes, entriesRes] = await Promise.all([
-        axios.get(`${API_BASE}/IncomeStatistics/${currentUser._id}`),
-        axios.get(`${API_BASE}/Income/${currentUser._id}`)
+        axios.get(`${API_BASE}/IncomeStatistics/${schoolId}`),
+        axios.get(`${API_BASE}/Income/${schoolId}`)
       ]);
 
       setStatistics(statsRes.data);
@@ -169,10 +170,11 @@ const IncomeManagement = () => {
         return;
       }
 
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
-        school: currentUser._id,
+        school: schoolId,
         createdBy: currentUser._id
       };
 

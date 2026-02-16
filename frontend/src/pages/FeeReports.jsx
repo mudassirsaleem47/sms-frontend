@@ -93,9 +93,10 @@ const FeeReports = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const [pendingRes, transactionsRes] = await Promise.all([
-        axios.get(`${API_BASE}/PendingFees/${currentUser._id}`),
-        axios.get(`${API_BASE}/FeeTransactions/${currentUser._id}`, {
+        axios.get(`${API_BASE}/PendingFees/${schoolId}`),
+        axios.get(`${API_BASE}/FeeTransactions/${schoolId}`, {
           params: apiDateFilter
         })
       ]);

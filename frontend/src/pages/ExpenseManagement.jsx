@@ -137,9 +137,10 @@ const ExpenseManagement = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const [statsRes, entriesRes] = await Promise.all([
-        axios.get(`${API_BASE}/ExpenseStatistics/${currentUser._id}`),
-        axios.get(`${API_BASE}/Expense/${currentUser._id}`)
+        axios.get(`${API_BASE}/ExpenseStatistics/${schoolId}`),
+        axios.get(`${API_BASE}/Expense/${schoolId}`)
       ]);
 
       setStatistics(statsRes.data);
@@ -170,10 +171,11 @@ const ExpenseManagement = () => {
         return;
       }
 
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
-        school: currentUser._id,
+        school: schoolId,
         createdBy: currentUser._id
       };
 

@@ -45,3 +45,6 @@ backend/whatsapp_sessions/
 whatsapp_sessions/
 backend/.wwebjs_cache/
 .wwebjs_cache/
+
+# Stakpak session files
+.stakpak/session*

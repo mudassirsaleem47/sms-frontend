@@ -78,7 +78,8 @@ const FeeCollection = () => {
 
   const fetchStudents = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
+        const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+        const response = await axios.get(`${API_BASE}/Students/${schoolId}`);
       setStudents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching students', 'error');
