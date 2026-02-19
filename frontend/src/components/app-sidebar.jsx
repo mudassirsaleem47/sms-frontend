@@ -116,7 +116,9 @@ const adminNavData = [
       title: 'Staff Management',
       icon: IconUsers,
       items: [
-        { title: 'Staff List', url: '/admin/staff' },
+        { title: 'Teachers', url: '/admin/teachers' },
+        { title: 'Accountants', url: '/admin/accountants' },
+        { title: 'Receptionists', url: '/admin/receptionists' },
       ]
   },
   {
@@ -244,10 +246,6 @@ const receptionistNavData = [
       { title: 'Complaints', url: '/receptionist/complaints' },
     ]
   },
-]
-
-const teacherFooterData = [
-  { title: 'Settings', url: '/teacher/settings', icon: IconSettings },
 ]
 
 export function AppSidebar({

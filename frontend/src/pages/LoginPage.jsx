@@ -2,7 +2,6 @@ import React from 'react';
 import { LoginForm } from '../components/login-form';
 import { TeacherLoginForm } from '../components/teacher-login-form';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Shield, GraduationCap } from 'lucide-react';
 
 const LoginPage = () => {
   return (
@@ -12,11 +11,9 @@ const LoginPage = () => {
           {/* Navigation Tabs */}
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="admin" className="gap-2">
-              <Shield className="w-4 h-4" />
               Admin
             </TabsTrigger>
             <TabsTrigger value="teacher" className="gap-2">
-              <GraduationCap className="w-4 h-4" />
               Teacher
             </TabsTrigger>
           </TabsList>

@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { Trash2, Plus, BookOpen, Clock, Hash, Search, Filter, MoreHorizontal, Pencil, Ban, CheckCircle, AlertCircle } from 'lucide-react';
+
+// ... (UI imports remain same, not replaced here)
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +57,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const SubjectManagement = () => {
     const { currentUser } = useAuth();
+    const location = useLocation();
     
     // State
     const [subjects, setSubjects] = useState([]);
@@ -62,6 +66,14 @@ const SubjectManagement = () => {
     
     // Add Subject Form State
     const [showAddModal, setShowAddModal] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.openAddModal) {
+            setShowAddModal(true);
+            window.history.replaceState({}, document.title)
+        }
+    }, [location]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentSubjectId, setCurrentSubjectId] = useState(null);

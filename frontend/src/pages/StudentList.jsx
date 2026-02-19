@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
-import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
+import { useNavigate, useOutletContext, useSearchParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -65,6 +65,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const StudentList = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const { setExtraBreadcrumb } = useOutletContext() || {};
     
     const [searchParams, setSearchParams] = useSearchParams();
@@ -124,7 +125,30 @@ const StudentList = () => {
                 axios.get(`${API_BASE}/Students/${schoolId}`)
             ]);
             setClassesList(Array.isArray(classesRes.data) ? classesRes.data : []);
-            setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
+
+            const fetchedStudents = Array.isArray(studentsRes.data) ? studentsRes.data : [];
+            setStudents(fetchedStudents);
+
+            // Handle Search Navigation
+            if (location.state?.searchTarget && fetchedStudents.length > 0) {
+                const targetId = location.state.searchTarget;
+                const targetStudent = fetchedStudents.find(s => s._id === targetId);
+
+                if (targetStudent) {
+                    // If filtering relies on class selection, we might need to select the class too.
+                    // For now, let's just set the search query which filters across the currently selected class or all? 
+                    // Wait, `filteredStudents` depends on `selectedClass`. 
+                    // If filter doesn't show students without a class selected, we must select the class.
+                    if (targetStudent.sclassName) {
+                        setSearchParams({ class: targetStudent.sclassName._id });
+                    }
+                    setSearchQuery(targetStudent.name || "");
+
+                    // Clear state
+                    window.history.replaceState({}, document.title);
+                }
+            }
+
         } catch (err) {
             console.error("Error fetching data:", err);
             toast.error("Failed to load data");

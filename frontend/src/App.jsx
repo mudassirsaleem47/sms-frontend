@@ -27,9 +27,10 @@ import ExamSchedule from './pages/ExamSchedule';
 import MarksDivision from './pages/MarksDivision';
 import ExamResult from './pages/ExamResult';
 import CampusManagement from './pages/CampusManagement';
-import StaffManagement from './pages/StaffManagement';
 import DesignationManagement from './pages/DesignationManagement';
 import DisableReasonPage from './pages/DisableReasonPage';
+import AccountantList from './pages/AccountantList';
+import ReceptionistList from './pages/ReceptionistList';
 
 import SendMessages from './pages/SendMessages';
 import MessageTemplates from './pages/MessageTemplates';
@@ -126,7 +127,9 @@ function App() {
                   <Route path="exam-result" element={<ExamResult />} />
                   <Route path="campuses" element={<CampusManagement />} />
                   <Route path="reports" element={<ReportsPage />} />
-                  <Route path="staff" element={<StaffManagement />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="accountants" element={<AccountantList />} />
+                  <Route path="receptionists" element={<ReceptionistList />} />
                   {/* <Route path="designations" element={<DesignationManagement />} /> */}
                   <Route path="send-messages" element={<SendMessages />} />
                   <Route path="message-templates" element={<MessageTemplates />} />

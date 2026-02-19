@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -55,7 +56,15 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const ShowClasses = () => {
     const { currentUser } = useAuth();
-    
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openAddModal) {
+            setShowAddModal(true);
+            window.history.replaceState({}, document.title)
+        }
+    }, [location]);
+
     // --- State Management ---
     const [sclasses, setSclasses] = useState([]);
     const [teachers, setTeachers] = useState([]);
@@ -71,7 +80,7 @@ const ShowClasses = () => {
     const [deleteConfig, setDeleteConfig] = useState({ open: false, type: null, id: null, subId: null });
 
     // --- 1. Fetch Classes ---
-    const fetchClasses = async () => {
+    const fetchClasses = React.useCallback(async () => {
         if (!currentUser || !currentUser._id) return;
 
         setLoading(true);
@@ -92,10 +101,10 @@ const ShowClasses = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser]);
 
     // --- Fetch Teachers ---
-    const fetchTeachers = async () => {
+    const fetchTeachers = React.useCallback(async () => {
         if (!currentUser || !currentUser._id) return;
 
         try {
@@ -106,12 +115,14 @@ const ShowClasses = () => {
         } catch (err) {
             console.error("Error fetching teachers:", err);
         }
-    };
+    }, [currentUser]);
 
     useEffect(() => {
-        fetchClasses();
-        fetchTeachers();
-    }, [currentUser]);
+        if (currentUser) {
+            fetchClasses();
+            fetchTeachers();
+        }
+    }, [currentUser, fetchClasses, fetchTeachers]);
 
     // --- 2. Add Class ---
     const addClass = async (e) => {
@@ -155,7 +166,8 @@ const ShowClasses = () => {
                 toast.success("Section deleted successfully!");
             }
             fetchClasses();
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             toast.error(`Error deleting ${type}`);
         }
         setDeleteConfig({ open: false, type: null, id: null, subId: null });
@@ -340,24 +352,6 @@ const ShowClasses = () => {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Request Alert Dialog */}
-            <AlertDialog open={deleteConfig.open} onOpenChange={(open) => !open && setDeleteConfig({ ...deleteConfig, open: false })}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the
-                            {deleteConfig.type === 'class' ? ' class and all its sections/students' : ' section'}.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
             {/* Delete Alert Dialog */}
             <AlertDialog open={deleteConfig.open} onOpenChange={(open) => !open && setDeleteConfig({ ...deleteConfig, open: false })}>
                 <AlertDialogContent>

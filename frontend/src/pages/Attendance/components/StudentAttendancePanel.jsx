@@ -11,13 +11,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import API_URL from '@/config/api';
 
 const StudentAttendancePanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const API_BASE = import.meta.env.VITE_API_URL;
+    const API_BASE = API_URL;
 
     // Filters
     const [classes, setClasses] = useState([]);

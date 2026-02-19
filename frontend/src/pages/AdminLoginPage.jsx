@@ -45,9 +45,6 @@ const AdminLoginPage = () => {
 
         {/* Header Section */}
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="p-3 bg-primary/10 rounded-full mb-2">
-            <School className="h-10 w-10 text-primary" />
-          </div>
           <h1 className="text-3xl font-bold tracking-tight">School Management System</h1>
           <p className="text-muted-foreground">Select your role to login to the portal</p>
         </div>
@@ -55,30 +52,30 @@ const AdminLoginPage = () => {
         {/* Login Area */}
         <div className="flex justify-center">
           <Tabs defaultValue="admin" className="w-full max-w-lg flex flex-col items-center">
-            <TabsList className="grid w-full grid-cols-5 h-auto p-1 bg-muted/50 rounded-full border">
-              <TabsTrigger value="admin" className="gap-2 py-2.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                <UserCog className="h-4 w-4" />
+            <TabsList className="grid w-[80%] grid-cols-5 h-auto p-1 bg-muted/50  border">
+              <TabsTrigger value="admin" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+            
                 <span className="hidden sm:inline text-xs font-medium">Admin</span>
               </TabsTrigger>
-              <TabsTrigger value="teacher" className="gap-2 py-2.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                <GraduationCap className="h-4 w-4" />
+              <TabsTrigger value="teacher" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                
                 <span className="hidden sm:inline text-xs font-medium">Teacher</span>
               </TabsTrigger>
-              <TabsTrigger value="accountant" className="gap-2 py-2.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                <Briefcase className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs font-medium">Finance</span>
+              <TabsTrigger value="accountant" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+  
+                <span className="hidden sm:inline text-xs font-medium">Accountant</span>
               </TabsTrigger>
-              <TabsTrigger value="receptionist" className="gap-2 py-2.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline text-xs font-medium">Front Desk</span>
+              <TabsTrigger value="receptionist" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                
+                <span className="hidden sm:inline text-xs font-medium">Receptionist</span>
               </TabsTrigger>
-              <TabsTrigger value="parent" className="gap-2 py-2.5 rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                <Baby className="h-4 w-4" />
+              <TabsTrigger value="parent" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+              
                 <span className="hidden sm:inline text-xs font-medium">Parent</span>
               </TabsTrigger>
             </TabsList>
 
-            <div className="mt-8 w-full animate-in slide-in-from-bottom-4 duration-500 fade-in zoom-in-95">
+            <div className="mt-8 w-[80%] animate-in slide-in-from-bottom-4 duration-500 fade-in zoom-in-95">
               <TabsContent value="admin">
                 <Card className="border shadow-lg">
                   <CardHeader className="text-center pb-2">
