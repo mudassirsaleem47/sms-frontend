@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 const TooltipProvider = TooltipPrimitive.Provider
 
-const TooltipRoot = TooltipPrimitive.Root
+const Tooltip = TooltipPrimitive.Root
 
 const TooltipTrigger = TooltipPrimitive.Trigger
 
@@ -23,24 +23,4 @@ const TooltipContent = React.forwardRef(({ className, sideOffset = 4, ...props }
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
-const SimpleTooltip = ({ children, text, position = "top", ...props }) => {
-  if (!text) {
-    return <>{children}</>;
-  }
-
-  return (
-    <TooltipProvider>
-      <TooltipRoot>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
-        <TooltipContent side={position} {...props}>
-          {text}
-        </TooltipContent>
-      </TooltipRoot>
-    </TooltipProvider>
-  )
-}
-
-export { TooltipRoot as Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
-export default SimpleTooltip
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
