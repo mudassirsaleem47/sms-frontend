@@ -17,7 +17,8 @@ app.use(cors({
         'http://localhost:5173',
         'http://127.0.0.1:5173',
         'http://192.168.10.4:5173',  // Current Network IP
-        'http://192.168.10.21:5173'  // Your local network IP
+        'http://192.168.10.21:5173',  // Your local network IP
+        process.env.FRONTEND_URL      // Deployed Frontend URL
     ],
     credentials: true
 }));
@@ -52,3 +53,5 @@ mongoose
     .catch((err) => {
         console.log("❌ Database Connection Error:", err);
     });
+
+module.exports = app;
