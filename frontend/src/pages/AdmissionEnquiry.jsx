@@ -3,6 +3,7 @@ import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import API_URL from '../config/api.js';
 import EnquiryModal from '../components/form-popup/EnquiryModal';
 import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +54,7 @@ import {
     MapPin
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = API_URL;
 
 const AdmissionEnquiry = () => {
     const { currentUser } = useAuth();

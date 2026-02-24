@@ -11,39 +11,35 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware (Data samajhne ke liye)
 app.use(express.json());
+
+// --- MIDDLEWARE: Double Slash Fix ---
+app.use((req, res, next) => {
+    if (req.url.includes('//')) {
+        req.url = req.url.replace(/\/+/g, '/');
+    }
+    next();
+});
+
 // CORS configuration for local network + Vercel deployments
 app.use(cors({
     origin: function (origin, callback) {
-        const allowedOrigins = [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            'http://192.168.10.4:5173',
-            'http://192.168.10.21:5173',
-            'http://192.168.10.85:5173',
-            'https://pink-spoonbill-303404.hostingersite.com',
-            'http://pink-spoonbill-303404.hostingersite.com'
-        ];
-
-        // Ensure FRONTEND_URL from env is included if it exists
-        if (process.env.FRONTEND_URL) {
-            allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ""));
-        }
-
         // Allow requests with no origin (mobile apps, curl, Postman, etc.)
         if (!origin) return callback(null, true);
 
-        // Remove trailing slash for comparison
         const sanitizedOrigin = origin.replace(/\/$/, "");
 
-        // Allow any *.vercel.app URL or Hostinger URL
+        // Simplified: Allow common domains and local dev
         if (
-            sanitizedOrigin.endsWith('.vercel.app') ||
-            sanitizedOrigin.endsWith('.hostingersite.com') ||
-            allowedOrigins.includes(sanitizedOrigin)
+            sanitizedOrigin.includes('hostingersite.com') ||
+            sanitizedOrigin.includes('vercel.app') ||
+            sanitizedOrigin.includes('localhost') ||
+            sanitizedOrigin.includes('127.0.0.1') ||
+            sanitizedOrigin.startsWith('http://192.168.')
         ) {
             return callback(null, true);
         }
 
+        console.log("CORS Blocked Origin:", origin);
         callback(new Error('Not allowed by CORS'));
     },
     credentials: true
