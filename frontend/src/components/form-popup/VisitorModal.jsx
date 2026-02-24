@@ -34,7 +34,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/DatePicker";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false }) => {
     const { currentUser } = useAuth();
@@ -538,3 +539,4 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
 };
 
 export default VisitorModal;
+

@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const { currentUser } = useAuth();
@@ -290,3 +291,4 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 };
 
 export default StudentModal;
+

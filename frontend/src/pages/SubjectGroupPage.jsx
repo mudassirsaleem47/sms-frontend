@@ -54,7 +54,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const SubjectGroup = () => {
     const { currentUser } = useAuth();
@@ -491,3 +492,4 @@ const SubjectGroup = () => {
 };
 
 export default SubjectGroup;
+

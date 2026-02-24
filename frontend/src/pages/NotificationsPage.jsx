@@ -34,7 +34,7 @@ const NotificationsPage = () => {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/Notifications/${currentUser._id}`);
+            const response = await axios.get(`${API_URL_CENTRAL}/Notifications/${currentUser._id}`);
             if (response.data.success) {
                 setNotifications(response.data.notifications);
             }
@@ -50,7 +50,7 @@ const NotificationsPage = () => {
 
     const handleMarkAllRead = async () => {
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/Notifications/read-all/${currentUser._id}`);
+            await axios.put(`${API_URL_CENTRAL}/Notifications/read-all/${currentUser._id}`);
             setNotifications(notifications.map(n => ({ ...n, read: true })));
             toast.success("Success", { description: "All notifications marked as read" });
         } catch (error) {
@@ -61,7 +61,7 @@ const NotificationsPage = () => {
 
     const handleClearAll = async () => {
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/Notifications/clear-all/${currentUser._id}`);
+            await axios.delete(`${API_URL_CENTRAL}/Notifications/clear-all/${currentUser._id}`);
             setNotifications([]);
             toast.success("Success", { description: "All notifications cleared" });
         } catch (error) {
@@ -72,7 +72,7 @@ const NotificationsPage = () => {
 
     const handleMarkAsRead = async (id) => {
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/Notification/${id}/read`);
+            await axios.put(`${API_URL_CENTRAL}/Notification/${id}/read`);
             setNotifications(notifications.map(n => n._id === id ? { ...n, read: true } : n));
         } catch (error) {
             console.error("Error marking as read:", error);
@@ -81,7 +81,7 @@ const NotificationsPage = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/Notification/${id}`);
+            await axios.delete(`${API_URL_CENTRAL}/Notification/${id}`);
             setNotifications(notifications.filter(n => n._id !== id));
             toast.success("Deleted", { description: "Notification removed" });
         } catch (error) {
@@ -264,3 +264,4 @@ const NotificationsPage = () => {
 };
 
 export default NotificationsPage;
+

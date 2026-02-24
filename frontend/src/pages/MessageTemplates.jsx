@@ -38,7 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const MessageTemplates = () => {
     const { currentUser } = useAuth();
@@ -399,3 +400,4 @@ const MessageTemplates = () => {
 };
 
 export default MessageTemplates;
+

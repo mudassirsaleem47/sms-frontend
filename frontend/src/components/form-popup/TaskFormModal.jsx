@@ -31,7 +31,8 @@ import { Trash2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const TaskFormModal = ({ isOpen, onClose, task, onTaskSaved }) => {
     const { currentUser } = useAuth();
@@ -264,3 +265,4 @@ const TaskFormModal = ({ isOpen, onClose, task, onTaskSaved }) => {
 };
 
 export default TaskFormModal;
+

@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     const { currentUser } = useAuth();
@@ -843,3 +844,4 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
 };
 
 export default StudentAdmissionForm;
+

@@ -58,7 +58,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { MoreHorizontal, Printer, Copy, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const FeeReports = () => {
   const { currentUser } = useAuth();
@@ -658,3 +659,4 @@ const FeeReports = () => {
 };
 
 export default FeeReports;
+

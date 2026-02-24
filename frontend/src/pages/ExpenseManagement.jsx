@@ -85,7 +85,8 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from "@/lib/utils";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const ExpenseManagement = () => {
   const { currentUser } = useAuth();
@@ -689,3 +690,4 @@ const ExpenseManagement = () => {
 };
 
 export default ExpenseManagement;
+

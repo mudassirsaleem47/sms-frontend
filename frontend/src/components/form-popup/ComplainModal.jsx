@@ -34,7 +34,8 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 
     const [showFullImage, setShowFullImage] = useState(false);
     const fileInputRef = useRef(null);
-    const API_URL = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_URL = API_URL_CENTRAL;
 
     useEffect(() => {
         if (initialData) {
@@ -398,3 +399,4 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 };
 
 export default ComplainModal;
+

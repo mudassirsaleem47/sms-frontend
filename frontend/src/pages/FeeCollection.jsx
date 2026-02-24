@@ -46,7 +46,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const FeeCollection = () => {
   const { currentUser } = useAuth();
@@ -578,3 +579,4 @@ const FeeCollection = () => {
 };
 
 export default FeeCollection;
+

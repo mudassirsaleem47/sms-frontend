@@ -61,7 +61,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const FeeManagement = () => {
   const { currentUser } = useAuth();

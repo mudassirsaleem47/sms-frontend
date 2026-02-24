@@ -20,7 +20,8 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 // Helper: Info Row
 const InfoRow = ({ label, value }) => (
@@ -626,3 +627,4 @@ const StudentDetailPage = () => {
 };
 
 export default StudentDetailPage;
+

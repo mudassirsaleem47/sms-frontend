@@ -22,7 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const AccountantDashboard = () => {
     const { currentUser } = useAuth();
@@ -232,3 +233,4 @@ const StatCard = ({ title, value, description, icon: Icon, loading, className })
 );
 
 export default AccountantDashboard;
+

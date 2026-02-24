@@ -54,7 +54,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from '@/components/ui/separator';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const DisabledStudents = () => {
     const { currentUser } = useAuth();
@@ -546,3 +547,4 @@ const DisabledStudents = () => {
 };
 
 export default DisabledStudents;
+

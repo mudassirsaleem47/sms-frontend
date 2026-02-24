@@ -14,7 +14,8 @@ import { format } from 'date-fns';
 const AttendanceByDatePanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const API_BASE = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
     // Filters
     const [classes, setClasses] = useState([]);
@@ -144,3 +145,4 @@ const AttendanceByDatePanel = () => {
 };
 
 export default AttendanceByDatePanel;
+

@@ -38,7 +38,8 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const Promotion = () => {
     const { currentUser } = useAuth();
@@ -373,3 +374,4 @@ const Promotion = () => {
 };
 
 export default Promotion;
+

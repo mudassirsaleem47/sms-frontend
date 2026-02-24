@@ -23,12 +23,12 @@ app.use((req, res, next) => {
 // CORS configuration for local network + Vercel deployments
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, Postman, etc.)
+        // Allow requests with no origin (mobile apps, curl, etc.)
         if (!origin) return callback(null, true);
 
-        const sanitizedOrigin = origin.replace(/\/$/, "");
+        const sanitizedOrigin = origin.replace(/\/+$/, "");
 
-        // Simplified: Allow common domains and local dev
+        // Extremely permissive for common dev/prod domains
         if (
             sanitizedOrigin.includes('hostingersite.com') ||
             sanitizedOrigin.includes('vercel.app') ||
@@ -39,10 +39,12 @@ app.use(cors({
             return callback(null, true);
         }
 
-        console.log("CORS Blocked Origin:", origin);
-        callback(new Error('Not allowed by CORS'));
+        console.error("CORS Blocked Origin:", origin);
+        callback(null, false); // Block other origins gracefully
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 app.use('/uploads', express.static('uploads'));

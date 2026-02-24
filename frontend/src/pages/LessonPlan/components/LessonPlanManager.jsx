@@ -15,7 +15,8 @@ import { format } from 'date-fns';
 const LessonPlanManager = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const API_BASE = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
     // Filters & Selection
     const [classes, setClasses] = useState([]);
@@ -322,3 +323,4 @@ const LessonPlanManager = () => {
 };
 
 export default LessonPlanManager;
+

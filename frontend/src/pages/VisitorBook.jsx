@@ -56,7 +56,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = API_URL;
 
 const VisitorBook = () => {
     const { currentUser } = useAuth();

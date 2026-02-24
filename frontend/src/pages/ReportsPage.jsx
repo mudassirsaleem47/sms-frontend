@@ -86,7 +86,8 @@ const statusConfig = {
     },
 };
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 // ================================================================
 // REPORT CATEGORIES
@@ -1035,3 +1036,4 @@ const EmptyState = ({ message }) => (
 );
 
 export default ReportsPage;
+

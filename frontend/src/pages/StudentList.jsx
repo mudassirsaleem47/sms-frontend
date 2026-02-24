@@ -4,6 +4,7 @@ import { useNavigate, useOutletContext, useSearchParams, useLocation } from 'rea
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import API_URL from '@/config/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import StudentModal from '../components/form-popup/StudentModal';
 import StudentDetailsModal from '../components/form-popup/StudentDetailsModal';
@@ -60,7 +61,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = API_URL;
 
 const StudentList = () => {
     const { currentUser } = useAuth();

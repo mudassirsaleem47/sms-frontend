@@ -22,7 +22,8 @@ const StudentTransportPanel = () => {
         const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
         navigate(`${basePath}/students/${studentId}`);
     };
-    const API_BASE = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
     // Data lists
     const [assignments, setAssignments] = useState([]);
@@ -289,3 +290,4 @@ const StudentTransportPanel = () => {
 };
 
 export default StudentTransportPanel;
+

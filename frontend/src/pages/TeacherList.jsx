@@ -52,7 +52,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TeacherModal from '../components/form-popup/TeacherModal';
 import AssignClassModal from '../components/form-popup/AssignClassModal';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = API_URL;
 
 const TeacherList = () => {
     const { currentUser } = useAuth();

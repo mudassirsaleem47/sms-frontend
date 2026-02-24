@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import API_URL from '@/config/api';
 import {
   Card,
   CardContent,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import { Link } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = API_URL;
 
 const ReceptionistDashboard = () => {
     const { currentUser } = useAuth();

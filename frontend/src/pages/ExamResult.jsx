@@ -36,7 +36,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const ExamResult = () => {
   const { currentUser } = useAuth();
@@ -499,3 +500,4 @@ const ExamResult = () => {
 };
 
 export default ExamResult;
+

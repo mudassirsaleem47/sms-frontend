@@ -19,7 +19,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const AssignClassModal = ({ isOpen, onClose, teacher, onAssignSuccess }) => {
     const { currentUser } = useAuth();
@@ -190,3 +191,4 @@ const AssignClassModal = ({ isOpen, onClose, teacher, onAssignSuccess }) => {
 };
 
 export default AssignClassModal;
+

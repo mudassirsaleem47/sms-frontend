@@ -10,7 +10,8 @@ import { Loader2 } from 'lucide-react';
 
 const SyllabusStatus = () => {
     const { currentUser } = useAuth();
-    const API_BASE = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
     // Filters
     const [classes, setClasses] = useState([]);
@@ -202,3 +203,4 @@ const SyllabusStatus = () => {
 };
 
 export default SyllabusStatus;
+

@@ -53,7 +53,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const SubjectManagement = () => {
     const { currentUser } = useAuth();
@@ -445,3 +446,4 @@ const SubjectManagement = () => {
 };
 
 export default SubjectManagement;
+

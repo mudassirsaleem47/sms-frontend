@@ -58,7 +58,8 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet";
 
-const API_BASE = import.meta.env.VITE_API_URL;
+import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
 const ComplainPage = () => {
     const { currentUser } = useAuth();
@@ -439,3 +440,4 @@ const ComplainPage = () => {
 };
 
 export default ComplainPage;
+

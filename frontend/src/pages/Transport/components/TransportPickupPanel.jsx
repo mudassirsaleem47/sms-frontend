@@ -12,7 +12,8 @@ import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 const TransportPickupPanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    const API_BASE = import.meta.env.VITE_API_URL;
+    import API_URL_CENTRAL from '@/config/api';
+const API_BASE = API_URL_CENTRAL;
 
     const [points, setPoints] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -175,4 +176,5 @@ const TransportPickupPanel = () => {
 };
 
 export default TransportPickupPanel;
+
 
