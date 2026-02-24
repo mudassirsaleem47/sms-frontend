@@ -20,7 +20,8 @@ app.use(cors({
             'http://192.168.10.4:5173',
             'http://192.168.10.21:5173',
             'http://192.168.10.85:5173',
-            process.env.FRONTEND_URL,       // Deployed Frontend URL (from env)
+            process.env.FRONTEND_URL,     // Deployed Frontend URL (from env)
+            'https://pink-spoonbill-303404.hostingersite.com'
         ].filter(Boolean);
 
         // Allow requests with no origin (mobile apps, curl, Postman, etc.)
