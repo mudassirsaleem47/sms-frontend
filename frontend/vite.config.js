@@ -3,19 +3,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 import { fileURLToPath } from "url"
-import { jsxToolDevServer } from "@jsx-tool/jsx-tool/vite";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Function to normalize paths for Windows (replace backslashes with forward slashes)
-function normalizePath(p) {
-  return p.split(path.sep).join(path.posix.sep);
-}
-
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), jsxToolDevServer()],
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
