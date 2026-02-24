@@ -37,11 +37,13 @@ const {
 // --- Admin Auth Routes ---
 router.post('/AdminReg', adminRegister);
 router.post('/AdminLogin', adminLogin);
+router.post('/admin/login', adminLogin); // Alias for case-insensitivity or cleaner URLs
 router.get('/Admin/:id', getAdminDetail);
 router.put('/Admin/:id', upload.single('schoolLogo'), updateAdmin);
 
 // --- Student Routes ---
 router.post('/StudentLogin', studentLogin);
+router.post('/student/login', studentLogin); // Alias
 router.post('/StudentRegister', upload.fields([
     { name: 'studentPhoto', maxCount: 1 },
     { name: 'fatherPhoto', maxCount: 1 },
@@ -101,6 +103,7 @@ router.put('/EnquiryUpdate/:id', enquiryUpdate);
 
 // --- Teacher Routes ---
 router.post('/TeacherLogin', teacherLogin);
+router.post('/teacher/login', teacherLogin); // Alias
 router.post('/TeacherRegister', addTeacher);
 router.get('/Teachers/:schoolId', getTeachersBySchool);
 router.put('/Teacher/:id', updateTeacher);
@@ -209,6 +212,7 @@ router.get('/CampusStats/:id', getCampusStats);
 
 // --- Staff Management Routes ---
 router.post('/StaffLogin', staffLogin);
+router.post('/staff/login', staffLogin); // Alias
 router.post('/Staff', createStaff);
 router.get('/Staff/:schoolId', getStaffBySchool);
 router.get('/StaffDetail/:id', getStaffById);

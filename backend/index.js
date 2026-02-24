@@ -20,15 +20,27 @@ app.use(cors({
             'http://192.168.10.4:5173',
             'http://192.168.10.21:5173',
             'http://192.168.10.85:5173',
-            process.env.FRONTEND_URL,     // Deployed Frontend URL (from env)
-            'https://pink-spoonbill-303404.hostingersite.com'
-        ].filter(Boolean);
+            'https://pink-spoonbill-303404.hostingersite.com',
+            'http://pink-spoonbill-303404.hostingersite.com'
+        ];
+
+        // Ensure FRONTEND_URL from env is included if it exists
+        if (process.env.FRONTEND_URL) {
+            allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ""));
+        }
 
         // Allow requests with no origin (mobile apps, curl, Postman, etc.)
         if (!origin) return callback(null, true);
 
-        // Allow any *.vercel.app URL (production + preview deployments)
-        if (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin)) {
+        // Remove trailing slash for comparison
+        const sanitizedOrigin = origin.replace(/\/$/, "");
+
+        // Allow any *.vercel.app URL or Hostinger URL
+        if (
+            sanitizedOrigin.endsWith('.vercel.app') ||
+            sanitizedOrigin.endsWith('.hostingersite.com') ||
+            allowedOrigins.includes(sanitizedOrigin)
+        ) {
             return callback(null, true);
         }
 
