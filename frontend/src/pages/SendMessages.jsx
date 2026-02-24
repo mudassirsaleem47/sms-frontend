@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, Users, MessageCircle, Mail, MessageSquare, Search, Info, Loader2 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
@@ -14,13 +15,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-
 const API_BASE = import.meta.env.VITE_API_URL;
 
 const SendMessages = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     
     // State Management
     const [students, setStudents] = useState([]);
@@ -45,41 +52,37 @@ const SendMessages = () => {
     const [designations, setDesignations] = useState([]);
 
     // Fetch Data
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
             
-            // Fetch students
-            const studentsRes = await axios.get(`${API_BASE}/students/${schoolId}`);
-            setStudents(Array.isArray(studentsRes.data) ? studentsRes.data : []);
+            const [stuRes, staffRes, tempRes, classesRes, designationsRes] = await Promise.all([
+                axios.get(`${API_BASE}/Students/${schoolId}`),
+                axios.get(`${API_BASE}/Staff/school/${schoolId}`),
+                axios.get(`${API_BASE}/MessageTemplates/${schoolId}`),
+                axios.get(`${API_BASE}/showClasses/${schoolId}`),
+                axios.get(`${API_BASE}/Designations/${schoolId}`)
+            ]);
             
-            // Fetch staff
-            const staffRes = await axios.get(`${API_BASE}/Staff/${schoolId}`);
-            setStaffList(staffRes.data.staff || []);
-            
-            // Fetch templates
-            const templatesRes = await axios.get(`${API_BASE}/MessageTemplates/${schoolId}`);
-            setTemplates(Array.isArray(templatesRes.data) ? templatesRes.data : []);
-            
-            // Fetch classes
-            const classesRes = await axios.get(`${API_BASE}/showClasses/${schoolId}`);
+            setStudents(Array.isArray(stuRes.data) ? stuRes.data : []);
+            setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
+            setTemplates(Array.isArray(tempRes.data) ? tempRes.data : []);
             setClasses(Array.isArray(classesRes.data) ? classesRes.data : []);
-            
-            // Fetch designations
-            const designationsRes = await axios.get(`${API_BASE}/Designations/${schoolId}`);
             setDesignations(Array.isArray(designationsRes.data) ? designationsRes.data : []);
             
-        } catch (err) {
-            console.error('Error fetching data:', err);
+        } catch (error) {
+            showToast("Error loading data", "error");
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser._id, showToast]);
 
     useEffect(() => {
-        if (currentUser) fetchData();
-    }, [currentUser]);
+        if (currentUser) {
+            fetchData();
+        }
+    }, [currentUser, fetchData]);
 
     // Filter Recipients
     const filteredRecipients = recipientGroup === 'student'
@@ -300,12 +303,18 @@ const SendMessages = () => {
                                                     <div className="flex-1 min-w-0 grid gap-0.5">
                                                         <div className="flex items-center justify-between gap-2">
                                                             <div className="flex items-center gap-2 min-w-0">
-                                                                <Label
-                                                                    htmlFor={`recipient-${recipient._id}`}
-                                                                    className="text-sm font-medium cursor-pointer truncate"
-                                                                >
-                                                                    {recipient.name}
-                                                                </Label>
+                                                                        {recipientGroup === 'student' ? (
+                                                                            <p className="font-medium text-sm truncate hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, recipient._id)}>
+                                                                                {recipient.name}
+                                                                            </p>
+                                                                        ) : (
+                                                                                <Label
+                                                                                    htmlFor={`recipient-${recipient._id}`}
+                                                                                    className="text-sm font-medium cursor-pointer truncate"
+                                                                                >
+                                                                                    {recipient.name}
+                                                                                </Label>
+                                                                        )}
                                                             </div>
                                                             <span className="text-xs text-muted-foreground font-mono flex-shrink-0">{recipient.phone}</span>
                                                         </div>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Award, Plus, Edit, Search, TrendingUp, Users, CheckCircle, XCircle, AlertCircle, Calculator } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const ExamResult = () => {
   const { currentUser } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNameClick = (e, studentId) => {
+    e.stopPropagation();
+    const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+    navigate(`${basePath}/students/${studentId}`);
+  };
   
   const [examGroups, setExamGroups] = useState([]);
   const [schedules, setSchedules] = useState([]);
@@ -61,25 +70,7 @@ const ExamResult = () => {
     remarks: ''
   });
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchInitialData();
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (selectedGroup) {
-      fetchSchedules();
-    }
-  }, [selectedGroup]);
-
-  useEffect(() => {
-    if (selectedSchedule) {
-      fetchScheduleDetails();
-    }
-  }, [selectedSchedule]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
       const [groupsRes, gradesRes] = await Promise.all([
@@ -94,35 +85,56 @@ const ExamResult = () => {
       showToast(error.response?.data?.message || 'Error fetching data', 'error');
       setLoading(false);
     }
-  };
+  }, [currentUser._id, showToast]);
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE}/ExamSchedules/Group/${selectedGroup}`);
       setSchedules(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching schedules', 'error');
     }
-  };
+  }, [selectedGroup, showToast]);
 
-  const fetchScheduleDetails = async () => {
+  const fetchScheduleDetails = useCallback(async () => {
     try {
       const schedule = schedules.find(s => s._id === selectedSchedule);
       if (!schedule) return;
 
-      const [studentsRes, resultsRes] = await Promise.all([
+      const [stuRes, resRes] = await Promise.all([
         axios.get(`${API_BASE}/Students/${currentUser._id}`),
-        axios.get(`${API_BASE}/ExamResults/Exam/${selectedSchedule}`)
+        axios.get(`${API_BASE}/ExamResults/Schedule/${selectedSchedule}`)
       ]);
 
-      // Filter students by class
-      const classStudents = studentsRes.data.filter(s => s.sclassName?._id === schedule.class._id);
+      const schoolStudents = Array.isArray(stuRes.data) ? stuRes.data : [];
+      const classStudents = schoolStudents.filter(s =>
+        s.sclassName?._id === schedule.sclassName?._id && s.section === schedule.section
+      );
+
       setStudents(classStudents);
-      setResults(Array.isArray(resultsRes.data) ? resultsRes.data : []);
+      setResults(Array.isArray(resRes.data) ? resRes.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching details', 'error');
     }
-  };
+  }, [currentUser._id, schedules, selectedSchedule, showToast]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchInitialData();
+    }
+  }, [currentUser, fetchInitialData]);
+
+  useEffect(() => {
+    if (selectedGroup) {
+      fetchSchedules();
+    }
+  }, [selectedGroup, fetchSchedules]);
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      fetchScheduleDetails();
+    }
+  }, [selectedSchedule, fetchScheduleDetails]);
 
   const calculateGrade = (percentage) => {
     for (const grade of grades) {
@@ -359,8 +371,8 @@ const ExamResult = () => {
                                 const result = getStudentResult(student._id);
                                 return (
                                     <TableRow key={student._id}>
-                                        <TableCell className="font-medium">{student.rollNum}</TableCell>
-                                        <TableCell>{student.name}</TableCell>
+                                    <TableCell className="font-medium hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</TableCell>
+                                    <TableCell>{student.rollNum}</TableCell>
                                         <TableCell>
                                             {result ? (
                                                 <span className="font-semibold">

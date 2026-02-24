@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -16,6 +17,14 @@ import API_URL from '@/config/api';
 const StudentAttendancePanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     const API_BASE = API_URL;
 
     // Filters
@@ -29,63 +38,63 @@ const StudentAttendancePanel = () => {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    const fetchClasses = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/SClasses/${currentUser._id}`);
+            setClasses(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error("Classes fetch error:", error);
+            showToast("Error fetching classes", "error");
+        }
+    }, [currentUser._id, API_BASE, showToast]);
+
     useEffect(() => {
         if (currentUser) {
             fetchClasses();
         }
-    }, [currentUser]);
+    }, [currentUser, fetchClasses]);
 
-    const fetchClasses = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
-            setClasses(res.data);
-        } catch (err) { }
-    };
-
-    // Fetch Students & Existing Attendance when Class or Date changes
-    useEffect(() => {
-        if (selectedClass && selectedDate) {
-            fetchData();
-        } else {
-            setStudents([]);
-            setAttendanceData({});
-        }
-    }, [selectedClass, selectedDate]);
-
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
+        if (!selectedClass) return;
         try {
             setLoading(true);
+            const [stuRes, attRes] = await Promise.all([
+                axios.get(`${API_BASE}/Students/Class/${selectedClass}`),
+                axios.get(`${API_BASE}/Attendance/Class/${selectedClass}/Date/${selectedDate.toISOString()}`)
+            ]);
 
-            // 1. Fetch Students
-            const studentRes = await axios.get(`${API_BASE}/Sclass/Students/${selectedClass}`);
-            const studentList = studentRes.data;
+            const studentsList = Array.isArray(stuRes.data) ? stuRes.data : [];
+            setStudents(studentsList);
 
-            // 2. Fetch Existing Attendance
-            const dateStr = format(selectedDate, 'yyyy-MM-dd');
-            // Using ISO string for date query, ensuring UTC start/end day matching on backend
-            const attendanceRes = await axios.get(`${API_BASE}/Attendance/ForClass/${currentUser._id}/${selectedClass}/${selectedDate.toISOString()}`);
-            const existingRecords = attendanceRes.data;
+            const attendanceMap = {};
+            if (Array.isArray(attRes.data)) {
+                attRes.data.forEach(item => {
+                    attendanceMap[item.student?._id || item.student] = {
+                        status: item.status,
+                        remark: item.remark || ''
+                    };
+                });
+            }
 
-            // 3. Merge Data
-            const initialData = {};
-            studentList.forEach(student => {
-                const record = existingRecords.find(r => r.student === student._id);
-                initialData[student._id] = {
-                    status: record ? record.status : 'Present', // Default to Present
-                    remark: record ? record.remark : ''
-                };
+            // Initialize missing students as Present
+            studentsList.forEach(student => {
+                if (!attendanceMap[student._id]) {
+                    attendanceMap[student._id] = { status: 'Present', remark: '' };
+                }
             });
 
-            setStudents(studentList);
-            setAttendanceData(initialData);
-
-        } catch (err) {
-            showToast('Failed to fetch data', 'error');
-            console.error(err);
+            setAttendanceData(attendanceMap);
+        } catch (error) {
+            console.error("Data fetch error:", error);
+            showToast("Error loading data", "error");
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedClass, selectedDate, API_BASE, showToast]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const handleStatusChange = (studentId, status) => {
         setAttendanceData(prev => ({
@@ -210,8 +219,8 @@ const StudentAttendancePanel = () => {
                                     <TableBody>
                                         {students.map(student => (
                                             <TableRow key={student._id}>
-                                                <TableCell className="font-medium">{student.rollNum}</TableCell>
-                                                <TableCell>{student.name}</TableCell>
+                                                <TableCell className="font-medium hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</TableCell>
+                                                <TableCell>{student.rollNum}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-4">
                                                         <label className="flex items-center gap-2 cursor-pointer">

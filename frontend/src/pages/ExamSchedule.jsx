@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DatePicker } from "@/components/ui/DatePicker";
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -315,12 +316,11 @@ const ExamSchedule = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="examDate">Exam Date *</Label>
-                                            <Input
-                                                id="examDate"
-                                                name="examDate"
-                                                type="date"
+                          <DatePicker
+                            id="examDate"
                                                 value={formData.examDate}
-                                                onChange={handleInputChange}
+                            onChange={(val) => setFormData(prev => ({ ...prev, examDate: val }))}
+                            placeholder="Select exam date"
                                                 required
                                             />
                                         </div>

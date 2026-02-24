@@ -19,6 +19,7 @@ app.use(cors({
             'http://127.0.0.1:5173',
             'http://192.168.10.4:5173',
             'http://192.168.10.21:5173',
+            'http://192.168.10.85:5173',
             process.env.FRONTEND_URL,       // Deployed Frontend URL (from env)
         ].filter(Boolean);
 
@@ -61,12 +62,12 @@ mongoose
         if (require.main === module) {
             app.listen(PORT, '0.0.0.0', () => {
                 console.log(`🚀 Server started on port ${PORT}`);
-                console.log(`📱 Access from other devices: http://192.168.10.4:${PORT}`);
+                console.log(`📱 Access from other devices: http://192.168.10.85:${PORT}`);
             });
         }
     })
     .catch((err) => {
-        console.log("❌ Database Connection Error:", err);
+        console.log("Database Connection Error:", err);
     });
 
 module.exports = app;

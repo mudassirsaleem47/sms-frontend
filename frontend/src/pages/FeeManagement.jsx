@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DatePicker } from "@/components/ui/DatePicker";
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -480,10 +481,10 @@ const FeeManagement = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Due Date *</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={formData.dueDate}
-                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                  onChange={(val) => handleInputChange('dueDate', val)}
+                  placeholder="Select due date"
                   required
                 />
               </div>

@@ -179,7 +179,7 @@ const StudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="password">
-                                Login Password (for Student & Parent Portal) {!initialData && <span className="text-destructive">*</span>}
+                                Login Password {!initialData && <span className="text-destructive">*</span>}
                             </Label>
                             <Input
                                 id="password"

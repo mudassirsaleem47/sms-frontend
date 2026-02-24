@@ -69,11 +69,9 @@ const AdminDashboard = () => {
       if (isTeacher) {
         // Teacher: count from assigned classes
         classCount = currentUser?.assignedClasses?.length || 0;
-        // Fetch students for teacher's school
         try {
           const studentsRes = await axios.get(`${API_URL}/Students/${schoolId}`);
           const allStudents = Array.isArray(studentsRes.data) ? studentsRes.data : [];
-          // Filter students by teacher's assigned classes
           const assignedClassIds = (currentUser?.assignedClasses || []).map(c => c._id || c);
           const myStudents = allStudents.filter(s => {
             const sclassId = s.sclass?._id || s.sclass;
@@ -83,60 +81,82 @@ const AdminDashboard = () => {
           setStudents(myStudents);
         } catch (err) { setStudents([]); }
       } else if (selectedCampus) {
-        const res = await axios.get(`${API_URL}/CampusStats/${selectedCampus._id}`);
-        if (res.data.success) {
-          const s = res.data.stats;
-          studentCount = s.totalStudents;
-          teacherCount = s.totalTeachers;
-          classCount = s.totalClasses;
-        }
-      } else if (campuses.length > 0) {
-        const promises = campuses.map(campus =>
-          axios.get(`${API_URL}/CampusStats/${campus._id}`)
-        );
-        const results = await Promise.all(promises);
-        results.forEach(res => {
+        // Single campus selected
+        try {
+          const res = await axios.get(`${API_URL}/CampusStats/${selectedCampus._id}`);
           if (res.data.success) {
-            studentCount += res.data.stats.totalStudents;
-            teacherCount += res.data.stats.totalTeachers;
-            classCount += res.data.stats.totalClasses;
+            const s = res.data.stats;
+            studentCount = s.totalStudents;
+            teacherCount = s.totalTeachers;
+            classCount = s.totalClasses;
           }
-        });
+        } catch { }
+      } else if (campuses.length > 0) {
+        // Multiple campuses — sum stats
+        try {
+          const promises = campuses.map(campus =>
+            axios.get(`${API_URL}/CampusStats/${campus._id}`)
+          );
+          const results = await Promise.allSettled(promises);
+          results.forEach(res => {
+            if (res.status === 'fulfilled' && res.value.data.success) {
+              studentCount += res.value.data.stats.totalStudents;
+              teacherCount += res.value.data.stats.totalTeachers;
+              classCount += res.value.data.stats.totalClasses;
+            }
+          });
+        } catch { }
+      } else {
+        // No campuses — fetch directly from school
+        try {
+          const [studRes, teachRes, classRes] = await Promise.allSettled([
+            axios.get(`${API_URL}/Students/${schoolId}`),
+            axios.get(`${API_URL}/Teachers/${schoolId}`),
+            axios.get(`${API_URL}/Sclasses/${schoolId}`),
+          ]);
+          if (studRes.status === 'fulfilled') {
+            const data = Array.isArray(studRes.value.data) ? studRes.value.data : [];
+            studentCount = data.length;
+            setStudents(data);
+          }
+          if (teachRes.status === 'fulfilled') {
+            teacherCount = Array.isArray(teachRes.value.data) ? teachRes.value.data.length : 0;
+          }
+          if (classRes.status === 'fulfilled') {
+            classCount = Array.isArray(classRes.value.data) ? classRes.value.data.length : 0;
+            setClasses(Array.isArray(classRes.value.data) ? classRes.value.data : []);
+          }
+        } catch (err) { }
       }
 
+      // Revenue from IncomeStatistics
       let revenue = 0;
       if (!isTeacher) {
         try {
-          const incomeRes = await axios.get(`${API_URL}/IncomeStatistics/${currentUser._id}`);
-          revenue = incomeRes.data.totalIncome?.amount || 0;
-        } catch (err) { }
+          const incomeRes = await axios.get(`${API_URL}/IncomeStatistics/${schoolId}`);
+          revenue = incomeRes.data?.totalIncome?.amount || 0;
+        } catch { }
       }
 
       setStats({ students: studentCount, teachers: teacherCount, classes: classCount, revenue });
 
-      // Parallel fetch - teacher skips financial APIs
+      // Parallel fetch for activity, events, detailed stats
       const fetchPromises = [
         axios.get(`${API_URL}/Notifications/${schoolId}`),
         axios.get(`${API_URL}/Events/${schoolId}`),
-        ...(isTeacher ? [] : [axios.get(`${API_URL}/Students/${schoolId}`)]),
-        ...(isTeacher ? [] : [axios.get(`${API_URL}/fee-statistics/${schoolId}`)]),
-        ...(isTeacher ? [] : [axios.get(`${API_URL}/income-statistics/${schoolId}`)]),
-        ...(isTeacher ? [] : [axios.get(`${API_URL}/expense-statistics/${schoolId}`)]),
-        axios.get(`${API_URL}/Sclasses/${schoolId}`),
+        ...(isTeacher ? [] : [
+          axios.get(`${API_URL}/Students/${schoolId}`),
+          axios.get(`${API_URL}/FeeStatistics/${schoolId}`),
+          axios.get(`${API_URL}/IncomeStatistics/${schoolId}`),
+          axios.get(`${API_URL}/ExpenseStatistics/${schoolId}`),
+          axios.get(`${API_URL}/Sclasses/${schoolId}`),
+        ]),
       ];
       const results = await Promise.allSettled(fetchPromises);
 
       let idx = 0;
       const notifRes = results[idx++];
       const eventRes = results[idx++];
-      let studentsRes, feeStatsRes, incomeStatsRes, expenseStatsRes;
-      if (!isTeacher) {
-        studentsRes = results[idx++];
-        feeStatsRes = results[idx++];
-        incomeStatsRes = results[idx++];
-        expenseStatsRes = results[idx++];
-      }
-      const classesRes = results[idx++];
 
       if (notifRes.status === 'fulfilled') {
         setActivities(notifRes.value.data.notifications?.slice(0, 5) || []);
@@ -149,13 +169,29 @@ const AdminDashboard = () => {
           .slice(0, 3);
         setEvents(upcoming);
       }
+
       if (!isTeacher) {
-        if (studentsRes?.status === 'fulfilled') setStudents(Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []);
+        const studentsRes2 = results[idx++];
+        const feeStatsRes = results[idx++];
+        const incomeStatsRes = results[idx++];
+        const expenseStatsRes = results[idx++];
+        const classesRes = results[idx++];
+
+        if (studentsRes2?.status === 'fulfilled') {
+          const data = Array.isArray(studentsRes2.value.data) ? studentsRes2.value.data : [];
+          setStudents(data);
+          // Update student count with fresh data
+          setStats(prev => ({ ...prev, students: data.length }));
+        }
         if (feeStatsRes?.status === 'fulfilled') setFeeStats(feeStatsRes.value.data);
         if (incomeStatsRes?.status === 'fulfilled') setIncomeStats(incomeStatsRes.value.data);
         if (expenseStatsRes?.status === 'fulfilled') setExpenseStats(expenseStatsRes.value.data);
+        if (classesRes?.status === 'fulfilled') {
+          const cls = Array.isArray(classesRes.value.data) ? classesRes.value.data : [];
+          setClasses(cls);
+          setStats(prev => ({ ...prev, classes: cls.length }));
+        }
       }
-      if (classesRes?.status === 'fulfilled') setClasses(Array.isArray(classesRes.value.data) ? classesRes.value.data : []);
 
     } catch (error) {
       console.error("Dashboard data fetch error:", error);
@@ -229,44 +265,52 @@ const AdminDashboard = () => {
   const statCards = isTeacher ? [
     {
       icon: BookOpen, label: 'My Classes', count: stats.classes,
-      subtitle: `${currentUser?.assignedClasses?.length || 0} assigned`, color: 'text-blue-600',
-      bg: 'bg-blue-500/10', ring: 'ring-blue-500/20'
+      subtitle: `${currentUser?.assignedClasses?.length || 0} assigned`,
+      gradient: 'from-blue-500 to-blue-700',
+      iconBg: 'bg-white/20',
     },
     {
       icon: GraduationCap, label: 'My Students', count: stats.students,
-      subtitle: 'In your classes', color: 'text-violet-600',
-      bg: 'bg-violet-500/10', ring: 'ring-violet-500/20'
+      subtitle: 'In your classes',
+      gradient: 'from-violet-500 to-purple-700',
+      iconBg: 'bg-white/20',
     },
     {
       icon: School, label: 'Subject', count: currentUser?.subject || 'N/A',
-      subtitle: currentUser?.qualification || '', color: 'text-orange-600',
-      bg: 'bg-orange-500/10', ring: 'ring-orange-500/20'
+      subtitle: currentUser?.qualification || '',
+      gradient: 'from-orange-400 to-rose-500',
+      iconBg: 'bg-white/20',
     },
     {
       icon: UserCheck, label: 'Experience', count: `${currentUser?.experience || 0} yrs`,
-      subtitle: 'Teaching experience', color: 'text-emerald-600',
-      bg: 'bg-emerald-500/10', ring: 'ring-emerald-500/20'
+      subtitle: 'Teaching experience',
+      gradient: 'from-emerald-500 to-teal-700',
+      iconBg: 'bg-white/20',
     },
   ] : [
     {
       icon: GraduationCap, label: 'Total Students', count: stats.students,
-      subtitle: `${chartData.activeStudents} active`, color: 'text-blue-600',
-      bg: 'bg-blue-500/10', ring: 'ring-blue-500/20'
+      subtitle: `${chartData.activeStudents} active`,
+      gradient: 'from-blue-500 to-blue-700',
+      iconBg: 'bg-white/20',
     },
     {
       icon: Users, label: 'Teachers', count: stats.teachers,
       subtitle: `1:${stats.teachers > 0 ? Math.round(stats.students / stats.teachers) : 0} ratio`,
-      color: 'text-violet-600', bg: 'bg-violet-500/10', ring: 'ring-violet-500/20'
+      gradient: 'from-violet-500 to-purple-700',
+      iconBg: 'bg-white/20',
     },
     {
       icon: School, label: 'Total Classes', count: stats.classes,
-      subtitle: `${classes.length} active`, color: 'text-orange-600',
-      bg: 'bg-orange-500/10', ring: 'ring-orange-500/20'
+      subtitle: `${classes.length} active`,
+      gradient: 'from-orange-400 to-rose-500',
+      iconBg: 'bg-white/20',
     },
     {
       icon: DollarSign, label: 'Revenue', count: formatCurrency(stats.revenue),
-      subtitle: 'Total income', color: 'text-emerald-600',
-      bg: 'bg-emerald-500/10', ring: 'ring-emerald-500/20'
+      subtitle: 'Total income',
+      gradient: 'from-emerald-500 to-teal-700',
+      iconBg: 'bg-white/20',
     },
   ];
 
@@ -355,21 +399,26 @@ const AdminDashboard = () => {
           const Icon = stat.icon;
           return (
             <motion.div variants={itemVariants} key={idx}>
-              <Card className="hover:shadow-md transition-all duration-300 overflow-hidden relative group">
-                <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full -translate-y-8 translate-x-8 opacity-50 group-hover:scale-125 transition-transform duration-500`} />
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.label}
-                  </CardTitle>
-                  <div className={`p-2.5 rounded-xl ${stat.bg}`}>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+              <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-lg hover:shadow-xl duration-300 cursor-default group`}>
+                {/* Decorative circles */}
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full group-hover:scale-125 transition-transform duration-500" />
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full" />
+                {/* Top row */}
+                <div className="relative flex items-center mb-4">
+                  <div className={`p-2.5 rounded-xl ${stat.iconBg} backdrop-blur-sm`}>
+                    <Icon className="h-5 w-5 text-white" />
                   </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-24" /> : stat.count}</div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.subtitle}</p>
-                </CardContent>
-              </Card>
+                </div>
+                {/* Count */}
+                <div className="relative">
+                  {loading
+                    ? <Skeleton className="h-9 w-28 bg-white/20" />
+                    : <p className="text-3xl font-bold tracking-tight">{stat.count}</p>
+                  }
+                  <p className="text-sm font-medium text-white/80 mt-0.5">{stat.label}</p>
+                  <p className="text-xs text-white/60 mt-1">{stat.subtitle}</p>
+                </div>
+              </div>
             </motion.div>
           );
         })}

@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode = false }) => {
     // Form state
@@ -250,12 +251,11 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
                                         </div>
                                         <div className="grid gap-2">
                                             <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
-                                            <Input
+                                            <DatePicker
                                                 id="date"
-                                                name="date"
-                                                type="date"
                                                 value={formData.date}
-                                                onChange={handleChange}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, date: val }))}
+                                                placeholder="Select date"
                                                 required
                                             />
                                         </div>

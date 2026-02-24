@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -13,6 +14,14 @@ import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
 const StudentTransportPanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     const API_BASE = import.meta.env.VITE_API_URL;
 
     // Data lists
@@ -33,13 +42,57 @@ const StudentTransportPanel = () => {
     const [deletingId, setDeletingId] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     
+    const fetchAssignments = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${API_BASE}/Transport/StudentTransport/${currentUser._id}`);
+            setAssignments(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error(error);
+            showToast("Error loading assignments", "error");
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUser._id, API_BASE, showToast]);
+
+    const fetchRoutes = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/Transport/Route/${currentUser._id}`);
+            setRoutes(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error(error);
+            showToast("Error loading routes", "error");
+        }
+    }, [currentUser._id, API_BASE, showToast]);
+
+    const fetchStudents = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
+            setStudents(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error(error);
+            showToast("Error loading students", "error");
+        }
+    }, [currentUser._id, API_BASE, showToast]);
+
+    const fetchStops = useCallback(async (routeId) => {
+        if (!routeId) return;
+        try {
+            const response = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`);
+            setStops(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error(error);
+            showToast("Error loading stops", "error");
+        }
+    }, [API_BASE, showToast]);
+
     useEffect(() => {
         if (currentUser) {
             fetchAssignments();
             fetchRoutes();
-            fetchStudents(); // Ideally this should be a search, but for now fetch all
+            fetchStudents();
         }
-    }, [currentUser]);
+    }, [currentUser, fetchAssignments, fetchRoutes, fetchStudents]);
 
     useEffect(() => {
         if (selectedRoute) {
@@ -47,40 +100,7 @@ const StudentTransportPanel = () => {
         } else {
             setStops([]);
         }
-    }, [selectedRoute]);
-
-    const fetchAssignments = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get(`${API_BASE}/Transport/StudentTransport/${currentUser._id}`);
-            setAssignments(res.data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchRoutes = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/Transport/Route/${currentUser._id}`);
-            setRoutes(res.data);
-        } catch (err) { }
-    };
-
-    const fetchStops = async (routeId) => {
-        try {
-            const res = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`);
-            setStops(res.data);
-        } catch (err) { }
-    };
-
-    const fetchStudents = async () => {
-        try {
-            const res = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
-            setStudents(res.data);
-        } catch (err) { }
-    };
+    }, [selectedRoute, fetchStops]);
 
     const handleAssign = async (e) => {
         e.preventDefault();
@@ -228,7 +248,7 @@ const StudentTransportPanel = () => {
                                 {assignments.map(assign => (
                                     <TableRow key={assign._id}>
                                         <TableCell className="font-medium">
-                                            {assign.student?.name}
+                                            <span className="hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, assign.student?._id || assign.student)}>{assign.student?.name}</span>
                                             <div className="text-xs text-muted-foreground">Roll: {assign.student?.rollNum}</div>
                                         </TableCell>
                                         <TableCell>

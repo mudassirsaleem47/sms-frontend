@@ -22,12 +22,5 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
-    rules: {
-      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]' }],
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-    },
   },
 ])

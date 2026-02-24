@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -63,6 +64,14 @@ const DisableReasonPage = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [studentToEnable, setStudentToEnable] = useState(null);
     const [enableLoading, setEnableLoading] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
 
     const reasons = ['Left School', 'Transferred', 'Expelled', 'Medical', 'Financial', 'Other'];
 
@@ -75,21 +84,26 @@ const DisableReasonPage = () => {
         'Other': 'bg-gray-100 text-gray-700 border-gray-200'
     };
 
-    useEffect(() => {
-        if (currentUser) fetchData();
-    }, [currentUser]);
 
-    const fetchData = async () => {
+
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const response = await axios.get(`${API_URL}/Students/Disabled/${currentUser._id}`);
             setStudents(Array.isArray(response.data) ? response.data : []);
-        } catch (err) {
+        } catch (error) {
+            console.error("Fetch disabled students error:", error);
             toast.error("Error loading disabled students");
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser._id, fetchData]);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchData();
+        }
+    }, [currentUser, fetchData]);
 
     const handleEnableConfirm = async () => {
         if (!studentToEnable) return;
@@ -107,10 +121,7 @@ const DisableReasonPage = () => {
         }
     };
 
-    const handleNameClick = (student) => {
-        setSelectedStudent(student);
-        setShowDetailsModal(true);
-    };
+
 
     const filteredStudents = students.filter(student => {
         const matchesSearch = !searchQuery || 
@@ -226,16 +237,16 @@ const DisableReasonPage = () => {
                                         <TableRow key={student._id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar className="h-9 w-9 border">
-                                                        <AvatarImage src={`${API_URL}/${student.studentPhoto}`} alt={student.name} />
-                                                        <AvatarFallback>{student.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                    <Avatar className="h-9 w-9">
+                                                        <AvatarImage src={student.studentImage} />
+                                                        <AvatarFallback className="bg-primary/10 text-primary">
+                                                            {student.name.charAt(0)}
+                                                        </AvatarFallback>
                                                     </Avatar>
                                                     <div className="flex flex-col">
-                                                        <span
-                                                            className="font-medium cursor-pointer hover:underline hover:text-primary transition-colors"
-                                                            onClick={() => handleNameClick(student)}
-                                                        >
-                                                            {student.name}
+                                                        <span className="font-medium hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</span>
+                                                        <span className="text-xs text-muted-foreground truncate">
+                                                            {student.admissionNum}
                                                         </span>
                                                     </div>
                                                 </div>

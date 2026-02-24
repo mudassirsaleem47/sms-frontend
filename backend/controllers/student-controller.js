@@ -1,6 +1,8 @@
 const Student = require('../models/studentSchema.js');
 const Sclass = require('../models/sclassSchema.js');
 const Teacher = require('../models/teacherSchema.js');
+const Fee = require('../models/feeSchema.js');
+const FeeStructure = require('../models/feeStructureSchema.js');
 const bcrypt = require('bcryptjs');
 
 // 1. New Student ka Admission
@@ -40,8 +42,16 @@ const studentAdmission = async (req, res) => {
         const transport = req.body.transport ? JSON.parse(req.body.transport) : {};
         const siblings = req.body.siblings ? JSON.parse(req.body.siblings) : [];
 
+        // Generate Admission Number (Format: [3 letters]-[4 digits])
+        // We'll use "SMS" as the default prefix
+        const prefix = "SMS";
+        const studentCount = await Student.countDocuments({ school });
+        const nextNumber = (studentCount + 1).toString().padStart(4, '0');
+        const admissionNum = `${prefix}-${nextNumber}`;
+
         const newStudent = new Student({
             ...req.body,
+            admissionNum, // Adding the auto-generated ID
             password: hashedPassword,
             studentPhoto,
             father: { ...father, photo: fatherPhoto },
@@ -52,6 +62,32 @@ const studentAdmission = async (req, res) => {
         });
 
         const result = await newStudent.save();
+
+        // --- Fee Assignment Logic ---
+        const feeStructureIds = req.body.feeStructureIds ? JSON.parse(req.body.feeStructureIds) : [];
+        if (feeStructureIds.length > 0) {
+            for (const feeStructureId of feeStructureIds) {
+                try {
+                    const feeStructure = await FeeStructure.findById(feeStructureId);
+                    if (feeStructure) {
+                        const newFee = new Fee({
+                            student: result._id,
+                            school: school,
+                            feeStructure: feeStructureId,
+                            totalAmount: feeStructure.amount,
+                            paidAmount: 0,
+                            pendingAmount: feeStructure.amount,
+                            dueDate: feeStructure.dueDate,
+                            academicYear: feeStructure.academicYear
+                        });
+                        await newFee.save();
+                        console.log(`✅ Fee ${feeStructure.feeName} assigned to student ${result.name}`);
+                    }
+                } catch (feeErr) {
+                    console.error(`❌ Error assigning fee ${feeStructureId}:`, feeErr.message);
+                }
+            }
+        }
 
         // Auto-assign student to class incharge
         if (sclass.classIncharge) {
@@ -239,4 +275,21 @@ const promoteStudents = async (req, res) => {
     }
 };
 
-module.exports = { studentAdmission, studentLogin, getStudentsBySchool, updateStudent, deleteStudent, getDisabledStudents, promoteStudents };
+// 5. Student By ID fetch karna
+const getStudentById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const student = await Student.findById(id).populate('sclassName');
+
+        if (!student) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        const { password, ...rest } = student.toObject();
+        res.status(200).json(rest);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching student", error: err.message });
+    }
+};
+
+module.exports = { studentAdmission, studentLogin, getStudentsBySchool, getStudentById, updateStudent, deleteStudent, getDisabledStudents, promoteStudents };

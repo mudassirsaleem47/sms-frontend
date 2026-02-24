@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
+import { DatePicker } from "@/components/ui/DatePicker";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -318,12 +319,11 @@ const IncomeManagement = () => {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="date">Date *</Label>
-                                <Input
-                                    id="date"
-                                    name="date"
-                                    type="date"
+                    <DatePicker
+                      id="date"
                                     value={formData.date}
-                                    onChange={handleInputChange}
+                      onChange={(val) => setFormData(prev => ({ ...prev, date: val }))}
+                      placeholder="Select date"
                                     required
                                 />
                             </div>

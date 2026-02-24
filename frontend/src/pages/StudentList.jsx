@@ -181,8 +181,9 @@ const StudentList = () => {
     };
 
     const handleNameClick = (student) => {
-        setDrawerData(student);
-        setIsDrawerOpen(true);
+        // Determine base path based on current URL
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${student._id}`);
     };
 
     // Breadcrumb Effect
@@ -456,17 +457,23 @@ const StudentList = () => {
                                                         aria-label="Select all"
                                                     />
                                                 </TableHead>
-                                                <TableHead>Student Details</TableHead>
-                                                <TableHead>Roll No</TableHead>
-                                                <TableHead className="hidden md:table-cell">Gender</TableHead>
-                                                <TableHead className="hidden lg:table-cell">Parent Contact</TableHead>
-                                                <TableHead className="text-right pr-6">Actions</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">ID#</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Student Name</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Roll No</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Class (Section)</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Father Name</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">DOB</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Gender</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Mobile</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Religion</TableHead>
+                                                <TableHead className="text-xs font-bold uppercase">Cast</TableHead>
+                                                <TableHead className="text-right pr-6 text-xs font-bold uppercase">Action</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {filteredStudents.length === 0 ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                                    <TableCell colSpan={12} className="h-32 text-center text-muted-foreground">
                                                         No students found in this class.
                                                     </TableCell>
                                                 </TableRow>
@@ -483,34 +490,50 @@ const StudentList = () => {
                                                                     aria-label={`Select ${student.name}`}
                                                                 />
                                                             </TableCell>
+                                                            <TableCell className="text-xs font-mono">
+                                                                {student.admissionNum || 'N/A'}
+                                                            </TableCell>
                                                             <TableCell>
                                                                 <div className="flex items-center gap-3">
-                                                                    <Avatar className="h-9 w-9 border">
+                                                                    <Avatar className="h-8 w-8 border shrink-0">
                                                                         <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} />
-                                                                        <AvatarFallback className="bg-primary/10 text-primary">{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                                        <AvatarFallback className="bg-primary/10 text-primary text-[10px]">{student.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                                                     </Avatar>
-                                                                    <div className="flex flex-col">
+                                                                    <div className="flex flex-col min-w-0">
                                                                         <span
-                                                                            className="font-medium hover:underline hover:text-primary cursor-pointer transition-colors"
+                                                                            className="font-semibold text-sm hover:underline hover:text-primary cursor-pointer transition-colors truncate"
                                                                             onClick={() => handleNameClick(student)}
+                                                                            title={student.name}
                                                                         >
                                                                             {student.name}
                                                                         </span>
-                                                                        <span className="text-xs text-muted-foreground">{student.email || 'No email'}</span>
+                                                                        <span className="text-[10px] text-muted-foreground truncate">{student.email || 'N/A'}</span>
                                                                     </div>
                                                                 </div>
                                                             </TableCell>
-                                                            <TableCell>
-                                                                <Badge variant="outline" className="font-mono">{student.rollNum}</Badge>
+                                                            <TableCell className="text-xs">
+                                                                <Badge variant="secondary" className="font-mono text-[10px]">{student.rollNum}</Badge>
                                                             </TableCell>
-                                                            <TableCell className="hidden md:table-cell">
-                                                                {student.gender}
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                                {student.sclassName?.sclassName} ({student.section || 'N/A'})
                                                             </TableCell>
-                                                            <TableCell className="hidden lg:table-cell">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm font-medium">{student.father?.name}</span>
-                                                                    <span className="text-xs text-muted-foreground">{student.father?.phone}</span>
-                                                                </div>
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                                {student.father?.name || 'N/A'}
+                                                            </TableCell>
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                                {student.dateOfBirth ? formatDateTime(student.dateOfBirth, { dateOnly: true }) : 'N/A'}
+                                                            </TableCell>
+                                                            <TableCell className="text-xs">
+                                                                <Badge variant="outline" className="text-[10px] py-0">{student.gender}</Badge>
+                                                            </TableCell>
+                                                            <TableCell className="text-xs whitespace-nowrap">
+                                                                {student.mobileNumber || student.father?.phone || 'N/A'}
+                                                            </TableCell>
+                                                            <TableCell className="text-xs">
+                                                                {student.religion || 'N/A'}
+                                                            </TableCell>
+                                                            <TableCell className="text-xs">
+                                                                {student.caste || 'N/A'}
                                                             </TableCell>
                                                             <TableCell className="text-right pr-6">
                                                                 <DropdownMenu>

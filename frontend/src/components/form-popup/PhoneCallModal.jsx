@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/DatePicker";
 import {
     Phone,
     PhoneIncoming,
@@ -235,15 +236,14 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="callDate">Call Date *</Label>
-                                        <Input
+                                        <DatePicker
                                             id="callDate"
-                                            name="callDate" 
-                                            type="date" 
-                                            value={formData.callDate}
-                                            onChange={handleChange}
-                                            required 
-                                    />
-                                </div>
+                                            value={formData.callDate ? formData.callDate.split('T')[0] : ''}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, callDate: val ? new Date(val).toISOString() : '' }))}
+                                            placeholder="Select call date"
+                                            required
+                                        />
+                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="callTime">Call Time *</Label>
                                         <Input
@@ -297,12 +297,11 @@ const PhoneCallModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMod
                                     {formData.followUpRequired && (
                                         <div className="pl-6 animate-fade-in-down">
                                             <Label htmlFor="followUpDate" className="mb-1.5 block">Follow-up Date</Label>
-                                            <Input
+                                            <DatePicker
                                                 id="followUpDate"
-                                                name="followUpDate" 
-                                                type="date" 
                                                 value={formData.followUpDate}
-                                                onChange={handleChange}
+                                                onChange={(val) => setFormData(prev => ({ ...prev, followUpDate: val }))}
+                                                placeholder="Select follow-up date"
                                                 className="w-full md:w-1/2"
                                             />
                                         </div>

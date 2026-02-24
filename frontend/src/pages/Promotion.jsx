@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { ArrowRight, Users, Loader2, Check, AlertCircle } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import {
@@ -41,6 +42,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 const Promotion = () => {
     const { currentUser } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     
     // --- State ---
     const [classes, setClasses] = useState([]);
@@ -274,7 +283,7 @@ const Promotion = () => {
                                                     onCheckedChange={() => toggleStudent(student._id)}
                                                 />
                                                 <div className="flex-1">
-                                                    <p className="font-medium leading-none">{student.name}</p>
+                                                        <p className="font-medium leading-none hover:underline hover:text-primary transition-colors" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</p>
                                                     <p className="text-xs text-muted-foreground mt-1">Roll No: {student.rollNum}</p>
                                                 </div>
                                                 {selectedStudents.includes(student._id) && (

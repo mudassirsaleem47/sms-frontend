@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
     Cake, Gift, Calendar, PartyPopper, Star, Search, MessageCircle, Send
 } from 'lucide-react';
@@ -28,6 +29,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const BirthdayWish = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     
     // State Management
     const [students, setStudents] = useState([]);
@@ -53,7 +62,7 @@ const BirthdayWish = () => {
     });
 
     // Fetch Data
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
@@ -104,14 +113,17 @@ const BirthdayWish = () => {
             
         } catch (err) {
             console.error('Error fetching data:', err);
+            showToast("Error loading data", "error");
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser._id, showToast]);
 
     useEffect(() => {
-        if (currentUser) fetchData();
-    }, [currentUser]);
+        if (currentUser) {
+            fetchData();
+        }
+    }, [currentUser, fetchData]);
 
     // Get filtered birthday students
     const getFilteredStudents = () => {
@@ -364,22 +376,16 @@ const BirthdayWish = () => {
                                                 />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <Label
-                                                            htmlFor={`student-${student._id}`}
-                                                            className="font-medium cursor-pointer"
-                                                        >
+                                                                <p className="font-semibold text-sm truncate hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>
                                                             {student.name}
-                                                        </Label>
+                                                                </p>
                                                         {new Date(student.dateOfBirth).getMonth() === new Date().getMonth() &&
                                                             new Date(student.dateOfBirth).getDate() === new Date().getDate() && (
                                                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
                                                                 Today! 🎂
                                                                 </Badge>
                                                             )}
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground truncate">
-                                                        {student.class?.sclassName || student.class?.className || 'N/A'} | Father: {student.fatherName}
-                                                    </p>
+                                                            </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-medium text-primary">

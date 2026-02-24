@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { Plus, Edit, Trash2, Copy, Clock, Search, FileText, Tag } from 'lucide-r
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,7 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const MessageTemplates = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
+    const editorRef = useRef(null);
     
     // State Management
     const [templates, setTemplates] = useState([]);
@@ -121,7 +122,9 @@ const MessageTemplates = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!formData.name || !formData.content) {
+        // Strip HTML tags to check if content is empty
+        const plainText = formData.content.replace(/<[^>]*>/g, '').trim();
+        if (!formData.name || !plainText) {
             showToast('All fields are required!', 'error');
             return;
         }
@@ -182,10 +185,9 @@ const MessageTemplates = () => {
     });
 
     const insertTag = (tag) => {
-        setFormData(prev => ({
-            ...prev,
-            content: prev.content + tag
-        }));
+        if (editorRef.current) {
+            editorRef.current.insertText(tag);
+        }
     };
 
     // Helper for badge variant
@@ -330,18 +332,13 @@ const MessageTemplates = () => {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="content">Valid Content *</Label>
-                                <Textarea
-                                    id="content"
+                                <Label>Valid Content *</Label>
+                                <RichTextEditor
+                                    ref={editorRef}
                                     value={formData.content}
-                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    onChange={(html) => setFormData({ ...formData, content: html })}
                                     placeholder="Write your message here..."
-                                    className="min-h-[150px] font-normal"
-                                    required
                                 />
-                                <div className="text-xs text-muted-foreground text-right">
-                                    {formData.content.length} characters
-                                </div>
                             </div>
 
                             <div className="space-y-3 pt-2">

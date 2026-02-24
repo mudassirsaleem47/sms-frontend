@@ -5,6 +5,11 @@ const studentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    admissionNum: {
+        type: String,
+        unique: true,
+        sparse: true // Allows nulls for old records but enforces uniqueness for non-nulls
+    },
     rollNum: {
         type: Number,
         required: true

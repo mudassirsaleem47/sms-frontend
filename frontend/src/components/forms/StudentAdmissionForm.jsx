@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Plus, Trash2, User, BookOpen, Users, Bus, Save, X, Check, Calendar as CalendarIcon } from 'lucide-react';
+import { Upload, Plus, Trash2, User, BookOpen, Users, Bus, Save, X, Check, Calendar as CalendarIcon, DollarSign } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useCampus } from '../../context/CampusContext';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -30,6 +31,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     const [classesList, setClassesList] = useState([]);
     const [sectionsList, setSectionsList] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [nextAdmissionNum, setNextAdmissionNum] = useState('');
+    const [routesList, setRoutesList] = useState([]);
+    const [pickupPointsList, setPickupPointsList] = useState([]);
+    const [transportLoading, setTransportLoading] = useState(false);
+    const [feeStructuresList, setFeeStructuresList] = useState([]);
+    const [selectedFees, setSelectedFees] = useState([]);
 
     const [guardianType, setGuardianType] = useState('father'); // 'father', 'mother', 'other'
 
@@ -87,17 +94,73 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     useEffect(() => {
         if (currentUser) {
             fetchClasses();
+            fetchNextAdmissionNum();
+            fetchRoutes();
         }
-    }, [currentUser]);
+    }, [currentUser, fetchClasses, fetchNextAdmissionNum, fetchRoutes]);
 
-    const fetchClasses = async () => {
+    const fetchNextAdmissionNum = React.useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
+            const students = res.data;
+            const prefix = "SMS";
+            const nextNumber = (students.length + 1).toString().padStart(4, '0');
+            setNextAdmissionNum(`${prefix}-${nextNumber}`);
+        } catch (err) {
+            console.error("Failed to fetch next admission number", err);
+        }
+    }, [currentUser._id]);
+
+    const fetchRoutes = React.useCallback(async () => {
+        try {
+            const res = await axios.get(`${API_BASE}/Transport/Route/${currentUser._id}`);
+            setRoutesList(res.data);
+        } catch (err) {
+            console.error("Failed to load routes", err);
+        }
+    }, [currentUser._id]);
+
+    const fetchPickupPoints = async (routeId) => {
+        if (!routeId) {
+            setPickupPointsList([]);
+            return;
+        }
+        setTransportLoading(true);
+        try {
+            const res = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`);
+            // RouteStop returns an array of stops, each with a pickupPoint object
+            setPickupPointsList(res.data);
+        } catch (err) {
+            console.error("Failed to load pickup points", err);
+            toast.error("Failed to load pickup points");
+        } finally {
+            setTransportLoading(false);
+        }
+    };
+
+    const fetchClasses = React.useCallback(async () => {
         try {
             const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
             setClassesList(res.data);
-        } catch (err) {
+        } catch {
             toast.error("Failed to load classes");
         }
-    };
+    }, [currentUser._id]);
+
+    const fetchAvailableFees = React.useCallback(async (classId) => {
+        try {
+            const res = await axios.get(`${API_BASE}/FeeStructures/${currentUser._id}`);
+            // Filter fees by class
+            const filteredFees = res.data.filter(f => {
+                const fClassId = f.class?._id || f.class;
+                return fClassId === classId;
+            });
+            setFeeStructuresList(filteredFees);
+            setSelectedFees([]); // Reset selection
+        } catch (err) {
+            console.error("Failed to fetch fees", err);
+        }
+    }, [currentUser._id]);
 
     // --- Handlers ---
     const handleInputChange = (e, section = null, index = null) => {
@@ -114,6 +177,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
             const selectedClass = classesList.find(c => c._id === value);
             setSectionsList(selectedClass ? selectedClass.sections : []);
             setFormData(prev => ({ ...prev, [name]: value, section: '' }));
+            fetchAvailableFees(value);
+        } else if (name === 'route' && section === 'transport') {
+            const selectedRoute = routesList.find(r => r._id === value);
+            setFormData(prev => ({
+                ...prev,
+                transport: { ...prev.transport, route: selectedRoute?.routeTitle || value, pickupPoint: '' }
+            }));
+            fetchPickupPoints(value);
         } else if (section === 'siblings' && index !== null) {
             const newSiblings = [...formData.siblings];
             newSiblings[index] = { ...newSiblings[index], [name]: value };
@@ -195,6 +266,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 if (photos[key]) data.append(key, photos[key]);
             });
 
+            data.append('feeStructureIds', JSON.stringify(selectedFees));
+
             await axios.post(`${API_BASE}/StudentRegister`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -219,7 +292,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 htmlFor={`file-${type}`}
                 className={`
                     relative flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 
-                    border-2 border-dashed rounded-full cursor-pointer 
+                    border-2 border-dashed rounded-full cursor-pointer
                     transition-all overflow-hidden bg-muted/30
                     ${preview ? 'border-primary' : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5'}
                 `}
@@ -270,6 +343,10 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                             <div className="space-y-2">
                                 <Label htmlFor="lastName">Last Name</Label>
                                 <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} placeholder="Doe" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="admissionNum">Admission No</Label>
+                                <Input id="admissionNum" name="admissionNum" value={nextAdmissionNum} readOnly className="bg-muted font-mono" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="rollNum">Roll Number <span className="text-destructive">*</span></Label>
@@ -380,7 +457,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="admissionDate">Admission Date</Label>
-                            <Input id="admissionDate" name="admissionDate" type="date" value={formData.admissionDate} onChange={handleInputChange} />
+                            <DatePicker
+                                id="admissionDate"
+                                value={formData.admissionDate}
+                                onChange={(val) => setFormData(prev => ({ ...prev, admissionDate: val }))}
+                                placeholder="Select admission date"
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -456,7 +538,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <Label htmlFor="password">Login Password (for Student & Parent Portal) <span className="text-destructive">*</span></Label>
+                            <Label htmlFor="password">Login Password <span className="text-destructive">*</span></Label>
                             <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} required placeholder="Set a strong password for login" />
                         </div>
                     </div>
@@ -594,11 +676,31 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="space-y-2">
                             <Label>Route</Label>
-                            <Input name="route" value={formData.transport.route} onChange={(e) => handleInputChange(e, 'transport')} />
+                            <Select value={formData.transport.route} onValueChange={(val) => handleSelectChange('route', val, 'transport')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Route" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {routesList.map(route => (
+                                        <SelectItem key={route._id} value={route._id}>{route.routeTitle}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Pickup Point</Label>
-                            <Input name="pickupPoint" value={formData.transport.pickupPoint} onChange={(e) => handleInputChange(e, 'transport')} />
+                            <Select value={formData.transport.pickupPoint} onValueChange={(val) => handleSelectChange('pickupPoint', val, 'transport')} disabled={!formData.transport.route || transportLoading}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={transportLoading ? "Loading..." : (formData.transport.route ? "Select Pickup Point" : "Select Route First")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {pickupPointsList.map(stop => (
+                                        <SelectItem key={stop._id} value={stop.pickupPoint?.pickupPointName || stop.pickupPointName}>
+                                            {stop.pickupPoint?.pickupPointName || stop.pickupPointName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Fees Month</Label>
@@ -617,7 +719,67 @@ const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
                 </CardContent>
             </Card>
 
-            {/* 6. Siblings */}
+            {/* 6. Fee Assignment */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5 text-green-600" />
+                        <CardTitle>Fee Assignment</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Select fee structures to assign to this student upon admission.
+                    </p>
+                </CardHeader>
+                <CardContent>
+                    {!formData.sclassName ? (
+                        <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
+                            <p className="text-muted-foreground text-sm">Please select a class first to see available fee structures.</p>
+                        </div>
+                    ) : feeStructuresList.length === 0 ? (
+                        <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
+                            <p className="text-muted-foreground text-sm">No active fee structures found for this class.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {feeStructuresList.map((fee) => (
+                                <div
+                                    key={fee._id}
+                                    className={`
+                                        flex items-center space-x-3 p-4 rounded-lg border transition-all cursor-pointer hover:bg-muted/50
+                                        ${selectedFees.includes(fee._id) ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-background'}
+                                    `}
+                                    onClick={() => {
+                                        if (selectedFees.includes(fee._id)) {
+                                            setSelectedFees(prev => prev.filter(id => id !== fee._id));
+                                        } else {
+                                            setSelectedFees(prev => [...prev, fee._id]);
+                                        }
+                                    }}
+                                >
+                                    <Checkbox
+                                        id={`fee-${fee._id}`}
+                                        checked={selectedFees.includes(fee._id)}
+                                        onCheckedChange={() => { }} // Handled by div click
+                                    />
+                                    <div className="grid gap-0.5 leading-none">
+                                        <label
+                                            htmlFor={`fee-${fee._id}`}
+                                            className="text-sm font-medium leading-none cursor-pointer"
+                                        >
+                                            {fee.feeName}
+                                        </label>
+                                        <p className="text-xs text-muted-foreground">
+                                            {fee.feeType} - {currentUser?.currency || 'PKR'} {fee.amount}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* 7. Siblings */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">

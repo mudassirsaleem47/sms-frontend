@@ -13,6 +13,7 @@ import VisitorBook from './pages/VisitorBook';
 import PhoneCallLog from './pages/PhoneCallLog';
 import ComplainPage from './pages/ComplainPage';
 import StudentAdmission from './pages/StudentAdmission';
+import StudentDetailPage from './pages/StudentDetailPage';
 import DisabledStudents from './pages/DisabledStudents';
 import SettingsProfile from './pages/SettingsProfile';
 import FeeManagement from './pages/FeeManagement';
@@ -80,7 +81,7 @@ function App() {
     <div className="App">
       <ToastProvider>
         <CampusProvider>
-          <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             <Routes>
               {/* Public Website Route */}
               <Route path="/" element={<Home />} />
@@ -92,12 +93,12 @@ function App() {
               <Route path="/AdminRegister" element={<Navigate to="/register" replace />} />
 
 
-
               <Route element={<ProtectedRoute />}>
                 <Route path="/admin" element={<AdminLayout />}> {/* <--- Layout Wrapper */}
                   <Route index element={<AdminDashboard />} />
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="students" element={<StudentList />} />
+                  <Route path="students/:studentId" element={<StudentDetailPage />} />
                   <Route path="enquiry" element={<AdmissionEnquiry />} />
                   <Route path="classes" element={<ShowClasses />} />
                   <Route path="subjects" element={<SubjectManagement />} />
@@ -114,6 +115,7 @@ function App() {
                   <Route path="students/disable-reasons" element={<DisableReasonPage />} />
                   <Route path="settings" element={<SettingsProfile />} />
 
+                  
                   <Route path="fee-management" element={<FeeManagement />} />
                   <Route path="fee-assignment" element={<FeeAssignment />} />
                   <Route path="fee-collection" element={<FeeCollection />} />

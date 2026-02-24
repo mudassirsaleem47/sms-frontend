@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/DatePicker";
 import {
     Dialog,
     DialogContent,
@@ -237,11 +238,11 @@ const StaffModal = ({ staff, onClose }) => {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="joiningDate">Joining Date</Label>
-                                <Input
+                                <DatePicker
                                     id="joiningDate"
-                                    type="date"
                                     value={joiningDate}
-                                    onChange={(e) => setJoiningDate(e.target.value)}
+                                    onChange={(val) => setJoiningDate(val)}
+                                    placeholder="Select joining date"
                                 />
                             </div>
                             <div className="space-y-2">

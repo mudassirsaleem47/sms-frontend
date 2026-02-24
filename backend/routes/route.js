@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const upload = require('../middleware/uploadMiddleware');
 const { adminRegister, adminLogin, getAdminDetail, updateAdmin } = require('../controllers/admin-controller.js');
-const { studentAdmission, studentLogin, getStudentsBySchool, updateStudent, deleteStudent, getDisabledStudents, promoteStudents } = require('../controllers/student-controller.js');
+const { studentAdmission, studentLogin, getStudentsBySchool, getStudentById, updateStudent, deleteStudent, getDisabledStudents, promoteStudents } = require('../controllers/student-controller.js');
 const { enquiryCreate, enquiryList, enquiryDelete, enquiryUpdate } = require('../controllers/enquiry-controller.js');
 const { sclassCreate, getSclassesBySchool, deleteSclass, addSection, deleteSection } = require('../controllers/sclass-controller.js');
 const { addTeacher, getTeachersBySchool, updateTeacher, deleteTeacher, assignClassToTeacher, removeClassFromTeacher, teacherLogin } = require('../controllers/teacher-controller.js');
@@ -49,6 +49,7 @@ router.post('/StudentRegister', upload.fields([
     { name: 'guardianPhoto', maxCount: 1 }
 ]), studentAdmission);
 router.get('/Students/:schoolId', getStudentsBySchool);
+router.get('/Student/:id', getStudentById);
 router.put('/Student/:id', upload.fields([
     { name: 'studentPhoto', maxCount: 1 },
     { name: 'fatherPhoto', maxCount: 1 },

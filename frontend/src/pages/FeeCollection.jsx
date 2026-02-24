@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Search, 
@@ -50,6 +51,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const FeeCollection = () => {
   const { currentUser } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNameClick = (e, studentId) => {
+    e.stopPropagation();
+    const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+    navigate(`${basePath}/students/${studentId}`);
+  };
   
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,27 +79,27 @@ const FeeCollection = () => {
 
   const paymentMethods = ['Cash', 'Online', 'Cheque', 'Card', 'Bank Transfer'];
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchStudents();
-    }
-  }, [currentUser]);
-
-  const fetchStudents = async () => {
-      try {
-        const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
-        const response = await axios.get(`${API_BASE}/Students/${schoolId}`);
+  const fetchStudents = useCallback(async () => {
+    try {
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const response = await axios.get(`${API_BASE}/Students/${schoolId}`);
       setStudents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching students', 'error');
     }
-  };
+  }, [currentUser, showToast]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchStudents();
+    }
+  }, [currentUser, fetchStudents]);
 
   const fetchStudentFees = async (studentId) => {
     try {
       const response = await axios.get(`${API_BASE}/StudentFees/${studentId}`);
       setStudentFees(Array.isArray(response.data) ? response.data : []);
-    } catch (error) {
+    } catch {
       showToast('Error fetching student fees', 'error');
     }
   };
@@ -241,9 +250,9 @@ const FeeCollection = () => {
                               <div className={`h-10 w-10 rounded-full flex items-center justify-center ${selectedStudent?._id === student._id ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                                 <User className="h-5 w-5" />
                               </div>
-                              <div>
-                                <div className="font-semibold text-sm">{student.name}</div>
-                                <div className="text-xs text-muted-foreground">
+                            <div>
+                              <div className="font-semibold text-sm hover:underline hover:text-primary transition-colors" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</div>
+                              <div className="text-xs text-muted-foreground">
                                   Roll: {student.rollNum} • Class: {student.sclassName?.sclassName} {student.section}
                                 </div>
                               </div>
@@ -278,7 +287,7 @@ const FeeCollection = () => {
 
                   <CardContent className="p-6 flex items-start justify-between relative z-10">
                     <div>
-                      <h2 className="text-2xl font-bold mb-1">{selectedStudent.name}</h2>
+                      <h2 className="text-2xl font-bold mb-1 hover:underline cursor-pointer" onClick={(e) => handleNameClick(e, selectedStudent._id)}>{selectedStudent.name}</h2>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-primary-foreground/80 text-sm">
                         <span>Roll Number: <span className="font-medium text-white">{selectedStudent.rollNum}</span></span>
                         <span className="hidden sm:inline">•</span>

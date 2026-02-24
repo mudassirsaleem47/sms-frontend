@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   SidebarInset,
@@ -32,7 +32,6 @@ import TaskModal from "./TaskModal";
 
 const AdminLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const isTeacher = currentUser?.userType === 'teacher';
   const isParent = currentUser?.userType === 'parent';
@@ -55,6 +54,9 @@ const AdminLayout = () => {
     // Skip first segment (admin/teacher)
     const pathsWithoutBase = paths.slice(1);
 
+    // MongoDB ObjectId pattern (24 hex chars)
+    const isObjectId = (str) => /^[a-f0-9]{24}$/i.test(str);
+
     // Convert path to readable title
     const toTitle = (str) => {
       return str
@@ -63,9 +65,13 @@ const AdminLayout = () => {
         .join(' ');
     };
 
-    return pathsWithoutBase.map((path, index) => {
-      const href = `/${basePath}/${pathsWithoutBase.slice(0, index + 1).join('/')}`;
-      const isLast = index === pathsWithoutBase.length - 1;
+    // Filter out ObjectId segments
+    const filteredPaths = pathsWithoutBase.filter(p => !isObjectId(p));
+
+    return filteredPaths.map((path, index) => {
+      // Rebuild href using original paths (with IDs) for correct navigation
+      const href = `/${basePath}/${pathsWithoutBase.slice(0, pathsWithoutBase.indexOf(path) + 1).join('/')}`;
+      const isLast = index === filteredPaths.length - 1;
       const title = toTitle(path);
 
       // Skip "Dashboard" from dynamic crumbs to avoid redundancy with the static root crumb
@@ -81,10 +87,7 @@ const AdminLayout = () => {
 
   const breadcrumbs = generateBreadcrumbs();
 
-  const handleSelect = (path) => {
-    setOpen(false);
-    navigate(path);
-  };
+
 
   return (
     <SidebarProvider>
@@ -107,7 +110,7 @@ const AdminLayout = () => {
               {breadcrumbs.length > 0 && (
                 <>
                   <BreadcrumbSeparator className="hidden md:block" />
-                  {breadcrumbs.map((crumb, index) => (
+                  {breadcrumbs.map((crumb) => (
                     <React.Fragment key={crumb.href}>
                       <BreadcrumbItem>
                         {crumb.isLast && !extraBreadcrumb ? (

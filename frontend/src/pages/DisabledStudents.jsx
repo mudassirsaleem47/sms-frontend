@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -59,6 +59,14 @@ const API_BASE = import.meta.env.VITE_API_URL;
 const DisabledStudents = () => {
     const { currentUser } = useAuth();
     const { setExtraBreadcrumb } = useOutletContext() || {};
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const handleNameClick = (e, studentId) => {
+        e.stopPropagation();
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
+        navigate(`${basePath}/students/${studentId}`);
+    };
     
     // --- State Management ---
     const [students, setStudents] = useState([]);
@@ -82,7 +90,7 @@ const DisabledStudents = () => {
     });
 
     // --- 1. Data Fetching ---
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
@@ -99,13 +107,16 @@ const DisabledStudents = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUser._id]);
 
     useEffect(() => {
-        if (currentUser) fetchData();
-        // Reset breadcrumb
-        if (setExtraBreadcrumb) setExtraBreadcrumb(null);
-    }, [currentUser]);
+        if (currentUser) {
+            fetchData();
+        }
+        if (setExtraBreadcrumb) {
+            setExtraBreadcrumb("Disabled Students");
+        }
+    }, [currentUser, fetchData, setExtraBreadcrumb]);
 
     // --- 2. Computed Data ---
     const filteredStudents = useMemo(() => {
@@ -404,17 +415,22 @@ const DisabledStudents = () => {
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-10 w-10 grayscale border">
-                                                            <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} />
-                                                            <AvatarFallback className="bg-primary/10 text-primary">{student.name.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-medium text-foreground">{student.name}</span>
-                                                            <span className="text-xs text-muted-foreground font-mono">Roll: {student.rollNum}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
+                                                            <div className="flex items-center gap-3">
+                                                                <Avatar className="h-9 w-9 border">
+                                                                    <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} alt={student.name} />
+                                                                    <AvatarFallback>{student.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="flex flex-col">
+                                                                    <span
+                                                                        className="font-medium hover:underline cursor-pointer text-primary"
+                                                                        onClick={(e) => handleNameClick(e, student._id)}
+                                                                    >
+                                                                        {student.name}
+                                                                    </span>
+                                                                    <span className="text-xs text-muted-foreground">{student.admissionNum}</span>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="bg-background">
                                                         {student.sclassName?.sclassName || 'N/A'}
@@ -475,11 +491,11 @@ const DisabledStudents = () => {
                                             </div>
                                         </div>
                                         <CardContent className="pt-0 relative flex flex-col items-center pb-6">
-                                            <Avatar className="h-20 w-20 border-4 border-background -mt-10 mb-3 shadow-md grayscale group-hover:grayscale-0 transition-all">
+                                                        <Avatar className="h-20 w-20 border-4 border-background -mt-10 mb-3 shadow-md grayscale group-hover:grayscale-0 transition-all cursor-pointer" onClick={(e) => handleNameClick(e, student._id)}>
                                                 <AvatarImage src={`${API_BASE}/${student.studentPhoto}`} className="object-cover" />
                                                 <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
                                             </Avatar>
-                                            <h3 className="font-bold text-lg text-center leading-tight mb-1">{student.name}</h3>
+                                                        <h3 className="font-bold text-lg text-center leading-tight mb-1 hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</h3>
                                             <p className="text-sm text-muted-foreground mb-4">Roll: {student.rollNum}</p>
 
                                             <div className="w-full grid grid-cols-2 gap-2 text-center text-sm border-t pt-2">

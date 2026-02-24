@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const TeacherModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     // Form state - if initialData exists (Edit mode), use it, otherwise keep empty
@@ -188,12 +189,11 @@ const TeacherModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="joiningDate">Joining Date</Label>
-                            <Input
+                            <DatePicker
                                 id="joiningDate"
-                                name="joiningDate"
-                                type="date"
                                 value={formData.joiningDate}
-                                onChange={handleChange} 
+                                onChange={(val) => setFormData(prev => ({ ...prev, joiningDate: val }))}
+                                placeholder="Select joining date"
                             />
                         </div>
                     </div>

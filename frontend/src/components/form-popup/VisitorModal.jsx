@@ -32,6 +32,7 @@ import {
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 
@@ -473,11 +474,10 @@ const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Date <span className="text-destructive">*</span></Label>
-                                        <Input 
-                                            name="date" 
-                                            type="date" 
-                                            value={formData.date}
-                                            onChange={handleChange} 
+                                        <DatePicker
+                                            value={formData.date ? formData.date.split('T')[0] : ''}
+                                            onChange={(val) => setFormData(prev => ({ ...prev, date: val ? new Date(val).toISOString() : '' }))}
+                                            placeholder="Select date"
                                             required
                                         />
                                     </div>

@@ -1,4 +1,5 @@
 "use client"
+import { useLocation } from "react-router-dom"
 
 import * as React from "react"
 import { useNavigate } from "react-router-dom"
@@ -43,6 +44,7 @@ export default function SearchBar() {
     const [dbResults, setDbResults] = React.useState({ students: [], teachers: [] })
     const { currentUser } = useAuth()
     const navigate = useNavigate()
+    const location = useLocation()
 
     React.useEffect(() => {
         const down = (e) => {
@@ -106,12 +108,11 @@ export default function SearchBar() {
 
     const navigateToDetail = (type, id) => {
         setOpen(false);
+        const basePath = location.pathname.startsWith('/teacher') ? '/teacher' : '/admin';
         if (type === 'student') {
-            // Navigate to student detail or list filtered by student. 
-            // Currently navigating to list, ideal would be /admin/students/:id
-            navigate('/admin/students', { state: { searchTarget: id } });
+            navigate(`${basePath}/students/${id}`);
         } else if (type === 'teacher') {
-            navigate('/admin/teachers', { state: { searchTarget: id } });
+            navigate(`${basePath}/teachers/${id}`);
         }
     }
 
@@ -195,7 +196,7 @@ export default function SearchBar() {
                         value={query}
                         onValueChange={setQuery}
                     />
-                    <CommandList>
+                    <CommandList className="[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
                         <CommandEmpty>No results found.</CommandEmpty>
 
                         {/* Database Results */}
