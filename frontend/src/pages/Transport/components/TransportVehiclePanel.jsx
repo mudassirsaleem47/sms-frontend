@@ -9,12 +9,13 @@ import { Loader2, Plus, Trash2, Bus, User, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
+import API_URL_CENTRAL from '@/config/api';
+
+const API_BASE = API_URL_CENTRAL;
 
 const TransportVehiclePanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
 
     const [vehicles, setVehicles] = useState([]);
     const [routes, setRoutes] = useState([]);
@@ -227,4 +228,3 @@ const API_BASE = API_URL_CENTRAL;
 };
 
 export default TransportVehiclePanel;
-

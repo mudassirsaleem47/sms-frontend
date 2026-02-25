@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import API_URL_CENTRAL from '@/config/api';
+
+const API_BASE = API_URL_CENTRAL;
 
 const SyllabusStatus = () => {
     const { currentUser } = useAuth();
-    import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
 
     // Filters
     const [classes, setClasses] = useState([]);
@@ -76,7 +77,7 @@ const API_BASE = API_URL_CENTRAL;
             const topicIds = [];
             
             // For each lesson, fetch topics (or if we had a better endpoint, get all topics by subject)
-             // Optimization: Add an endpoint to get topic count or list by subject/class directly
+            // Optimization: Add an endpoint to get topic count or list by subject/class directly
             // For now, iterate
             for (const lesson of lessonRes.data) {
                 const topicRes = await axios.get(`${API_BASE}/LessonPlan/Topic/${lesson._id}`);
@@ -203,4 +204,3 @@ const API_BASE = API_URL_CENTRAL;
 };
 
 export default SyllabusStatus;
-

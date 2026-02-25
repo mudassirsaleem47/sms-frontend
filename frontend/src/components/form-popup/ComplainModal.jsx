@@ -18,6 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DatePicker } from "@/components/ui/DatePicker";
+import API_URL_CENTRAL from '@/config/api';
+
+const API_URL = API_URL_CENTRAL;
 
 const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode = false }) => {
     // Form state
@@ -34,8 +37,6 @@ const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode
 
     const [showFullImage, setShowFullImage] = useState(false);
     const fileInputRef = useRef(null);
-    import API_URL_CENTRAL from '@/config/api';
-const API_URL = API_URL_CENTRAL;
 
     useEffect(() => {
         if (initialData) {
@@ -399,4 +400,3 @@ const API_URL = API_URL_CENTRAL;
 };
 
 export default ComplainModal;
-

@@ -11,12 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import API_URL_CENTRAL from '@/config/api';
+
+const API_BASE = API_URL_CENTRAL;
 
 const LessonPlanManager = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
 
     // Filters & Selection
     const [classes, setClasses] = useState([]);
@@ -323,4 +324,3 @@ const API_BASE = API_URL_CENTRAL;
 };
 
 export default LessonPlanManager;
-

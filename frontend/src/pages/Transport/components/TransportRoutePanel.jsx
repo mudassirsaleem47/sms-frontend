@@ -9,12 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Trash2, Route } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
+import API_URL_CENTRAL from '@/config/api';
+
+const API_BASE = API_URL_CENTRAL;
 
 const TransportRoutePanel = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
 
     const [routes, setRoutes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -180,4 +181,3 @@ const API_BASE = API_URL_CENTRAL;
 };
 
 export default TransportRoutePanel;
-

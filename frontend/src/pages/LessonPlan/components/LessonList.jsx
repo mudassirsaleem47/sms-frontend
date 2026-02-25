@@ -9,12 +9,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
+import API_URL_CENTRAL from '@/config/api';
+
+const API_BASE = API_URL_CENTRAL;
 
 const LessonList = () => {
     const { currentUser } = useAuth();
     const { showToast } = useToast();
-    import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
 
     // Filter state
     const [classes, setClasses] = useState([]);
@@ -339,4 +340,3 @@ const API_BASE = API_URL_CENTRAL;
 };
 
 export default LessonList;
-
