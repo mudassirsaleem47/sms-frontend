@@ -14,8 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import TaskFormModal from './form-popup/TaskFormModal';
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const TaskModal = () => {
     const { currentUser } = useAuth();

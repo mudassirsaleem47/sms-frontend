@@ -5,8 +5,8 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useModalAnimation } from '../hooks/useModalAnimation';
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const CalendarModal = ({ isOpen, onClose }) => {
     const { currentUser } = useAuth();

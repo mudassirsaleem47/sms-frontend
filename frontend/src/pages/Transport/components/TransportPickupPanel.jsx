@@ -8,9 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Plus, Trash2, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import ConfirmDeleteModal from '@/components/form-popup/ConfirmDeleteModal';
-import API_URL_CENTRAL from '@/config/api';
+import API_URL from '@/config/api';
 
-const API_BASE = API_URL_CENTRAL;
+const API_BASE = API_URL;
 
 const TransportPickupPanel = () => {
     const { currentUser } = useAuth();

@@ -50,8 +50,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import StaffModal from '../components/form-popup/StaffModal';
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const ReceptionistList = () => {
     const { currentUser } = useAuth();

@@ -34,8 +34,8 @@ import { useAuth } from '../../context/AuthContext';
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/DatePicker";
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const VisitorModal = ({ isOpen, onClose, onSubmit, initialData, viewMode = false }) => {
     const { currentUser } = useAuth();

@@ -7,9 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import API_URL_CENTRAL from '@/config/api';
+import API_URL from '@/config/api';
 
-const API_BASE = API_URL_CENTRAL;
+const API_BASE = API_URL;
 
 const SyllabusStatus = () => {
     const { currentUser } = useAuth();

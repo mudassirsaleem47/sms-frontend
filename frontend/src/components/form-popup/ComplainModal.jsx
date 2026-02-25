@@ -18,9 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { DatePicker } from "@/components/ui/DatePicker";
-import API_URL_CENTRAL from '@/config/api';
+import API_URL from '@/config/api';
 
-const API_URL = API_URL_CENTRAL;
 
 const ComplainModal = ({ isOpen, onClose, onSubmit, initialData = null, viewMode = false }) => {
     // Form state

@@ -13,8 +13,8 @@ import { Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,Dialog
 import { AlertDialog,AlertDialogAction,AlertDialogCancel,AlertDialogContent,AlertDialogDescription,AlertDialogFooter,AlertDialogHeader,AlertDialogTitle,} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const ExamGroup = () => {
   const { currentUser } = useAuth();

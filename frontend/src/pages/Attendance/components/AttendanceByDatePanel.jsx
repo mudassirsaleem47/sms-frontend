@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import API_URL_CENTRAL from '@/config/api';
+import API_URL from '@/config/api';
 
-const API_BASE = API_URL_CENTRAL;
+const API_BASE = API_URL;
 
 const AttendanceByDatePanel = () => {
     const { currentUser } = useAuth();

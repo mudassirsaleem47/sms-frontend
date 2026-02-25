@@ -8,9 +8,9 @@ import { Loader2, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import API_URL_CENTRAL from '@/config/api';
+import API_URL from '@/config/api';
 
-const API_BASE = API_URL_CENTRAL;
+const API_BASE = API_URL;
 
 const ApproveLeavePanel = () => {
     const { currentUser } = useAuth();

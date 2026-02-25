@@ -21,8 +21,8 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const StudentAdmissionForm = ({ onSuccess, onCancel }) => {
     const { currentUser } = useAuth();

@@ -58,8 +58,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { MoreHorizontal, Printer, Copy, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const FeeReports = () => {
   const { currentUser } = useAuth();

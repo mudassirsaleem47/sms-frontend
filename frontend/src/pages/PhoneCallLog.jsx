@@ -67,8 +67,8 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet";
 
-import API_URL_CENTRAL from '@/config/api';
-const API_BASE = API_URL_CENTRAL;
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
 const PhoneCallLog = () => {
     const { currentUser } = useAuth();
