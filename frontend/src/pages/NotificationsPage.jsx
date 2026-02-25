@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import API_URL from '../config/api';
 import { useAuth } from '../context/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, Info, AlertTriangle, CheckCircle, Clock, Trash2, Check, MoreVertical, Search, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { toast } from "sonner";
+
 
 const NotificationsPage = () => {
     const { currentUser } = useAuth();
@@ -34,7 +36,7 @@ const NotificationsPage = () => {
     const fetchNotifications = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL_CENTRAL}/Notifications/${currentUser._id}`);
+            const response = await axios.get(`${API_URL}/Notifications/${currentUser._id}`);
             if (response.data.success) {
                 setNotifications(response.data.notifications);
             }
@@ -50,7 +52,7 @@ const NotificationsPage = () => {
 
     const handleMarkAllRead = async () => {
         try {
-            await axios.put(`${API_URL_CENTRAL}/Notifications/read-all/${currentUser._id}`);
+            await axios.put(`${API_URL}/Notifications/read-all/${currentUser._id}`);
             setNotifications(notifications.map(n => ({ ...n, read: true })));
             toast.success("Success", { description: "All notifications marked as read" });
         } catch (error) {
@@ -61,7 +63,7 @@ const NotificationsPage = () => {
 
     const handleClearAll = async () => {
         try {
-            await axios.delete(`${API_URL_CENTRAL}/Notifications/clear-all/${currentUser._id}`);
+            await axios.delete(`${API_URL}/Notifications/clear-all/${currentUser._id}`);
             setNotifications([]);
             toast.success("Success", { description: "All notifications cleared" });
         } catch (error) {
@@ -72,7 +74,7 @@ const NotificationsPage = () => {
 
     const handleMarkAsRead = async (id) => {
         try {
-            await axios.put(`${API_URL_CENTRAL}/Notification/${id}/read`);
+            await axios.put(`${API_URL}/Notification/${id}/read`);
             setNotifications(notifications.map(n => n._id === id ? { ...n, read: true } : n));
         } catch (error) {
             console.error("Error marking as read:", error);
@@ -81,7 +83,7 @@ const NotificationsPage = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${API_URL_CENTRAL}/Notification/${id}`);
+            await axios.delete(`${API_URL}/Notification/${id}`);
             setNotifications(notifications.filter(n => n._id !== id));
             toast.success("Deleted", { description: "Notification removed" });
         } catch (error) {
