@@ -15,20 +15,6 @@ import {
   IconCalendar,
 } from "@tabler/icons-react"
 
-import { Link } from "react-router-dom"
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"
 import { useAuth } from "../context/AuthContext"
 
 // Admin full navigation
@@ -274,7 +260,7 @@ export function AppSidebar({
   const userData = {
     name: currentUser?.name || (isTeacher ? "Teacher" : (isParent ? "Parent" : (isAccountant ? "Accountant" : (isReceptionist ? "Receptionist" : "Admin")))),
     email: currentUser?.email || (isTeacher ? "teacher@school.com" : (isParent ? "parent@school.com" : (isAccountant ? "accountant@school.com" : (isReceptionist ? "receptionist@school.com" : "admin@school.com")))),
-    avatar: currentUser?.avatar || "/avatars/admin.png",
+    avatar: currentUser?.avatar || "https://github.com/shadcn.png",
   };
 
   return (
