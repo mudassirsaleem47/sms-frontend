@@ -14,6 +14,12 @@ import {
   IconCalendar,
 } from "@tabler/icons-react"
 
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "./ui/sidebar"
+import { NavMain } from "./nav-main"
+import { NavUser } from "./nav-user"
+import { TeamSwitcher } from "./team-switcher"
+import { Link } from "react-router-dom"
+
 import { useAuth } from "../context/AuthContext"
 
 // Admin full navigation
