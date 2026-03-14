@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { 
-  DollarSign, 
+  DollarSign,
   TrendingUp, 
   Calendar, 
   Plus, 
@@ -42,7 +42,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -60,6 +59,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
 import ConfirmDeleteModal from '../components/form-popup/ConfirmDeleteModal';
+import { TablePagination } from '../components/TablePagination';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import API_URL from '@/config/api';
 const API_BASE = API_URL;
@@ -81,11 +82,13 @@ const FeeManagement = () => {
   const [editingFee, setEditingFee] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [feeToDelete, setFeeToDelete] = useState(null);
+  const [selectedFees, setSelectedFees] = useState([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   
   const [formData, setFormData] = useState({
     feeName: '',
     feeType: 'Tuition',
-    class: '',
     amount: '',
     academicYear: new Date().getFullYear().toString(),
     frequency: 'Monthly',
@@ -93,10 +96,15 @@ const FeeManagement = () => {
     dueDate: '',
     description: ''
   });
+  const [errors, setErrors] = useState({});
 
   const [searchTerm, setSearchTerm] = useState('');
 
   const feeTypes = ['Tuition', 'Transport', 'Library', 'Sports', 'Lab', 'Exam', 'Uniform', 'Other'];
+
+  useEffect(() => {
+    setSelectedFees([]);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (currentUser) {
@@ -130,10 +138,27 @@ const FeeManagement = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Explicit validation for required fields
+    const newErrors = {};
+    if (!formData.feeName) newErrors.feeName = 'Fee Name is required';
+    if (!formData.feeType) newErrors.feeType = 'Fee Type is required';
+    if (!formData.amount) newErrors.amount = 'Amount is required';
+    if (!formData.academicYear) newErrors.academicYear = 'Academic Year is required';
+    if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
+    if (formData.frequency === 'Monthly' && !formData.month) newErrors.month = 'Month is required';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
     
     try {
       const payload = {
@@ -162,7 +187,6 @@ const FeeManagement = () => {
     setFormData({
       feeName: fee.feeName,
       feeType: fee.feeType,
-      class: fee.class?._id || '',
       amount: fee.amount.toString(),
       academicYear: fee.academicYear,
       frequency: fee.frequency || 'Monthly',
@@ -193,11 +217,42 @@ const FeeManagement = () => {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedFees.length === currentFees.length) {
+      setSelectedFees([]);
+    } else {
+      setSelectedFees(currentFees.map(f => f._id));
+    }
+  };
+
+  const toggleSelectFee = (id) => {
+    if (selectedFees.includes(id)) {
+      setSelectedFees(selectedFees.filter(fid => fid !== id));
+    } else {
+      setSelectedFees([...selectedFees, id]);
+    }
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedFees.length === 0) return;
+    try {
+      setIsDeletingBulk(true);
+      await Promise.all(selectedFees.map(id => axios.delete(`${API_BASE}/FeeStructure/${id}`)));
+      showToast(`${selectedFees.length} fee structure(s) deleted successfully!`, 'success');
+      setSelectedFees([]);
+      fetchData();
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Error deleting some fee structures', 'error');
+    } finally {
+      setIsDeletingBulk(false);
+      setIsBulkDeleteModalOpen(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       feeName: '',
       feeType: 'Tuition',
-      class: '',
       amount: '',
       academicYear: new Date().getFullYear().toString(),
       frequency: 'Monthly',
@@ -207,6 +262,7 @@ const FeeManagement = () => {
     });
     setEditingFee(null);
     setIsDialogOpen(false);
+    setErrors({});
   };
 
   const filteredFees = feeStructures.filter(fee =>
@@ -290,14 +346,26 @@ const FeeManagement = () => {
             <CardTitle>Fee Structures</CardTitle>
             <CardDescription>All defined fee types and amounts</CardDescription>
           </div>
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search fees..."
-              className="pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex items-center space-x-4">
+            {selectedFees.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Selected ({selectedFees.length})
+              </Button>
+            )}
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search fees..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -307,13 +375,20 @@ const FeeManagement = () => {
               <p>No fee structures found</p>
             </div>
           ) : (
+            <>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[50px]">
+                        <Checkbox 
+                          checked={selectedFees.length === filteredFees.length && filteredFees.length > 0} 
+                          onCheckedChange={toggleSelectAll} 
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead>Fee Name</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Class</TableHead>
                       <TableHead>Frequency</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Due Date</TableHead>
@@ -323,13 +398,19 @@ const FeeManagement = () => {
                   <TableBody>
                     {filteredFees.map((fee) => (
                       <TableRow key={fee._id}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedFees.includes(fee._id)} 
+                            onCheckedChange={() => toggleSelectFee(fee._id)} 
+                            aria-label="Select fee"
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{fee.feeName}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
                             {fee.feeType}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{fee.class?.sclassName || 'All Classes'}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-col">
                                     <span>{fee.frequency}</span>
@@ -361,6 +442,7 @@ const FeeManagement = () => {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -388,6 +470,7 @@ const FeeManagement = () => {
                   placeholder="e.g. Tuition Fee"
                   required
                 />
+                {errors.feeName && <p className="text-xs text-destructive">{errors.feeName}</p>}
               </div>
 
               <div className="space-y-2">
@@ -401,32 +484,15 @@ const FeeManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {feeTypes.map(type => (
-                                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                                ))}
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+                {errors.feeType && <p className="text-xs text-destructive">{errors.feeType}</p>}
               </div>
-                </div>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Class</Label>
-                <Select
-                  value={formData.class}
-                  onValueChange={(val) => handleInputChange('class', val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Removed the empty value SelectItem to fix the error */}
-                    {classes.map(cls => (
-                                  <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
-                                ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label>Amount (Rs.) *</Label>
                 <Input
@@ -437,8 +503,9 @@ const FeeManagement = () => {
                   min="0"
                   required
                 />
+                {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
               </div>
-                </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -475,6 +542,7 @@ const FeeManagement = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.month && <p className="text-xs text-destructive">{errors.month}</p>}
                 </div>
               )}
             </div>
@@ -488,6 +556,7 @@ const FeeManagement = () => {
                   placeholder="Select due date"
                   required
                 />
+                {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Academic Year *</Label>
@@ -496,8 +565,9 @@ const FeeManagement = () => {
                   onChange={(e) => handleInputChange('academicYear', e.target.value)}
                   required
                 />
+                {errors.academicYear && <p className="text-xs text-destructive">{errors.academicYear}</p>}
               </div>
-                </div>
+            </div>
 
             <div className="space-y-2">
               <Label>Description</Label>
@@ -527,6 +597,15 @@ const FeeManagement = () => {
         title="Delete Fee Structure?"
         description="Are you sure you want to delete this fee structure? This action cannot be undone."
         confirmText="Delete"
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={confirmBulkDelete}
+        title={`Delete ${selectedFees.length} Fee Structures?`}
+        description="Are you sure you want to delete the selected fee structures? This action cannot be undone."
+        confirmText={isDeletingBulk ? "Deleting..." : "Delete Selected"}
       />
     </div>
   );
