@@ -28,7 +28,7 @@ const API_BASE = API_URL;
 
 const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const { currentUser, activeSession } = useAuth();
-    const { campuses, selectedCampus } = useCampus();
+    const { campuses, selectedCampus, isMainAdmin } = useCampus();
 
     // --- State ---
     const [classesList, setClassesList] = useState([]);
@@ -141,16 +141,10 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         }
     }, [currentUser._id]);
 
-    const fetchAvailableFees = React.useCallback(async (classId) => {
+    const fetchAvailableFees = React.useCallback(async () => {
         try {
             const res = await axios.get(`${API_BASE}/FeeStructures/${currentUser._id}`);
-            // Filter fees by class
-            const filteredFees = res.data.filter(f => {
-                const fClassId = f.class?._id || f.class;
-                return fClassId === classId;
-            });
-            setFeeStructuresList(filteredFees);
-            setSelectedFees([]); // Reset selection
+            setFeeStructuresList(res.data);
         } catch (err) {
             console.error("Failed to fetch fees", err);
         }
@@ -159,12 +153,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     useEffect(() => {
         if (currentUser) {
             fetchClasses();
+            fetchAvailableFees();
             if (!editStudentId) {
                 fetchNextAdmissionNum();
             }
             fetchRoutes();
         }
-    }, [currentUser, fetchClasses, fetchNextAdmissionNum, fetchRoutes, editStudentId]);
+    }, [currentUser, fetchClasses, fetchNextAdmissionNum, fetchRoutes, editStudentId, fetchAvailableFees]);
 
     // Fetch student data if edit mode
     useEffect(() => {
@@ -215,7 +210,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                          if (selectedClass) setSectionsList(selectedClass.sections);
                          setClassesList(cRes.data);
                     } catch (e) {}
-                    fetchAvailableFees(classId);
                 }
 
                 // If transport route exists, fetch pickup points
@@ -257,7 +251,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             const selectedClass = classesList.find(c => c._id === value);
             setSectionsList(selectedClass ? selectedClass.sections : []);
             setFormData(prev => ({ ...prev, [name]: value, section: '' }));
-            fetchAvailableFees(value);
         } else if (name === 'route' && section === 'transport') {
             const selectedRoute = routesList.find(r => r._id === value);
             setFormData(prev => ({
@@ -511,8 +504,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                             <div className="space-y-2">
                                 <Label htmlFor="campus">Campus</Label>
-                                <Select value={formData.campus} onValueChange={(val) => handleSelectChange('campus', val)}>
-                                    <SelectTrigger>
+                                <Select 
+                                    value={formData.campus} 
+                                    onValueChange={(val) => handleSelectChange('campus', val)}
+                                    disabled={!isMainAdmin}
+                                >
+                                    <SelectTrigger className={!isMainAdmin ? "bg-muted cursor-not-allowed" : ""}>
                                         <SelectValue placeholder="Select Campus" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -521,6 +518,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {!isMainAdmin && <p className="text-[10px] text-muted-foreground mt-1">Campus is pre-selected based on your branch.</p>}
                             </div>
                         </div>
                     </div>
@@ -870,13 +868,9 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
                             <p className="text-muted-foreground text-sm">Fee assignment is done during new admission. To manage fees for existing students, please use the Fee Collection module.</p>
                         </div>
-                    ) : !formData.sclassName ? (
-                        <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
-                            <p className="text-muted-foreground text-sm">Please select a class first to see available fee structures.</p>
-                        </div>
                     ) : feeStructuresList.length === 0 ? (
                         <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
-                            <p className="text-muted-foreground text-sm">No active fee structures found for this class.</p>
+                            <p className="text-muted-foreground text-sm">No active fee structures found.</p>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

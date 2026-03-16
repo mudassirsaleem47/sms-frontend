@@ -30,7 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const StaffModal = ({ staff, onClose }) => {
     const { currentUser } = useAuth();
-    const { campuses } = useCampus();
+    const { campuses, selectedCampus, isMainAdmin } = useCampus();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -44,6 +44,7 @@ const StaffModal = ({ staff, onClose }) => {
     const [salary, setSalary] = useState('');
     const [joiningDate, setJoiningDate] = useState(new Date().toISOString());
     const [status, setStatus] = useState('active');
+
     const designations = [
         "Accountant",
         "Teacher",
@@ -65,7 +66,7 @@ const StaffModal = ({ staff, onClose }) => {
             setPassword(''); // Don't populate password
             setPhone(staff.phone || '');
             setDesignation(staff.designation || '');
-            setCampus(staff.campus?._id || '');
+            setCampus(staff.campus?._id || staff.campus || '');
             setSalary(staff.salary || '');
             setJoiningDate(staff.joiningDate || new Date().toISOString());
             setStatus(staff.status || 'active');
@@ -76,12 +77,13 @@ const StaffModal = ({ staff, onClose }) => {
             setPassword('');
             setPhone('');
             setDesignation('');
-            setCampus('');
+            // Default to currently selected campus if adding new
+            setCampus(selectedCampus?._id || '');
             setSalary('');
             setJoiningDate(new Date().toISOString());
             setStatus('active');
         }
-    }, [staff]);
+    }, [staff, selectedCampus]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -207,7 +209,7 @@ const StaffModal = ({ staff, onClose }) => {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="campus">Campus</Label>
-                                <Select value={campus} onValueChange={setCampus}>
+                                <Select value={campus} onValueChange={setCampus} disabled={!isMainAdmin}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select campus" />
                                     </SelectTrigger>

@@ -3,6 +3,7 @@ import { formatDateTime } from '../utils/formatDateTime';
 import { useNavigate, useOutletContext, useSearchParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { toast } from 'sonner';
 import API_URL from '@/config/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,6 +67,7 @@ const API_BASE = API_URL;
 
 const StudentList = () => {
     const { currentUser, activeSession } = useAuth();
+    const { selectedCampus } = useCampus();
     const navigate = useNavigate();
     const location = useLocation();
     const { setExtraBreadcrumb } = useOutletContext() || {};
@@ -116,7 +118,7 @@ const StudentList = () => {
         if (currentUser) {
             fetchInitialData();
         }
-    }, [currentUser, activeSession]);
+    }, [currentUser, activeSession, selectedCampus]);
 
     const fetchInitialData = async () => {
         try {
@@ -124,10 +126,11 @@ const StudentList = () => {
             
             // Correctly derive school ID for all user types
             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
-            
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+
             const [classesRes, studentsRes] = await Promise.all([
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`),
-                axios.get(`${API_BASE}/Students/${schoolId}`)
+                axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`)
             ]);
 
             let fetchedClasses = Array.isArray(classesRes.data) ? classesRes.data : [];

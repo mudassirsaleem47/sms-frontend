@@ -239,6 +239,14 @@ const parentNavData = [
 const accountantNavData = [
   { title: 'Dashboard', url: '/accountant/dashboard', icon: IconSchool },
   {
+    title: 'Student Information',
+    icon: IconUsers,
+    items: [
+      { title: 'Student List', url: '/accountant/students' },
+      { title: 'Admission', url: '/accountant/admission' },
+    ]
+  },
+  {
     title: 'Fees Management',
     icon: IconCurrencyDollar,
     items: [
@@ -258,6 +266,14 @@ const accountantNavData = [
 
 const receptionistNavData = [
   { title: 'Dashboard', url: '/receptionist/dashboard', icon: IconSchool },
+  {
+    title: 'Student Information',
+    icon: IconUsers,
+    items: [
+      { title: 'Student List', url: '/receptionist/students' },
+      { title: 'Admission', url: '/receptionist/admission' },
+    ]
+  },
   {
     title: 'Front Office',
     icon: IconBriefcase,

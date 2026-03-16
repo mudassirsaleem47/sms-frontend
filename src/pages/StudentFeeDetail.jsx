@@ -163,8 +163,13 @@ const StudentFeeDetail = () => {
   /* ── totals ── */
   const totals = useMemo(() =>
     fees.reduce(
-      (acc, f) => ({ total: acc.total + (f.totalAmount || 0), paid: acc.paid + (f.paidAmount || 0), balance: acc.balance + (f.pendingAmount || 0) }),
-      { total: 0, paid: 0, balance: 0 }
+      (acc, f) => ({
+        total: acc.total + (f.totalAmount || 0),
+        paid: acc.paid + (f.paidAmount || 0),
+        discount: acc.discount + (f.discountAmount || 0),
+        balance: acc.balance + (f.pendingAmount || 0)
+      }),
+      { total: 0, paid: 0, discount: 0, balance: 0 }
     ), [fees]);
 
   /* ── pay modal ── */
@@ -190,6 +195,7 @@ const StudentFeeDetail = () => {
       setPaying(true);
       const res = await axios.post(`${API_BASE}/CollectFee`, {
         feeId: selectedFee._id, amount,
+        discount,
         paymentMethod: paymentForm.paymentMethod,
         collectedBy: currentUser._id,
         chequeNumber: paymentForm.chequeNumber, bankName: paymentForm.bankName,
@@ -216,7 +222,7 @@ const StudentFeeDetail = () => {
 
   /* ════════════ RENDER ════════════ */
   return (
-    <div className="space-y-4">
+    <div className="flex-1 space-y-6 p-8 pt-6">
 
 
         {/* ─── TOP ROW: Profile (left) + Stats (right) ─── */}
@@ -402,7 +408,9 @@ const StudentFeeDetail = () => {
                             <TableCell className="text-xs text-muted-foreground">—</TableCell>
                             <TableCell className="text-xs text-muted-foreground">—</TableCell>
                             <TableCell className="text-xs text-muted-foreground">—</TableCell>
-                            <TableCell className="text-right text-xs text-muted-foreground tabular-nums">0.00</TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                              {fee.discountAmount > 0 ? fmt(fee.discountAmount) : '0.00'}
+                            </TableCell>
                             <TableCell className="text-right tabular-nums text-sm text-emerald-600 font-medium">
                               {fmt(fee.paidAmount)}
                             </TableCell>
@@ -427,8 +435,7 @@ const StudentFeeDetail = () => {
 
                           {/* ── Sub-rows: transactions ── */}
                           {feeTxns.map((txn, i) => {
-                            const discountMatch = txn.remarks?.match(/\[Discount: Rs\.([\d.]+)\]/);
-                            const discount = discountMatch ? parseFloat(discountMatch[1]) : 0;
+                            const discount = txn.discount || (txn.remarks?.match(/\[Discount: Rs\.([\d.]+)\]/)?.[1] ? parseFloat(txn.remarks.match(/\[Discount: Rs\.([\d.]+)\]/)[1]) : 0);
                             return (
                               <TableRow key={txn._id || i} className="bg-muted/10 text-xs border-l-2 border-l-primary/40">
                                 <TableCell className="pl-4" />
@@ -504,9 +511,10 @@ const StudentFeeDetail = () => {
           {!loadingFees && fees.length > 0 && (
             <CardFooter className="border-t bg-muted/20 py-3 px-5 flex flex-wrap gap-6 justify-end">
               {[
-                { label: 'Total', value: totals.total,   cls: 'text-foreground' },
-                { label: 'Paid',  value: totals.paid,    cls: 'text-emerald-600' },
-                { label: 'Balance', value: totals.balance, cls: totals.balance > 0 ? 'text-destructive' : 'text-emerald-600' },
+                { label: 'Total',    value: totals.total,    cls: 'text-foreground' },
+                { label: 'Discount', value: totals.discount, cls: 'text-blue-600' },
+                { label: 'Paid',     value: totals.paid,     cls: 'text-emerald-600' },
+                { label: 'Balance',  value: totals.balance,  cls: totals.balance > 0 ? 'text-destructive' : 'text-emerald-600' },
               ].map(({ label, value, cls }) => (
                 <div key={label} className="text-right">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>

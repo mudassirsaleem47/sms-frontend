@@ -19,6 +19,7 @@ import {
 import { ParentLoginForm } from "@/components/parent-login-form";
 import { AccountantLoginForm } from "@/components/accountant-login-form";
 import { ReceptionistLoginForm } from "@/components/receptionist-login-form";
+import { CampusLoginForm } from "@/components/campus-login-form";
 
 const AdminLoginPage = () => {
   const { login, loading, error } = useAuth();
@@ -72,6 +73,10 @@ const AdminLoginPage = () => {
               <TabsTrigger value="parent" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
               
                 <span className="hidden sm:inline text-xs font-medium">Parent</span>
+              </TabsTrigger>
+              <TabsTrigger value="campus" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+              
+                <span className="hidden sm:inline text-xs font-medium">Campus</span>
               </TabsTrigger>
             </TabsList>
 
@@ -159,6 +164,10 @@ const AdminLoginPage = () => {
 
               <TabsContent value="parent">
                 <ParentLoginForm />
+              </TabsContent>
+
+              <TabsContent value="campus">
+                <CampusLoginForm />
               </TabsContent>
             </div>
           </Tabs>

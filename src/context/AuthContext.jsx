@@ -102,6 +102,8 @@ export const AuthContextProvider = ({ children }) => {
         setError(null);
         try {
             const res = await axios.post(TEACHER_LOGIN_URL, credentials);
+            // res.data.teacher already contains populated campus from backend teacherLogin controller? 
+            // Let's check backend teacherLogin controller first.
             const userData = { ...res.data.teacher, userType: 'teacher' };
             localStorage.setItem('currentUser', JSON.stringify(userData));
             setCurrentUser(userData);
@@ -148,7 +150,7 @@ export const AuthContextProvider = ({ children }) => {
             if (normalizeRole === 'accountant') userType = 'accountant';
             else if (normalizeRole === 'teacher') userType = 'teacher';
             else if (normalizeRole === 'receptionist') userType = 'receptionist';
-            else if (normalizeRole === 'admin') userType = 'admin';
+            else if (normalizeRole === 'admin' || normalizeRole === 'principal') userType = 'admin';
 
             const userData = { ...staff, userType: userType };
             localStorage.setItem('currentUser', JSON.stringify(userData));

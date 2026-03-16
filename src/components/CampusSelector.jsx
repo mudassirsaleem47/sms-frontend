@@ -25,7 +25,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const CampusSelector = () => {
-    const { campuses, selectedCampus, changeCampus, clearCampusSelection, loading } = useCampus();
+    const { campuses, selectedCampus, changeCampus, clearCampusSelection, isMainAdmin, loading } = useCampus();
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -43,6 +43,16 @@ const CampusSelector = () => {
         setOpen(false);
         navigate('/admin/campuses?action=new');
     };
+
+    // If not main admin, just show their campus name as a badge/text
+    if (!isMainAdmin && selectedCampus) {
+        return (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border border-dashed border-muted-foreground/30 max-w-[220px]">
+                <Building2 className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm font-medium truncate">{selectedCampus.campusName}</span>
+            </div>
+        );
+    }
 
     return (
         <Popover open={open} onOpenChange={setOpen}>

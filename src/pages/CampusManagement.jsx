@@ -67,7 +67,8 @@ const CampusManagement = () => {
         principalName: '',
         totalCapacity: '',
         isMain: false,
-        status: 'Active'
+        status: 'Active',
+        password: '' // Added password field
     });
     const [formLoading, setFormLoading] = useState(false);
 
@@ -161,7 +162,8 @@ const CampusManagement = () => {
                 principalName: '',
                 totalCapacity: '',
                 isMain: false,
-                status: 'Active'
+                status: 'Active',
+                password: ''
             });
         }
         setIsDialogOpen(true);
@@ -436,6 +438,23 @@ const CampusManagement = () => {
                                         <Input id="principal" value={formData.principalName} onChange={(e) => handleFormChange('principalName', e.target.value)} placeholder="Name of Principal" />
                                     </div>
                                 </div>
+
+                                {!selectedCampus && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="password">Login Password <span className="text-destructive">*</span></Label>
+                                            <Input 
+                                                id="password" 
+                                                type="password" 
+                                                value={formData.password} 
+                                                onChange={(e) => handleFormChange('password', e.target.value)} 
+                                                placeholder="Create password for campus login" 
+                                                required={!selectedCampus}
+                                            />
+                                            <p className="text-[10px] text-muted-foreground italic">Required for creating the Principal login account.</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">

@@ -117,11 +117,19 @@ const AdminDashboard = () => {
       // If custom dates are set, we use them.
       // Otherwise fallback to activeSession if it's not a 'lifetime' preset.
       let statsParams = '';
+      const campusId = selectedCampus?._id || selectedCampus;
+      const campusPart = campusId ? `campus=${campusId}` : '';
+
       if (startDate && endDate) {
-        statsParams = `?startDate=${startDate}&endDate=${endDate}`;
+        statsParams = `?startDate=${startDate}&endDate=${endDate}${campusPart ? `&${campusPart}` : ''}`;
       } else if (datePreset !== 'lifetime' && activeSession) {
-        statsParams = `?session=${activeSession._id}`;
+        statsParams = `?session=${activeSession._id}${campusPart ? `&${campusPart}` : ''}`;
+      } else if (campusPart) {
+        statsParams = `?${campusPart}`;
       }
+
+      const qChar = statsParams ? (statsParams.includes('?') ? '&' : '?') : '?';
+      const campusQuery = campusPart ? `?${campusPart}` : '';
 
       let studentCount = 0;
       let teacherCount = 0;
@@ -148,9 +156,9 @@ const AdminDashboard = () => {
       } else {
         // Fetch everything in parallel
         const [studRes, teachRes, classRes] = await Promise.allSettled([
-          axios.get(`${API_URL}/Students/${schoolId}`),
-          axios.get(`${API_URL}/Teachers/${schoolId}`),
-          axios.get(`${API_URL}/Sclasses/${schoolId}`),
+          axios.get(`${API_URL}/Students/${schoolId}${campusQuery}`),
+          axios.get(`${API_URL}/Teachers/${schoolId}${campusQuery}`),
+          axios.get(`${API_URL}/Sclasses/${schoolId}${campusQuery}`),
         ]);
 
         if (studRes.status === 'fulfilled') {
@@ -170,8 +178,8 @@ const AdminDashboard = () => {
 
       // 3. Fetch Transactional Statistics (Filtered by Dates)
       const fetchPromises = [
-        axios.get(`${API_URL}/Notifications/${schoolId}`),
-        axios.get(`${API_URL}/Events/${schoolId}`),
+        axios.get(`${API_URL}/Notifications/${schoolId}${campusQuery}`),
+        axios.get(`${API_URL}/Events/${schoolId}${campusQuery}`),
         ...(isTeacher ? [] : [
           axios.get(`${API_URL}/FeeStatistics/${schoolId}${statsParams}`),
           axios.get(`${API_URL}/IncomeStatistics/${schoolId}${statsParams}`),

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -23,6 +24,7 @@ const API_BASE = API_URL;
 
 const FeeCollection = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,9 +42,11 @@ const FeeCollection = () => {
     try {
       setLoading(true);
       const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      
       const [classRes, studentRes] = await Promise.all([
-        axios.get(`${API_BASE}/Sclasses/${schoolId}`),
-        axios.get(`${API_BASE}/Students/${schoolId}`),
+        axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
       ]);
       setClasses(Array.isArray(classRes.data) ? classRes.data : []);
       setAllStudents(Array.isArray(studentRes.data) ? studentRes.data : []);
@@ -51,7 +55,7 @@ const FeeCollection = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser, showToast]);
+  }, [currentUser, selectedCampus, showToast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

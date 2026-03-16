@@ -232,6 +232,9 @@ function App() {
                 <Route path="/accountant" element={<AdminLayout />}>
                   <Route index element={<AccountantDashboard />} />
                   <Route path="dashboard" element={<AccountantDashboard />} />
+                  <Route path="students" element={<StudentList />} />
+                  <Route path="students/:studentId" element={<StudentDetailPage />} />
+                  <Route path="admission" element={<StudentAdmission />} />
                   <Route path="fee-collection" element={<FeeCollection />} />
                   <Route path="fee-collection/:studentId" element={<StudentFeeDetail />} />
                   <Route path="fee-reports" element={<FeeReports />} />
@@ -244,6 +247,9 @@ function App() {
                 <Route path="/receptionist" element={<AdminLayout />}>
                   <Route index element={<ReceptionistDashboard />} />
                   <Route path="dashboard" element={<ReceptionistDashboard />} />
+                  <Route path="students" element={<StudentList />} />
+                  <Route path="students/:studentId" element={<StudentDetailPage />} />
+                  <Route path="admission" element={<StudentAdmission />} />
                   <Route path="visitor-book" element={<VisitorBook />} />
                   <Route path="admission-enquiry" element={<AdmissionEnquiry />} />
                   <Route path="call-logs" element={<PhoneCallLog />} />

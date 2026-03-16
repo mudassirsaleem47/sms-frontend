@@ -561,23 +561,29 @@ const SettingsProfile = () => {
         try {
             setPasswordLoading(true);
 
+            let res;
             if (isAdmin) {
-                await axios.put(`${API_BASE}/Admin/Settings/${currentUser._id}`, {
+                res = await axios.put(`${API_BASE}/Admin/Settings/${currentUser._id}`, {
                     currentPassword: passwordData.currentPassword,
                     newPassword: passwordData.newPassword
                 });
+                if (res.data) setCurrentUser({ ...currentUser, ...res.data });
             } else if (isTeacher) {
-                await axios.put(`${API_BASE}/Teacher/${currentUser._id}`, {
+                res = await axios.put(`${API_BASE}/Teacher/${currentUser._id}`, {
                     password: passwordData.newPassword
                 });
+                if (res.data.teacher) setCurrentUser({ ...currentUser, ...res.data.teacher });
             } else if (isParent) {
-                await axios.put(`${API_BASE}/Student/${currentUser._id}`, {
+                res = await axios.put(`${API_BASE}/Student/${currentUser._id}`, {
                     password: passwordData.newPassword
                 });
+                if (res.data) setCurrentUser({ ...currentUser, ...res.data });
             } else if (isAccountant || isReceptionist) {
                 await axios.put(`${API_BASE}/Staff/${currentUser._id}/resetPassword`, {
                     newPassword: passwordData.newPassword
                 });
+                // Staff reset password doesn't return user, so we update manually for UI
+                setCurrentUser({ ...currentUser, passwordChangedAt: new Date().toISOString() });
             }
 
             showToast("Password updated!", "success");
@@ -840,7 +846,9 @@ const SettingsProfile = () => {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium">Account Password</p>
-                                                <p className="text-xs text-muted-foreground">Last changed: Not tracked yet</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Last changed: {currentUser?.passwordChangedAt ? formatDateTime(currentUser.passwordChangedAt) : "Not tracked yet"}
+                                                </p>
                                             </div>
                                         </div>
                                         <Button variant="outline" size="sm" onClick={() => setPasswordDialogOpen(true)}>Change Password</Button>

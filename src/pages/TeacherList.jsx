@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import {
     Edit,
@@ -57,6 +58,7 @@ const API_BASE = API_URL;
 
 const TeacherList = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const location = useLocation();
 
@@ -84,8 +86,9 @@ const TeacherList = () => {
         try {
             setLoading(true);
             const schoolId = currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
             setTeachers([]);
-            const response = await axios.get(`${API_BASE}/Teachers/${schoolId}`);
+            const response = await axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`);
             setTeachers(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error(error);
@@ -97,7 +100,7 @@ const TeacherList = () => {
 
     useEffect(() => {
         if (currentUser) fetchData();
-    }, [currentUser, fetchData]);
+    }, [currentUser, fetchData, selectedCampus]);
 
     // --- 2. Action Handlers ---
 
