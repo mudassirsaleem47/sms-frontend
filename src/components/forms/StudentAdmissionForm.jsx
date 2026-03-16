@@ -98,11 +98,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     // --- Effects & Fetchers ---
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
-            const students = res.data;
-            const prefix = "SMS";
-            const nextNumber = (students.length + 1).toString().padStart(4, '0');
-            setNextAdmissionNum(`${prefix}-${nextNumber}`);
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${currentUser._id}`);
+            setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
@@ -884,39 +881,34 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {feeStructuresList.map((fee) => (
-                                <div
-                                    key={fee._id}
-                                    className={`
-                                        flex items-center space-x-3 p-4 rounded-lg border transition-all cursor-pointer hover:bg-muted/50
-                                        ${selectedFees.includes(fee._id) ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-background'}
-                                    `}
-                                    onClick={() => {
-                                        if (selectedFees.includes(fee._id)) {
-                                            setSelectedFees(prev => prev.filter(id => id !== fee._id));
-                                        } else {
-                                            setSelectedFees(prev => [...prev, fee._id]);
-                                        }
-                                    }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        id={`fee-${fee._id}`}
-                                        checked={selectedFees.includes(fee._id)}
-                                        onChange={() => { }} // Handled by div click
-                                        className="h-4 w-4 shrink-0 rounded-sm border border-primary text-primary focus:ring-primary"
-                                    />
-                                    <div className="grid gap-0.5 leading-none">
-                                        <label
-                                            htmlFor={`fee-${fee._id}`}
-                                            className="text-sm font-medium leading-none cursor-pointer"
-                                        >
-                                            {fee.feeName}
-                                        </label>
-                                        <p className="text-xs text-muted-foreground">
-                                            {fee.feeType} - {currentUser?.currency || 'PKR'} {fee.amount}
-                                        </p>
-                                    </div>
-                                </div>
+                                    <label
+                                        key={fee._id}
+                                        htmlFor={`fee-${fee._id}`}
+                                        className={`
+                                            flex items-center space-x-3 p-4 rounded-lg border transition-all cursor-pointer hover:bg-muted/50
+                                            ${selectedFees.includes(fee._id) ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-background'}
+                                        `}
+                                    >
+                                        <Checkbox
+                                            id={`fee-${fee._id}`}
+                                            checked={selectedFees.includes(fee._id)}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedFees(prev => [...prev, fee._id]);
+                                                } else {
+                                                    setSelectedFees(prev => prev.filter(id => id !== fee._id));
+                                                }
+                                            }}
+                                        />
+                                        <div className="grid gap-0.5 leading-none">
+                                            <span className="text-sm font-medium leading-none">
+                                                {fee.feeName}
+                                            </span>
+                                            <p className="text-xs text-muted-foreground">
+                                                {fee.feeType} - {currentUser?.currency || 'PKR'} {fee.amount}
+                                            </p>
+                                        </div>
+                                    </label>
                             ))}
                         </div>
                     )}

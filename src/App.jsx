@@ -100,7 +100,7 @@ function App() {
     <div className="App">
       <ToastProvider>
         <CampusProvider>
-          <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
             <Routes>
               {/* Public Website Route */}
               <Route path="/" element={<Home />} />
