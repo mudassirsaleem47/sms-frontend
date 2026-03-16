@@ -29,8 +29,12 @@ axios.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Token expired or invalid
+            const isLoginPage = window.location.pathname.includes('/login');
             localStorage.removeItem('currentUser');
-            if (window.location.pathname !== '/login') {
+            localStorage.removeItem('sms_activeSession');
+            
+            // Only redirect if NOT already on login page to avoid loops
+            if (!isLoginPage) {
                 window.location.href = '/login?expired=true';
             }
         }
@@ -63,6 +67,15 @@ export const AuthContextProvider = ({ children }) => {
             return s ? JSON.parse(s) : null;
         } catch { return null; }
     });
+
+    // --- EFFECT: Cleanup on Expired param ---
+    useEffect(() => {
+        if (window.location.search.includes('expired=true')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('sms_activeSession');
+            setCurrentUser(null);
+        }
+    }, []);
 
     // --- EFFECT: currentUser change hone par Local Storage update karna ---
     useEffect(() => {
