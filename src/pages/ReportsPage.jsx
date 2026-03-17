@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import {
     BarChart3, Users, GraduationCap, BookOpen, DollarSign, TrendingUp,
@@ -105,6 +106,7 @@ const REPORT_CATEGORIES = [
 // ================================================================
 const ReportsPage = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const [activeCategory, setActiveCategory] = useState('overview');
     const [loading, setLoading] = useState(true);
@@ -122,7 +124,7 @@ const ReportsPage = () => {
     const [enquiries, setEnquiries] = useState([]);
     const [complaints, setComplaints] = useState([]);
 
-    const schoolId = currentUser?._id;
+    const schoolId = currentUser?.school?._id || currentUser?.school || currentUser?._id;
 
     // ================================================================
     // FETCH DATA
@@ -130,20 +132,21 @@ const ReportsPage = () => {
     const fetchAllData = async () => {
         if (!schoolId) return;
         try {
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
             const [
                 studentsRes, teachersRes, staffRes, classesRes, subjectsRes,
                 feeStatsRes, incomeStatsRes, expenseStatsRes, enquiriesRes, complaintsRes
             ] = await Promise.allSettled([
-                axios.get(`${API_BASE}/Students/${schoolId}`),
-                axios.get(`${API_BASE}/Teachers/${schoolId}`),
-                axios.get(`${API_BASE}/Staff/${schoolId}`),
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`),
-                axios.get(`${API_BASE}/AllSubjects/${schoolId}`),
-                axios.get(`${API_BASE}/fee-statistics/${schoolId}`),
-                axios.get(`${API_BASE}/income-statistics/${schoolId}`),
-                axios.get(`${API_BASE}/expense-statistics/${schoolId}`),
-                axios.get(`${API_BASE}/Enquiry/${schoolId}`),
-                axios.get(`${API_BASE}/Complains/${schoolId}`),
+                axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Staff/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/AllSubjects/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/fee-statistics/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/income-statistics/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/expense-statistics/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Enquiry/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Complains/${schoolId}${campusQuery}`),
             ]);
 
             if (studentsRes.status === 'fulfilled') setStudents(Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []);
@@ -168,7 +171,7 @@ const ReportsPage = () => {
             setLoading(false);
         };
         loadData();
-    }, [schoolId]);
+    }, [schoolId, selectedCampus]);
 
     const handleRefresh = async () => {
         setRefreshing(true);

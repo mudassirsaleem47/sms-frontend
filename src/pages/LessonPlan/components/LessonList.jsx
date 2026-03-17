@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ const API_BASE = API_URL;
 
 const LessonList = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
 
     // Filter state
@@ -39,12 +41,14 @@ const LessonList = () => {
         if (currentUser) {
             fetchClasses();
         }
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // Fetch Classes
     const fetchClasses = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
             setClasses(res.data);
         } catch (err) { }
     };
@@ -66,7 +70,9 @@ const LessonList = () => {
              // Assuming existing endpoint: /Subjects/:schoolId
             // OR /Subjects/:classId -> Need to check existing endpoints.
             // Using generic all subject fetch for now and filtering if possible, or assume generic list
-            const res = await axios.get(`${API_BASE}/AllSubjects/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/AllSubjects/${schoolId}${campusQuery}`);
             const allSubs = res.data;
              // Filtering based on class usually happens in backend or subjects associated with class.
              // For simplicity, just listing all subjects.
@@ -84,8 +90,10 @@ const LessonList = () => {
     const fetchLessons = async () => {
         try {
             setLoading(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const res = await axios.post(`${API_BASE}/LessonPlan/Lesson/List`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 sclass: selectedClass,
                 subject: selectedSubject
             });
@@ -131,8 +139,10 @@ const LessonList = () => {
             let lessonId = editingId;
             
             // 1. Create/Update Lesson
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const lessonPayload = {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 sclass: selectedClass,
                 subject: selectedSubject,
                 title: formData.title
@@ -154,8 +164,10 @@ const LessonList = () => {
             const topicsToAdd = formData.topics.filter(t => t.title.trim() !== '');
             
             for (const topic of topicsToAdd) {
+                const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
                 await axios.post(`${API_BASE}/LessonPlan/Topic`, {
-                    school: currentUser._id,
+                    school: schoolId,
+                    campus: selectedCampus?._id,
                     lesson: lessonId,
                     title: topic.title
                 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { toast } from 'sonner';
 import API_URL from '../config/api.js';
 import { TablePagination } from '@/components/TablePagination';
@@ -59,6 +60,7 @@ const API_BASE = API_URL;
 
 const AdmissionEnquiry = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     
     // --- State Management ---
     const [enquiries, setEnquiries] = useState([]);
@@ -89,11 +91,12 @@ const AdmissionEnquiry = () => {
         try {
             setLoading(true);
             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
 
             const [enqRes, classRes, teachRes] = await Promise.all([
-                axios.get(`${API_BASE}/EnquiryList/${schoolId}`),
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`),
-                axios.get(`${API_BASE}/Teachers/${schoolId}`).catch(() => ({ data: [] }))
+                axios.get(`${API_BASE}/EnquiryList/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`).catch(() => ({ data: [] }))
             ]);
 
             setEnquiries(Array.isArray(enqRes.data) ? enqRes.data : []);
@@ -109,7 +112,7 @@ const AdmissionEnquiry = () => {
 
     useEffect(() => {
         if (currentUser) fetchData();
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // --- 2. Action Handlers ---
 
@@ -117,7 +120,11 @@ const AdmissionEnquiry = () => {
     const handleFormSubmit = async (formData) => {
         try {
             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
-            const dataToSend = { ...formData, school: schoolId };
+            const dataToSend = { 
+                ...formData, 
+                school: schoolId,
+                campus: selectedCampus?._id || formData.campus
+            };
             
             // Check if it's an update (has _id) or a new creation (no _id or it's a copy)
             // Note: Copies have undefined _id, so they fall into the 'else' block

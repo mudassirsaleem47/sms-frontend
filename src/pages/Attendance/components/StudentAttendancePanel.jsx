@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +17,7 @@ import API_URL from '@/config/api';
 
 const StudentAttendancePanel = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
@@ -40,13 +42,15 @@ const StudentAttendancePanel = () => {
 
     const fetchClasses = useCallback(async () => {
         try {
-            const response = await axios.get(`${API_BASE}/SClasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const response = await axios.get(`${API_BASE}/SClasses/${schoolId}${campusQuery}`);
             setClasses(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error("Classes fetch error:", error);
             showToast("Error fetching classes", "error");
         }
-    }, [currentUser._id, API_BASE, showToast]);
+    }, [currentUser, selectedCampus, API_BASE, showToast]);
 
     useEffect(() => {
         if (currentUser) {
@@ -58,10 +62,12 @@ const StudentAttendancePanel = () => {
         if (!selectedClass) return;
         try {
             setLoading(true);
-            const schoolId = currentUser._id;
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            
             const [stuRes, attRes] = await Promise.all([
-                axios.get(`${API_BASE}/Students/${schoolId}`),
-                axios.get(`${API_BASE}/Attendance/ForClass/${schoolId}/${selectedClass}/${selectedDate.toISOString()}`)
+                axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Attendance/ForClass/${schoolId}/${selectedClass}/${selectedDate.toISOString()}${campusQuery}`)
             ]);
 
             // Filter students by selected class on frontend
@@ -93,7 +99,7 @@ const StudentAttendancePanel = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedClass, selectedDate, API_BASE, showToast]);
+    }, [selectedClass, selectedDate, API_BASE, showToast, currentUser, selectedCampus]);
 
     useEffect(() => {
         fetchData();
@@ -116,8 +122,10 @@ const StudentAttendancePanel = () => {
     const handleSave = async () => {
         try {
             setSaving(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const payload = {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id || currentUser.campus?._id || currentUser.campus,
                 sclass: selectedClass,
                 date: selectedDate,
                 attendance: Object.keys(attendanceData).map(studentId => ({

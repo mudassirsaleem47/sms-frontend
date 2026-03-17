@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,6 +14,7 @@ const API_BASE = API_URL;
 
 const SyllabusStatus = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
 
     // Filters
     const [classes, setClasses] = useState([]);
@@ -28,11 +30,13 @@ const SyllabusStatus = () => {
         if (currentUser) {
             fetchClasses();
         }
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     const fetchClasses = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
             setClasses(res.data);
         } catch (err) { }
     };
@@ -47,8 +51,10 @@ const SyllabusStatus = () => {
 
     const fetchSubjects = async (classId) => {
         try {
-            const res = await axios.get(`${API_BASE}/AllSubjects/${currentUser._id}`);
-            setSubjects(res.data);
+             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+             const res = await axios.get(`${API_BASE}/AllSubjects/${schoolId}${campusQuery}`);
+             setSubjects(res.data);
         } catch (err) { }
     };
 
@@ -66,9 +72,11 @@ const SyllabusStatus = () => {
             // 1. Get all TOPICS for class/subject (Total Syllabus)
             // 2. Get all COMPLETED PLANS for class/subject (Completed Syllabus)
             
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             // Fetch Lessons first to get all topics
             const lessonRes = await axios.post(`${API_BASE}/LessonPlan/Lesson/List`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 sclass: selectedClass,
                 subject: selectedSubject
             });
@@ -87,7 +95,8 @@ const SyllabusStatus = () => {
 
             // Fetch Plans
             const planRes = await axios.post(`${API_BASE}/LessonPlan/Plan/List`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 sclass: selectedClass,
                 subject: selectedSubject
             });

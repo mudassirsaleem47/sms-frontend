@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { toast } from 'sonner';
 import { Trash2, Plus, BookOpen, Clock, Hash, Search, Filter, MoreHorizontal, Pencil, Ban, CheckCircle, AlertCircle } from 'lucide-react';
 
@@ -69,6 +70,7 @@ const API_BASE = API_URL;
 
 const SubjectManagement = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const location = useLocation();
     
     // State
@@ -110,7 +112,9 @@ const SubjectManagement = () => {
         if (!currentUser?._id) return;
         setLoading(true);
         try {
-            const result = await axios.get(`${API_BASE}/AllSubjects/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const result = await axios.get(`${API_BASE}/AllSubjects/${schoolId}${campusQuery}`);
             if (Array.isArray(result.data)) {
                 setSubjects(result.data);
             } else {
@@ -126,7 +130,7 @@ const SubjectManagement = () => {
 
     useEffect(() => {
         fetchSubjects();
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // Handle Add Subject
     const handleAddSubject = async (e) => {
@@ -158,7 +162,8 @@ const SubjectManagement = () => {
                         sessions: formData.sessions,
                         subType: formData.subType
                     }],
-                    adminID: currentUser._id
+                    adminID: currentUser.school?._id || currentUser.school || currentUser._id,
+                    campus: selectedCampus?._id
                 };
                 await axios.post(`${API_BASE}/SubjectCreate`, payload);
                 toast.success("Subject added successfully!");

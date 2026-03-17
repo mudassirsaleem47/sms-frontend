@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DatePicker } from "@/components/ui/DatePicker";
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { Calendar, Plus, Edit, Trash2, Clock, BookOpen, FileText, Search } from 'lucide-react';
@@ -51,6 +52,7 @@ const API_BASE = API_URL;
 
 const ExamSchedule = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
   
   const [schedules, setSchedules] = useState([]);
@@ -84,7 +86,7 @@ const ExamSchedule = () => {
     if (currentUser) {
       fetchInitialData();
     }
-  }, [currentUser]);
+  }, [currentUser, selectedCampus]);
 
   useEffect(() => {
     if (selectedGroup) {
@@ -95,9 +97,12 @@ const ExamSchedule = () => {
   const fetchInitialData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      
       const [groupsRes, classesRes] = await Promise.all([
-        axios.get(`${API_BASE}/ExamGroups/${currentUser._id}`),
-        axios.get(`${API_BASE}/Sclasses/${currentUser._id}`)
+        axios.get(`${API_BASE}/ExamGroups/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`)
       ]);
       
       setExamGroups(Array.isArray(groupsRes.data) ? groupsRes.data : []);
@@ -111,7 +116,9 @@ const ExamSchedule = () => {
 
   const fetchSchedules = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/ExamSchedules/Group/${selectedGroup}`);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      const response = await axios.get(`${API_BASE}/ExamSchedules/Group/${selectedGroup}${campusQuery}`);
       setSchedules(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching schedules', 'error');
@@ -131,12 +138,14 @@ const ExamSchedule = () => {
     if (e) e.preventDefault();
     
     try {
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const payload = {
         ...formData,
         duration: parseInt(formData.duration),
         totalMarks: parseFloat(formData.totalMarks),
         passingMarks: parseFloat(formData.passingMarks),
-        school: currentUser._id
+        school: schoolId,
+        campus: selectedCampus?._id
       };
 
       if (editingSchedule) {

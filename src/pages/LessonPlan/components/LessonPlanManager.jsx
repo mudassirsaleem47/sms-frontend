@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ const API_BASE = API_URL;
 
 const LessonPlanManager = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
 
     // Filters & Selection
@@ -43,18 +45,22 @@ const LessonPlanManager = () => {
             fetchClasses();
             fetchTeachers();
         }
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     const fetchClasses = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
             setClasses(res.data);
         } catch (err) { }
     };
 
     const fetchTeachers = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Teachers/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`);
             setTeachers(res.data);
         } catch (err) { }
     };
@@ -78,15 +84,19 @@ const LessonPlanManager = () => {
     // Data Loaders
     const fetchSubjects = async (classId) => {
         try {
-             const res = await axios.get(`${API_BASE}/AllSubjects/${currentUser._id}`);
+             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+             const res = await axios.get(`${API_BASE}/AllSubjects/${schoolId}${campusQuery}`);
              setSubjects(res.data);
         } catch (err) { }
     };
 
     const fetchLessons = async (classId, subjectId) => {
         try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const res = await axios.post(`${API_BASE}/LessonPlan/Lesson/List`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 sclass: classId,
                 subject: subjectId
             });
@@ -104,8 +114,10 @@ const LessonPlanManager = () => {
     const fetchPlans = async () => {
         try {
             setLoading(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const res = await axios.post(`${API_BASE}/LessonPlan/Plan/List`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 teacher: selectedTeacher || undefined,
                 sclass: selectedClass || undefined,
                 subject: selectedSubject || undefined,
@@ -129,8 +141,10 @@ const LessonPlanManager = () => {
 
         try {
             setAdding(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const payload = {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 teacher: selectedTeacher,
                 sclass: selectedClass,
                 subject: selectedSubject,

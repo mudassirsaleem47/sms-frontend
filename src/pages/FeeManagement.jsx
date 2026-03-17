@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DatePicker } from "@/components/ui/DatePicker";
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { 
@@ -67,6 +68,7 @@ const API_BASE = API_URL;
 
 const FeeManagement = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
   
   const [statistics, setStatistics] = useState({
@@ -110,15 +112,18 @@ const FeeManagement = () => {
     if (currentUser) {
       fetchData();
     }
-  }, [currentUser]);
+  }, [currentUser, selectedCampus]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      
       const [statsRes, structuresRes, classesRes] = await Promise.all([
-        axios.get(`${API_BASE}/FeeStatistics/${currentUser._id}`),
-        axios.get(`${API_BASE}/FeeStructures/${currentUser._id}`),
-        axios.get(`${API_BASE}/Sclasses/${currentUser._id}`)
+        axios.get(`${API_BASE}/FeeStatistics/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`)
       ]);
 
       setStatistics(statsRes.data || {
@@ -161,9 +166,11 @@ const FeeManagement = () => {
     }
     
     try {
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       const payload = {
         ...formData,
-        school: currentUser._id,
+        school: schoolId,
+        campus: selectedCampus?._id,
         amount: parseFloat(formData.amount)
       };
 

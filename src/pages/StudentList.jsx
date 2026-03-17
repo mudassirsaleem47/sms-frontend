@@ -264,7 +264,12 @@ const StudentList = () => {
 
     const handleFormSubmit = async (formData) => {
         try {
-            const payload = { ...formData, school: currentUser._id };
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const payload = { 
+                ...formData, 
+                school: schoolId,
+                campus: selectedCampus?._id 
+            };
 
             // Handle Disable Logic
             if (payload.status === 'Disabled') {

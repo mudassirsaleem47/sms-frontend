@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { toast } from 'sonner';
 import { Plus, GraduationCap, Users, BookOpen, Trash2, X, MoreHorizontal, Pencil, AlertTriangle, GripVertical } from 'lucide-react';
 
@@ -76,6 +77,7 @@ const API_BASE = API_URL;
 
 const ShowClasses = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -126,14 +128,18 @@ const ShowClasses = () => {
 
         setLoading(true);
         try {
-            const result = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            console.log(`Fetching classes from: ${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
+            const result = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
+            console.log("Classes found:", result.data.length);
             if (Array.isArray(result.data)) {
                 setSclasses(result.data);
             } else {
                 setSclasses([]);
             }
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching classes:", err);
             if (err.response && err.response.status === 404) {
                 setSclasses([]);
             } else {
@@ -142,27 +148,30 @@ const ShowClasses = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // --- Fetch Teachers ---
     const fetchTeachers = React.useCallback(async () => {
         if (!currentUser || !currentUser._id) return;
 
         try {
-            const result = await axios.get(`${API_BASE}/Teachers/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const result = await axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`);
             if (Array.isArray(result.data)) {
                 setTeachers(result.data);
             }
         } catch (err) {
             console.error("Error fetching teachers:", err);
         }
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // --- Fetch Sections ---
     const fetchSections = React.useCallback(async () => {
         if (!currentUser?._id) return;
         try {
-            const res = await axios.get(`${API_BASE}/Sections/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/Sections/${schoolId}`);
             if (Array.isArray(res.data)) {
                 setAvailableSections(res.data);
             }
@@ -187,7 +196,8 @@ const ShowClasses = () => {
         try {
             const data = {
                 sclassName: sclassName,
-                school: currentUser._id,
+                school: currentUser.school?._id || currentUser.school || currentUser._id,
+                campus: selectedCampus?._id,
                 classIncharge: classIncharge || undefined,
                 sections: selectedSections
             };

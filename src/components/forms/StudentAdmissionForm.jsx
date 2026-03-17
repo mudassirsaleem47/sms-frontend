@@ -98,21 +98,23 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     // --- Effects & Fetchers ---
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
-            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [currentUser._id]);
+    }, [currentUser]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Transport/Route/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/Transport/Route/${schoolId}`);
             setRoutesList(res.data);
         } catch (err) {
             console.error("Failed to load routes", err);
         }
-    }, [currentUser._id]);
+    }, [currentUser]);
 
     const fetchPickupPoints = async (routeId) => {
         if (!routeId) {
@@ -134,21 +136,25 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
     const fetchClasses = React.useCallback(async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
             setClassesList(res.data);
         } catch {
             toast.error("Failed to load classes");
         }
-    }, [currentUser._id]);
+    }, [currentUser, selectedCampus]);
 
     const fetchAvailableFees = React.useCallback(async () => {
         try {
-            const res = await axios.get(`${API_BASE}/FeeStructures/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`);
             setFeeStructuresList(res.data);
         } catch (err) {
             console.error("Failed to fetch fees", err);
         }
-    }, [currentUser._id]);
+    }, [currentUser, selectedCampus]);
 
     useEffect(() => {
         if (currentUser) {
@@ -205,7 +211,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     const classId = data.sclassName?._id || data.sclassName;
                     // Note: classesList might not be loaded yet, so we'll rely on the API returning valid sections for the class
                     try {
-                         const cRes = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+                         const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+                         const cRes = await axios.get(`${API_BASE}/Sclasses/${schoolId}`);
                          const selectedClass = cRes.data.find(c => c._id === classId);
                          if (selectedClass) setSectionsList(selectedClass.sections);
                          setClassesList(cRes.data);
@@ -338,9 +345,15 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         try {
             const data = new FormData();
             
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            
             Object.keys(formData).forEach(key => {
                 if (key === 'name' && !formData[key]) {
                      data.append('name', fullName);
+                } else if (key === 'school') {
+                    data.append('school', schoolId);
+                } else if (key === 'campus') {
+                    data.append('campus', formData.campus || selectedCampus?._id || '');
                 } else if (['father', 'mother', 'guardian', 'transport', 'siblings'].includes(key)) {
                     data.append(key, JSON.stringify(formData[key]));
                 } else if (key === 'campus' && !formData[key]) {
@@ -551,7 +564,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                            <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
+                            <Input id="dateOfBirth" name="dateOfBi8rth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
                         </div>
 
                         <div className="space-y-2">

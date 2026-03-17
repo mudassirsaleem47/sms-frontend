@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,6 +38,7 @@ const StatusBadge = ({ status }) => {
 
 const AttendanceByDatePanel = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
 
     const [classes, setClasses] = useState([]);
@@ -51,11 +53,13 @@ const AttendanceByDatePanel = () => {
 
     useEffect(() => {
         if (currentUser) fetchClasses();
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     const fetchClasses = async () => {
         try {
-            const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
             setClasses(Array.isArray(res.data) ? res.data : []);
         } catch (err) { }
     };
@@ -64,8 +68,10 @@ const AttendanceByDatePanel = () => {
         if (!selectedClass || !selectedDate) return;
         try {
             setLoading(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `&campus=${selectedCampus._id}` : '';
             const res = await axios.get(
-                `${API_BASE}/Attendance/ForClass/${currentUser._id}/${selectedClass}/${selectedDate.toISOString()}`
+                `${API_BASE}/Attendance/ForClass/${schoolId}/${selectedClass}/${selectedDate.toISOString()}?${campusQuery}`
             );
             setAttendance(Array.isArray(res.data) ? res.data : []);
         } catch (err) {

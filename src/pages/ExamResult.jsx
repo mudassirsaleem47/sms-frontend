@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -41,6 +42,7 @@ const API_BASE = API_URL;
 
 const ExamResult = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,10 +78,13 @@ const ExamResult = () => {
   const fetchInitialData = useCallback(async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+
       const [groupsRes, gradesRes, sclassRes] = await Promise.all([
-        axios.get(`${API_BASE}/ExamGroups/${currentUser._id}`),
-        axios.get(`${API_BASE}/MarksGrades/${currentUser._id}`),
-        axios.get(`${API_BASE}/Sclasses/${currentUser._id}`)
+        axios.get(`${API_BASE}/ExamGroups/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/MarksGrades/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`)
       ]);
       
       setExamGroups(Array.isArray(groupsRes.data) ? groupsRes.data : []);
@@ -90,25 +95,30 @@ const ExamResult = () => {
       showToast(error.response?.data?.message || 'Error fetching data', 'error');
       setLoading(false);
     }
-  }, [currentUser._id, showToast]);
+  }, [currentUser, selectedCampus, showToast]);
 
   const fetchSchedules = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_BASE}/ExamSchedules/Group/${selectedGroup}`);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      const response = await axios.get(`${API_BASE}/ExamSchedules/Group/${selectedGroup}${campusQuery}`);
       setSchedules(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching schedules', 'error');
     }
-  }, [selectedGroup, showToast]);
+  }, [currentUser, selectedCampus, selectedGroup, showToast]);
 
   const fetchScheduleDetails = useCallback(async () => {
     try {
       const schedule = schedules.find(s => s._id === selectedSchedule);
       if (!schedule) return;
 
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+
       const [stuRes, resRes] = await Promise.all([
-        axios.get(`${API_BASE}/Students/${currentUser._id}`),
-        axios.get(`${API_BASE}/ExamResults/Exam/${selectedSchedule}`)
+        axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/ExamResults/Exam/${selectedSchedule}${campusQuery}`)
       ]);
 
       const schoolStudents = Array.isArray(stuRes.data) ? stuRes.data : [];
@@ -123,7 +133,7 @@ const ExamResult = () => {
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching details', 'error');
     }
-  }, [currentUser._id, schedules, selectedSchedule, showToast]);
+  }, [currentUser, selectedCampus, schedules, selectedSchedule, showToast]);
 
   useEffect(() => {
     if (currentUser) {
@@ -203,7 +213,8 @@ const ExamResult = () => {
         grade,
         status: formData.status,
         remarks: formData.remarks,
-        school: currentUser._id
+        school: currentUser.school?._id || currentUser.school || currentUser._id,
+        campus: selectedCampus?._id
       };
 
       if (editingResult) {

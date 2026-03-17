@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatDateTime';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { 
@@ -46,6 +47,7 @@ const API_BASE = API_URL;
 
 const FeeAssignment = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
   
   const [feeStructures, setFeeStructures] = useState([]);
@@ -67,7 +69,7 @@ const FeeAssignment = () => {
     if (currentUser) {
       fetchData();
     }
-  }, [currentUser]);
+  }, [currentUser, selectedCampus]);
 
   useEffect(() => {
     filterStudents();
@@ -76,10 +78,13 @@ const FeeAssignment = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+
       const [feeStructuresRes, studentsRes, classesRes] = await Promise.all([
-        axios.get(`${API_BASE}/FeeStructures/${currentUser._id}`),
-        axios.get(`${API_BASE}/Students/${currentUser._id}`),
-        axios.get(`${API_BASE}/Sclasses/${currentUser._id}`)
+        axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
+        axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`)
       ]);
       
       setFeeStructures(Array.isArray(feeStructuresRes.data) ? feeStructuresRes.data : []);
@@ -186,10 +191,12 @@ const FeeAssignment = () => {
       const assignmentResults = await Promise.all(
         selectedFeeStructures.map(async (feeStructureId) => {
           try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const response = await axios.post(`${API_BASE}/AssignFee`, {
               feeStructureId,
               studentIds,
-              school: currentUser._id
+              school: schoolId,
+              campus: selectedCampus?._id
             });
             return { ok: true, data: response.data };
           } catch (error) {

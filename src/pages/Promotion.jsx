@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { toast } from 'sonner';
 import { ArrowRight, Users, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -43,6 +44,7 @@ const API_BASE = API_URL;
 
 const Promotion = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -68,7 +70,7 @@ const Promotion = () => {
         const fetchClasses = async () => {
             try {
                 if (currentUser?._id) {
-                    const result = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+                    const schoolId = currentUser.school?._id || currentUser.school || currentUser._id; const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : ""; const result = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
                     setClasses(result.data);
                 }
             } catch (err) {
@@ -77,7 +79,7 @@ const Promotion = () => {
             }
         };
         fetchClasses();
-    }, [currentUser]);
+    }, [currentUser, selectedCampus]);
 
     // Fetch Students when Source Class changes
     useEffect(() => {
@@ -89,7 +91,7 @@ const Promotion = () => {
             setLoading(true);
             try {
                 // Fetch all and filter client-side as per pattern
-                const res = await axios.get(`${API_BASE}/Students/${currentUser._id}`);
+                const schoolId = currentUser.school?._id || currentUser.school || currentUser._id; const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : ""; const res = await axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`);
                 const allStudents = Array.isArray(res.data) ? res.data : [];
                 const classStudents = allStudents.filter(s => s.sclassName?._id === sourceClass);
                 setStudents(classStudents);
@@ -103,7 +105,7 @@ const Promotion = () => {
             }
         };
         fetchStudents();
-    }, [sourceClass, currentUser]);
+    }, [sourceClass, currentUser, selectedCampus]);
 
     // Toggle Select All
     const toggleSelectAll = (checked) => {

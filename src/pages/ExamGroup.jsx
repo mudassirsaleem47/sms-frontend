@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { formatDateTime } from '../utils/formatDateTime';
@@ -22,6 +23,7 @@ const API_BASE = API_URL;
 
 const ExamGroup = () => {
   const { currentUser } = useAuth();
+  const { selectedCampus } = useCampus();
   const { showToast } = useToast();
 
   const [groups, setGroups] = useState([]);
@@ -52,12 +54,14 @@ const ExamGroup = () => {
 
   useEffect(() => {
     if (currentUser) { fetchGroups(); fetchClasses(); }
-  }, [currentUser]);
+  }, [currentUser, selectedCampus]);
 
   const fetchGroups = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE}/ExamGroups/${currentUser._id}`);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      const response = await axios.get(`${API_BASE}/ExamGroups/${schoolId}${campusQuery}`);
       setGroups(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       showToast(error.response?.data?.message || 'Error fetching exam groups', 'error');
@@ -66,7 +70,9 @@ const ExamGroup = () => {
 
   const fetchClasses = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/Sclasses/${currentUser._id}`);
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
       setClasses(Array.isArray(res.data) ? res.data : []);
     } catch (error) { console.error('Error fetching classes:', error); }
   };
@@ -74,7 +80,8 @@ const ExamGroup = () => {
   const fetchExamSchedules = async (groupId) => {
     try {
       setLoadingSchedules(true);
-      const res = await axios.get(`${API_BASE}/ExamSchedules/Group/${groupId}`);
+      const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+      const res = await axios.get(`${API_BASE}/ExamSchedules/Group/${groupId}${campusQuery}`);
       setExamSchedules(Array.isArray(res.data) ? res.data : []);
     } catch { setExamSchedules([]); }
     finally { setLoadingSchedules(false); }
@@ -91,7 +98,8 @@ const ExamGroup = () => {
       if (!formData.groupName || !formData.academicYear || !formData.status) {
         showToast('Please fill in all required fields', 'error'); return;
       }
-      const payload = { ...formData, school: currentUser._id };
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+      const payload = { ...formData, school: schoolId, campus: selectedCampus?._id };
       if (editingGroup) {
         await axios.put(`${API_BASE}/ExamGroup/${editingGroup._id}`, payload);
         showToast('Exam group updated!', 'success');
@@ -142,8 +150,12 @@ const ExamGroup = () => {
       showToast('Please fill in all required fields', 'error'); return;
     }
     try {
+      const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
       await axios.post(`${API_BASE}/ExamScheduleCreate`, {
-        ...examForm, examGroup: selectedGroupForExam._id, school: currentUser._id,
+        ...examForm, 
+        examGroup: selectedGroupForExam._id, 
+        school: schoolId,
+        campus: selectedCampus?._id,
         duration: Number(examForm.duration), totalMarks: Number(examForm.totalMarks), passingMarks: Number(examForm.passingMarks),
       });
       showToast('Exam added!', 'success'); resetExamForm(); fetchExamSchedules(selectedGroupForExam._id);

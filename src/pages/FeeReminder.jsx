@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { useCampus } from '@/context/CampusContext';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +18,10 @@ const API_BASE = API_URL;
 
 const FeeReminder = () => {
     const { currentUser, activeSession } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const isTeacher = currentUser?.userType === 'teacher';
-    const schoolId = isTeacher ? (currentUser?.school?._id || currentUser?.school) : currentUser?._id;
+    const schoolId = currentUser?.school?._id || currentUser?.school || currentUser?._id;
 
     const [pendingFees, setPendingFees] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -38,16 +40,17 @@ const FeeReminder = () => {
         if (currentUser) {
             fetchData();
         }
-    }, [currentUser, activeSession]);
+    }, [currentUser, activeSession, selectedCampus]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const sessionQuery = activeSession ? `?session=${activeSession._id}` : '';
+            const campusQuery = selectedCampus ? (sessionQuery ? `&campus=${selectedCampus._id}` : `?campus=${selectedCampus._id}`) : '';
             
             const [feesRes, classRes] = await Promise.all([
-                axios.get(`${API_BASE}/PendingFees/${schoolId}${sessionQuery}`),
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`)
+                axios.get(`${API_BASE}/PendingFees/${schoolId}${sessionQuery}${campusQuery}`),
+                axios.get(`${API_BASE}/Sclasses/${schoolId}${selectedCampus ? `?campus=${selectedCampus._id}` : ''}`)
             ]);
             
             setPendingFees(Array.isArray(feesRes.data) ? feesRes.data : []);

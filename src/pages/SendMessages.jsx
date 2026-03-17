@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, Users, MessageCircle, Mail, MessageSquare, Search, Info, Loader2 } from 'lucide-react';
@@ -21,6 +22,7 @@ const API_BASE = API_URL;
 
 const SendMessages = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
@@ -55,16 +57,17 @@ const SendMessages = () => {
 
     // Fetch Data
     const fetchData = useCallback(async () => {
-        try {
+            try {
             setLoading(true);
-            const schoolId = currentUser._id;
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
             
             const [stuRes, staffRes, tempRes, classesRes, designationsRes] = await Promise.all([
-                axios.get(`${API_BASE}/Students/${schoolId}`),
-                axios.get(`${API_BASE}/Staff/${schoolId}`),
-                axios.get(`${API_BASE}/MessageTemplates/${schoolId}`),
-                axios.get(`${API_BASE}/Sclasses/${schoolId}`),
-                axios.get(`${API_BASE}/Designations/${schoolId}`)
+                axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Staff/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/MessageTemplates/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
+                axios.get(`${API_BASE}/Designations/${schoolId}${campusQuery}`)
             ]);
             
             setStudents(Array.isArray(stuRes.data) ? stuRes.data : []);
@@ -78,7 +81,7 @@ const SendMessages = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser._id, showToast]);
+    }, [currentUser, selectedCampus, showToast]);
 
     useEffect(() => {
         if (currentUser) {
@@ -156,10 +159,12 @@ const SendMessages = () => {
         }
 
         try {
-            setSending(true);
+            setLoading(true); // Re-use loading or sending
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             
             await axios.post(`${API_BASE}/SendMessages`, {
-                school: currentUser._id,
+                school: schoolId,
+                campus: selectedCampus?._id,
                 recipientIds: selectedRecipients,
                 recipientGroup: recipientGroup,
                 message: message,
