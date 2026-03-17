@@ -4,7 +4,6 @@ import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import axios from 'axios';
 import { formatDateTime } from '../utils/formatDateTime';
-import { DatePicker } from "@/components/ui/DatePicker";
 import { BookOpen, Plus, Edit, Trash2, Calendar, Clock, Award, MapPin, ListChecks, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,7 +350,7 @@ const ExamGroup = () => {
               </div>
               <div className="space-y-1.5">
                 <Label>Exam Date *</Label>
-                <DatePicker value={examForm.examDate} onChange={val => setExamForm(p => ({ ...p, examDate: val }))} placeholder="Select date" />
+                <Input type="date" value={examForm.examDate} onChange={e => setExamForm(p => ({ ...p, examDate: e.target.value }))} required />
               </div>
               <div className="space-y-1.5">
                 <Label>Start Time *</Label>
