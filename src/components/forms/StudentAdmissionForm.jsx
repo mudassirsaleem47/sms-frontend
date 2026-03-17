@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DatePicker } from '@/components/ui/DatePicker';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -594,12 +593,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="admissionDate">Admission Date</Label>
-                            <DatePicker
-                                id="admissionDate"
-                                value={formData.admissionDate}
-                                onChange={(val) => setFormData(prev => ({ ...prev, admissionDate: val }))}
-                                placeholder="Select admission date"
-                            />
+                            <Input id="admissionDate" name="admissionDate" type="date" value={formData.admissionDate} onChange={handleInputChange} />
                         </div>
 
                         <div className="space-y-2">
@@ -633,6 +627,21 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="height">Height</Label>
+                            <Input id="height" name="height" value={formData.height} onChange={handleInputChange} placeholder="e.g. 120cm or 4ft 5in" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="weight">Weight</Label>
+                            <Input id="weight" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g. 45kg" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="measurementDate">Measurement Date</Label>
+                            <Input id="measurementDate" name="measurementDate" type="date" value={formData.measurementDate} onChange={handleInputChange} />
                         </div>
                     </div>
 
