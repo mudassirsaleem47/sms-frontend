@@ -564,7 +564,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                            <Input id="dateOfBirth" name="dateOfBi8rth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
+                            <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
                         </div>
 
                         <div className="space-y-2">
@@ -986,4 +986,3 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 };
 
 export default StudentAdmissionForm;
-
