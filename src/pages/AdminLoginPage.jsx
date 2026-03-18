@@ -7,19 +7,15 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "../context/AuthContext";
 import { useState } from "react";
 import {
-  Building2,
   GraduationCap,
   Users,
-  UserCircle,
   Briefcase,
   UserCog,
-  Baby,
-  School
+  Baby
 } from "lucide-react";
 import { ParentLoginForm } from "@/components/parent-login-form";
 import { AccountantLoginForm } from "@/components/accountant-login-form";
 import { ReceptionistLoginForm } from "@/components/receptionist-login-form";
-import { CampusLoginForm } from "@/components/campus-login-form";
 
 const AdminLoginPage = () => {
   const { login, loading, error } = useAuth();
@@ -41,55 +37,51 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-      <div className="w-full max-w-4xl grid grid-cols-1 gap-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 px-4 py-10 sm:py-14">
+      <div className="mx-auto w-full max-w-5xl">
 
         {/* Header Section */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">School Management System</h1>
-          <p className="text-muted-foreground">Select your role to login to the portal</p>
+        <div className="mb-8 flex flex-col items-center text-center sm:mb-10">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">School Management System</h1>
+          <p className="mt-2 text-sm text-muted-foreground sm:text-base">Select your role to login to the portal</p>
         </div>
 
         {/* Login Area */}
-        <div className="flex justify-center">
-          <Tabs defaultValue="admin" className="w-full max-w-lg flex flex-col items-center">
-            <TabsList className="grid w-[80%] grid-cols-5 h-auto p-1 bg-muted/50  border">
-              <TabsTrigger value="admin" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-            
-                <span className="hidden sm:inline text-xs font-medium">Admin</span>
+        <div className="mx-auto w-full max-w-2xl">
+          <Tabs defaultValue="admin" className="w-full">
+            <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl border bg-muted/40 p-1.5 sm:grid-cols-5">
+              <TabsTrigger value="admin" className="flex h-auto flex-col gap-1 py-2 text-[11px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                <UserCog className="h-4 w-4" />
+                <span className="font-medium">Admin</span>
               </TabsTrigger>
-              <TabsTrigger value="teacher" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                
-                <span className="hidden sm:inline text-xs font-medium">Teacher</span>
+              <TabsTrigger value="teacher" className="flex h-auto flex-col gap-1 py-2 text-[11px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                <GraduationCap className="h-4 w-4" />
+                <span className="font-medium">Teacher</span>
               </TabsTrigger>
-              <TabsTrigger value="accountant" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-  
-                <span className="hidden sm:inline text-xs font-medium">Accountant</span>
+              <TabsTrigger value="accountant" className="flex h-auto flex-col gap-1 py-2 text-[11px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                <Briefcase className="h-4 w-4" />
+                <span className="font-medium">Accountant</span>
               </TabsTrigger>
-              <TabsTrigger value="receptionist" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-                
-                <span className="hidden sm:inline text-xs font-medium">Receptionist</span>
+              <TabsTrigger value="receptionist" className="flex h-auto flex-col gap-1 py-2 text-[11px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                <Users className="h-4 w-4" />
+                <span className="font-medium">Receptionist</span>
               </TabsTrigger>
-              <TabsTrigger value="parent" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-              
-                <span className="hidden sm:inline text-xs font-medium">Parent</span>
-              </TabsTrigger>
-              <TabsTrigger value="campus" className="gap-2 py-2.5 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
-              
-                <span className="hidden sm:inline text-xs font-medium">Campus</span>
+              <TabsTrigger value="parent" className="flex h-auto flex-col gap-1 py-2 text-[11px] sm:text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-300">
+                <Baby className="h-4 w-4" />
+                <span className="font-medium">Parent</span>
               </TabsTrigger>
             </TabsList>
 
-            <div className="mt-8 w-[80%] animate-in slide-in-from-bottom-4 duration-500 fade-in zoom-in-95">
+            <div className="mt-6 min-h-[560px] animate-in slide-in-from-bottom-4 duration-500 fade-in zoom-in-95 sm:min-h-[620px]">
               <TabsContent value="admin">
-                <Card className="border shadow-lg">
-                  <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-xl">Admin Login</CardTitle>
+                <Card className="border shadow-xl/10 min-h-[520px] flex flex-col">
+                  <CardHeader className="text-center pb-2 pt-6">
+                    <CardTitle className="text-2xl">Admin Login</CardTitle>
                     <CardDescription>
                       Enter your credentials to access the administration panel
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1">
                     <form onSubmit={handleSubmit}>
                       <div className="grid gap-4">
                         {localError && (
@@ -127,7 +119,7 @@ const AdminLoginPage = () => {
                             className="h-10"
                           />
                         </div>
-                        <Button type="submit" className="w-full h-10 mt-2" disabled={loading}>
+                        <Button type="submit" className="w-full h-11 mt-2" disabled={loading}>
                           {loading ? "Authenticating..." : "Login to Admin Portal"}
                         </Button>
                       </div>
@@ -143,12 +135,12 @@ const AdminLoginPage = () => {
               </TabsContent>
 
               <TabsContent value="teacher">
-                <Card className="border shadow-lg">
-                  <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-xl">Teacher Login</CardTitle>
+                <Card className="border shadow-xl/10 min-h-[520px] flex flex-col">
+                  <CardHeader className="text-center pb-2 pt-6">
+                    <CardTitle className="text-2xl">Teacher Login</CardTitle>
                     <CardDescription>Access class schedules and student records</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-1">
                     <LoginForm role="Teacher" />
                   </CardContent>
                 </Card>
@@ -166,9 +158,6 @@ const AdminLoginPage = () => {
                 <ParentLoginForm />
               </TabsContent>
 
-              <TabsContent value="campus">
-                <CampusLoginForm />
-              </TabsContent>
             </div>
           </Tabs>
         </div>

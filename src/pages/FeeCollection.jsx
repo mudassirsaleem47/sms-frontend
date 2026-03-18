@@ -251,7 +251,7 @@ const FeeCollection = () => {
                       {/* Name + Avatar */}
                       <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="h-9 w-9 shrink-0 border">
-                          <AvatarImage src={student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto}`} />
+                          <AvatarImage src={student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto?.replace(/\\/g, '/')}`} />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                             {student.name?.substring(0, 2).toUpperCase()}
                           </AvatarFallback>

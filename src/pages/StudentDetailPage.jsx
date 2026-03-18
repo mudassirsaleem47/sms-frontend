@@ -192,7 +192,7 @@ const StudentDetailPage = () => {
                             {/* Avatar */}
                             <div className="flex flex-col items-center -mt-12 mb-4">
                                 <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                                    <AvatarImage src={student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto}`} className="object-cover" />
+                                    <AvatarImage src={student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto?.replace(/\\/g, '/')}`} className="object-cover" />
                                     <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
                                         {student.name?.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
@@ -529,10 +529,10 @@ const StudentDetailPage = () => {
                                 <TabsContent value="documents">
                                     <div className="space-y-3">
                                         {[
-                                            { label: 'Student Photo', value: student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto}` },
-                                            { label: "Father's Photo", value: student.father?.photo },
-                                            { label: "Mother's Photo", value: student.mother?.photo },
-                                            { label: "Guardian's Photo", value: student.guardian?.photo },
+                                            { label: 'Student Photo', value: student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_BASE}/${student.studentPhoto?.replace(/\\/g, '/')}` },
+                                            { label: "Father's Photo", value: student.father?.photo?.startsWith('http') ? student.father.photo : (student.father?.photo ? `${API_BASE}/${student.father.photo.replace(/\\/g, '/')}` : null) },
+                                            { label: "Mother's Photo", value: student.mother?.photo?.startsWith('http') ? student.mother.photo : (student.mother?.photo ? `${API_BASE}/${student.mother.photo.replace(/\\/g, '/')}` : null) },
+                                            { label: "Guardian's Photo", value: student.guardian?.photo?.startsWith('http') ? student.guardian.photo : (student.guardian?.photo ? `${API_BASE}/${student.guardian.photo.replace(/\\/g, '/')}` : null) },
                                         ].map(({ label, value }) => (
                                             <div key={label} className="flex items-center justify-between rounded-lg border px-4 py-3">
                                                 <div className="flex items-center gap-3">
@@ -540,7 +540,7 @@ const StudentDetailPage = () => {
                                                     <span className="text-sm font-medium">{label}</span>
                                                 </div>
                                                 {value ? (
-                                                    <a href={value.startsWith('http') ? value : `${API_BASE}/${value}`} target="_blank" rel="noopener noreferrer">
+                                                    <a href={value.startsWith('http') ? value : `${API_BASE}/${value?.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer">
                                                         <Button size="sm" variant="outline" className="gap-2">
                                                             <TrendingUp className="h-3 w-3" />View
                                                         </Button>
@@ -615,7 +615,7 @@ const StudentDetailPage = () => {
                                     <CardContent className="pt-4 pb-4">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10 border">
-                                                <AvatarImage src={sib.studentPhoto?.startsWith('http') ? sib.studentPhoto : `${API_BASE}/${sib.studentPhoto}`} className="object-cover" />
+                                                <AvatarImage src={sib.studentPhoto?.startsWith('http') ? sib.studentPhoto : `${API_BASE}/${sib.studentPhoto?.replace(/\\/g, '/')}`} className="object-cover" />
                                                 <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
                                                     {sib.name?.substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>

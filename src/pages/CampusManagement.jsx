@@ -7,7 +7,7 @@ import API_URL from '../config/api.js';
 import {
     Building2, Plus, Edit, Trash2, MapPin, Phone, Mail,
     MoreVertical, School, Users, GraduationCap, CheckCircle2, XCircle, Search,
-    UserCheck, UserX, Clock, LayoutGrid, ListChecks
+    UserCheck, UserX, Clock, LayoutGrid, ListChecks, Loader2
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 

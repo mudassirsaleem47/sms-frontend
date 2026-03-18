@@ -243,7 +243,11 @@ const StudentFeeDetail = () => {
               ) : (
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16 flex-shrink-0 ring-2 ring-primary/20 ring-offset-2">
-                    <AvatarImage src={student?.studentImage} />
+                    <AvatarImage 
+                      src={student?.studentPhoto?.startsWith('http') 
+                        ? student.studentPhoto 
+                        : `${API_BASE}/${student?.studentPhoto?.replace(/\\/g, '/')}`} 
+                    />
                     <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
                       {student?.name?.charAt(0) || 'S'}
                     </AvatarFallback>
@@ -256,9 +260,9 @@ const StudentFeeDetail = () => {
                     <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                       {[
                         { label: 'Roll No',  value: student?.rollNum },
-                        { label: 'Adm No',   value: student?.admissionNumber },
-                        { label: 'Father',   value: student?.fatherName },
-                        { label: 'Mobile',   value: student?.fatherMobile || student?.motherMobile },
+                        { label: 'Adm No',   value: student?.admissionNum },
+                        { label: 'Father',   value: student?.father?.name },
+                        { label: 'Mobile',   value: student?.father?.phone || student?.mother?.phone || student?.mobileNumber },
                       ].map(({ label, value }) => (
                         <div key={label} className="min-w-0">
                           <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}: </span>

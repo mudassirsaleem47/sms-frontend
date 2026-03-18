@@ -43,7 +43,7 @@ const CardRenderer = ({ template, data, schoolData }) => {
     // 3. Resolve Image URL
     const getImageUrl = (path) => {
         if (!path) return null;
-        return path.startsWith('http') ? path : `${API_URL}/${path}`;
+        return path.startsWith('http') ? path : `${API_URL}/${path?.replace(/\\/g, '/')}`;
     };
 
     return (

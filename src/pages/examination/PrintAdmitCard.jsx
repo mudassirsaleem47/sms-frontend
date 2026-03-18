@@ -341,7 +341,7 @@ const PrintAdmitCard = () => {
                                                     <TableCell>
                                                         <div className="w-10 h-10 rounded-full overflow-hidden border bg-muted">
                                                             {student.studentPhoto ? (
-                                                                <img src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`} alt="" className="w-full h-full object-cover" />
+                                                                <img src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto?.replace(/\\/g, '/')}`} alt="" className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center"><User className="h-5 w-5 text-muted-foreground" /></div>
                                                             )}

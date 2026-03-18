@@ -192,7 +192,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                 });
 
                 // Populate Previews
-                const getPreview = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}/${path}`) : null;
+                const getPreview = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}/${path?.replace(/\\/g, '/')}`) : null;
                 setPreviews({
                     studentPhoto: getPreview(data.studentPhoto),
                     fatherPhoto: getPreview(data.father?.photo),

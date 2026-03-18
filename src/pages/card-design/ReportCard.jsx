@@ -398,7 +398,7 @@ const ReportCard = () => {
                                                     <div className="w-12 h-12 rounded-full overflow-hidden border bg-muted shrink-0">
                                                         {student.studentPhoto ? (
                                                             <img
-                                                                src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto}`}
+                                                                src={student.studentPhoto.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto?.replace(/\\/g, '/')}`}
                                                                 alt=""
                                                                 className="w-full h-full object-cover" 
                                                                 onError={(e) => {

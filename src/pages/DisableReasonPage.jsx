@@ -238,7 +238,7 @@ const DisableReasonPage = () => {
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-9 w-9">
-                                                        <AvatarImage src={student.studentImage} />
+                                                        <AvatarImage src={student.studentPhoto?.startsWith('http') ? student.studentPhoto : `${API_URL}/${student.studentPhoto?.replace(/\\/g, '/')}`} />
                                                         <AvatarFallback className="bg-primary/10 text-primary">
                                                             {student.name.charAt(0)}
                                                         </AvatarFallback>
