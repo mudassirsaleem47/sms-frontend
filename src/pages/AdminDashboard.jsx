@@ -405,9 +405,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500">
+    <div className="flex-1 space-y-6 p-4 pt-2 md:p-6 md:pt-4 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur-sm md:p-5">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground">
             {isTeacher ? `Welcome, ${currentUser?.name || 'Teacher'}` : 'Dashboard'}
@@ -517,7 +517,7 @@ const AdminDashboard = () => {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid gap-4 lg:grid-cols-7">
         {/* Enrollment Bar Chart */}
         <motion.div variants={itemVariants} className="lg:col-span-4">
-          <Card className="h-full">
+          <Card className="h-full border-border/70 shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -563,7 +563,7 @@ const AdminDashboard = () => {
 
         {/* Gender + Status Pie Charts */}
         <motion.div variants={itemVariants} className="lg:col-span-3">
-          <Card className="h-full">
+          <Card className="h-full border-border/70 shadow-sm">
             <CardHeader>
               <CardTitle className="text-base">Student Demographics</CardTitle>
               <CardDescription>Gender & status distribution</CardDescription>
@@ -654,7 +654,7 @@ const AdminDashboard = () => {
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Financial Summary */}
         <motion.div variants={itemVariants}>
-          <Card className="h-full">
+            <Card className="h-full border-border/70 shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -712,7 +712,7 @@ const AdminDashboard = () => {
 
         {/* Fee Collection Chart */}
         <motion.div variants={itemVariants}>
-          <Card className="h-full">
+            <Card className="h-full border-border/70 shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -770,7 +770,7 @@ const AdminDashboard = () => {
 
         {/* Fee Collection Progress */}
         <motion.div variants={itemVariants}>
-          <Card className="h-full">
+            <Card className="h-full border-border/70 shadow-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -816,7 +816,7 @@ const AdminDashboard = () => {
       {/* Activity + Quick Actions Row */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         {/* Recent Activity */}
-        <Card className="col-span-4 lg:col-span-4 flex flex-col">
+        <Card className="col-span-4 flex flex-col border-border/70 shadow-sm lg:col-span-4">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -878,7 +878,7 @@ const AdminDashboard = () => {
         {/* Quick Actions & Events */}
         <div className="col-span-3 space-y-4">
           {/* Quick Actions */}
-          <Card>
+          <Card className="border-border/70 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Quick Actions</CardTitle>
             </CardHeader>
@@ -888,7 +888,7 @@ const AdminDashboard = () => {
                 return (
                   <Button
                     key={idx} variant="outline"
-                    className="h-auto flex-col items-center justify-center py-3.5 space-y-1.5 hover:bg-muted/50 transition-all duration-200 group"
+                    className="group h-auto flex-col items-center justify-center space-y-1.5 rounded-xl border-border/60 py-3.5 hover:bg-muted/50 hover:shadow-sm transition-all duration-200"
                     onClick={() => navigate(action.route)}
                   >
                     <div className={`p-2 rounded-xl ${action.bg} group-hover:scale-110 transition-transform`}>

@@ -25,6 +25,13 @@ import { PasswordField } from '@/components/ui/email-pass';
 import API_URL from '@/config/api';
 const API_BASE = API_URL;
 
+const toInputDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+};
+
 const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const { currentUser, activeSession } = useAuth();
     const { campuses, selectedCampus, isMainAdmin } = useCampus();
@@ -59,13 +66,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         mobileNumber: '',
         email: '',
 
-        admissionDate: new Date().toISOString(),
+        admissionDate: toInputDate(new Date()),
         session: activeSession?._id || '', // Will be set in useEffect based on activeSession
         bloodGroup: '',
         house: '',
         height: '',
         weight: '',
-        measurementDate: new Date().toISOString(),
+        measurementDate: toInputDate(new Date()),
 
         religion: '',
         caste: '',
@@ -180,9 +187,9 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     ...initialFormState,
                     ...data,
                     sclassName: data.sclassName?._id || data.sclassName || '',
-                    dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '',
-                    admissionDate: data.admissionDate || new Date().toISOString(),
-                    measurementDate: data.measurementDate || new Date().toISOString(),
+                    dateOfBirth: toInputDate(data.dateOfBirth),
+                    admissionDate: toInputDate(data.admissionDate) || toInputDate(new Date()),
+                    measurementDate: toInputDate(data.measurementDate) || toInputDate(new Date()),
                     father: data.father || initialFormState.father,
                     mother: data.mother || initialFormState.mother,
                     guardian: data.guardian || initialFormState.guardian,

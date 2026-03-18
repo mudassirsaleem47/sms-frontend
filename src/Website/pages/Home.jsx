@@ -1,631 +1,322 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ModeToggle } from '@/components/mode-toggle';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
-  GraduationCap, Users, BookOpen, Calendar, DollarSign, BarChart3,
-  Shield, ArrowRight, CheckCircle2, Menu, X, Sparkles,
-  Mail, Phone, MapPin, Github, Linkedin, Twitter, Star, Zap, Globe, Lock
+    GraduationCap,
+    Menu,
+    X,
+    ArrowRight,
+    Users,
+    Wallet,
+    CalendarDays,
+    ShieldCheck,
+    BarChart3,
+    BellRing,
+    CheckCircle2,
 } from 'lucide-react';
 
-const FadeIn = ({ children, delay = 0, className = "" }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: "-100px" }}
-    transition={{ duration: 0.5, delay, ease: "easeOut" }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
+const navItems = [
+    { label: 'Features', id: 'features' },
+    { label: 'Stats', id: 'stats' },
+    { label: 'Pricing', id: 'pricing' },
+    { label: 'Contact', id: 'contact' },
+];
 
-const Marquee = ({ children, reverse = false }) => (
-  <div className="flex overflow-hidden group">
-    <div className={`flex gap-8 animate-marquee ${reverse ? 'flex-row-reverse' : ''} group-hover:paused`}>
-      {children}
-      {children}
-    </div>
-  </div>
-);
+const features = [
+    {
+        title: 'Student Lifecycle',
+        description: 'Admissions, profiles, attendance, and progress in one structured flow.',
+        icon: Users,
+        tint: 'from-blue-50 to-cyan-50',
+        iconBg: 'bg-blue-600',
+    },
+    {
+        title: 'Finance Control',
+        description: 'Track fees, generate receipts, and monitor dues with a clean ledger view.',
+        icon: Wallet,
+        tint: 'from-emerald-50 to-lime-50',
+        iconBg: 'bg-emerald-600',
+    },
+    {
+        title: 'Academic Planning',
+        description: 'Class schedules, exam calendars, and subject mapping with less manual work.',
+        icon: CalendarDays,
+        tint: 'from-amber-50 to-orange-50',
+        iconBg: 'bg-amber-600',
+    },
+    {
+        title: 'Secure Access',
+        description: 'Role-based authentication so admins, staff, and parents see only what they need.',
+        icon: ShieldCheck,
+        tint: 'from-violet-50 to-fuchsia-50',
+        iconBg: 'bg-violet-600',
+    },
+    {
+        title: 'Smart Reporting',
+        description: 'Data-rich dashboards for attendance, finance, and academic insights.',
+        icon: BarChart3,
+        tint: 'from-rose-50 to-pink-50',
+        iconBg: 'bg-rose-600',
+    },
+    {
+        title: 'Instant Alerts',
+        description: 'Notify parents and staff quickly with integrated message workflows.',
+        icon: BellRing,
+        tint: 'from-sky-50 to-indigo-50',
+        iconBg: 'bg-sky-600',
+    },
+];
 
 function Home() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [pricingPeriod, setPricingPeriod] = useState('monthly');
-  const { scrollYProgress } = useScroll();
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.2], [0.9, 1]);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMobileOpen(false);
-  };
-
-  const navLinks = [
-    { name: 'Features', id: 'features' },
-    { name: 'Benefits', id: 'benefits' },
-    { name: 'Pricing', id: 'pricing' },
-    { name: 'FAQ', id: 'faq' },
-  ];
-
-  const features = [
-    { icon: Users, title: 'Student Management', color: "text-blue-500", bg: "bg-blue-500/10", desc: 'Securely manage student records, admissions, attendance, and performance tracking all in one place.' },
-    { icon: DollarSign, title: 'Financial Intelligence', color: "text-green-500", bg: "bg-green-500/10", desc: 'Automated fee structures, instant receipts, and defaulter tracking with comprehensive financial reports.' },
-    { icon: Calendar, title: 'Smart Scheduling', color: "text-purple-500", bg: "bg-purple-500/10", desc: 'Effortlessly create conflict-free timetables, exam schedules, and academic calendars.' },
-    { icon: BookOpen, title: 'Academic Excellence', color: "text-orange-500", bg: "bg-orange-500/10", desc: 'Streamline assignments, syllabus tracking, and grading with our intuitive academic tools.' },
-    { icon: BarChart3, title: 'Advanced Analytics', color: "text-pink-500", bg: "bg-pink-500/10", desc: 'Make data-driven decisions with real-time dashboards and detailed performance insights.' },
-    { icon: Shield, title: 'Enterprise Security', color: "text-red-500", bg: "bg-red-500/10", desc: 'Bank-grade encryption and role-based access control to keep your institutional data safe.' },
-  ];
-
-  const pricingPlans = [
-    {
-      name: "Starter",
-      price: pricingPeriod === 'monthly' ? "$49" : "$490",
-      period: pricingPeriod === 'monthly' ? "/mo" : "/yr",
-      desc: "Perfect for small schools getting started.",
-      features: ["Up to 200 Students", "Basic Reporting", "Attendance Tracking", "Email Support"],
-      cta: "Start Free Trial",
-      popular: false
-    },
-    {
-      name: "Pro",
-      price: pricingPeriod === 'monthly' ? "$99" : "$990",
-      period: pricingPeriod === 'monthly' ? "/mo" : "/yr",
-      desc: "Comprehensive solution for growing institutions.",
-      features: ["Up to 1000 Students", "Advanced Analytics", "Fee Management", "Priority Support", "Exam Management"],
-      cta: "Get Started",
-      popular: true
-    },
-    {
-      name: "Enterprise",
-      price: "Custom",
-      period: "",
-      desc: "Tailored for large universities & districts.",
-      features: ["Unlimited Students", "Custom Integrations", "Dedicated Account Manager", "SLA Support", "Multi-Campus"],
-      cta: "Contact Sales",
-      popular: false
-    }
-  ];
-
-  const faqs = [
-    { q: "Is my data secure?", a: "Absolutely. We use industry-standard encryption protocols (SSL/TLS) and secure cloud storage to ensure your institution's data is protected at all times." },
-    { q: "Can I manage multiple campuses?", a: "Yes! Our Enterprise plan supports multi-campus management from a single unified dashboard." },
-    { q: "Do you offer training?", a: "We provide comprehensive video tutorials, documentation, and live onboarding sessions for your staff." },
-    { q: "Is there a mobile app?", a: "Our platform is fully responsive and works seamlessly on all devices, including tablets and smartphones." },
-  ];
-
-  const trustedLogos = [1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-    <div key={i} className="flex items-center gap-2 text-muted-foreground/50 font-bold text-xl mx-8 grayscale opacity-50 hover:opacity-100 transition-opacity cursor-default">
-      <div className="h-8 w-8 rounded bg-current"></div>
-      SCHOOL {i}
-    </div>
-  ));
+    const scrollTo = (id) => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        setMobileOpen(false);
+    };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 overflow-x-hidden">
-
-      {/* ── Navbar ── */}
-      <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="bg-primary p-1.5 rounded-lg group-hover:scale-105 transition-transform shadow-lg shadow-primary/20">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">School MS</span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            <div className="flex gap-6">
-              {navLinks.map((link) => (
-                <button
-                  key={link.id}
-                  onClick={() => scrollTo(link.id)}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground relative group py-1"
-                >
-                  {link.name}
-                  <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></span>
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-3 pl-6 border-l">
-              <ModeToggle />
-              <Link to="/AdminLogin">
-                <Button variant="ghost" size="sm" className="font-medium">Log in</Button>
-              </Link>
-              <Link to="/AdminRegister">
-                <Button size="sm" className="shadow-md font-medium px-5">Get Started</Button>
-              </Link>
-            </div>
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+          <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+              <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-200/40 blur-3xl" />
+              <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="flex items-center gap-2 md:hidden">
-            <ModeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)}>
-              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Nav Content */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden border-b bg-background overflow-hidden absolute top-16 left-0 right-0 shadow-xl"
-            >
-              <div className="container mx-auto px-6 py-4 space-y-4 bg-background">
-                {navLinks.map((link) => (
-                  <button
-                    key={link.id}
-                    onClick={() => scrollTo(link.id)}
-                    className="block w-full text-left text-sm font-medium py-2 hover:text-primary transition-colors border-b border-border/50 last:border-0"
-                  >
-                    {link.name}
+          <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
+              <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+                  <button onClick={() => scrollTo('hero')} className="flex items-center gap-2">
+                      <div className="rounded-xl bg-slate-900 p-2 text-white">
+                          <GraduationCap className="h-5 w-5" />
+            </div>
+                      <div className="text-left">
+                          <p className="text-sm font-semibold leading-tight">School Management</p>
+                          <p className="text-xs text-slate-500 leading-tight">Simple Premium Suite</p>
+                      </div>
                   </button>
-                ))}
-                <div className="flex flex-col gap-3 pt-4">
-                  <Link to="/AdminLogin" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" className="w-full justify-start">Log in</Button>
-                  </Link>
-                  <Link to="/AdminRegister" onClick={() => setMobileOpen(false)}>
-                    <Button className="w-full justify-start">Get Started</Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
 
-      {/* ── Hero Section ── */}
-      <section id="hero" className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden bg-dot-pattern">
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 -z-10 bg-background">
-          <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[100px] animate-pulse-slow"></div>
-          <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px] animate-pulse-slow delay-1000"></div>
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                  <nav className="hidden items-center gap-7 md:flex">
+                      {navItems.map((item) => (
+                          <button
+                              key={item.id}
+                              onClick={() => scrollTo(item.id)}
+                              className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+                >
+                              {item.label}
+                </button>
+                      ))}
+                  </nav>
+
+                  <div className="hidden items-center gap-2 md:flex">
+                      <Link to="/AdminLogin">
+                          <Button variant="ghost" className="font-medium">Login</Button>
+                      </Link>
+                      <Link to="/AdminRegister">
+                          <Button className="bg-slate-900 text-white hover:bg-slate-800">Get Started</Button>
+                      </Link>
+          </div>
+
+                  <button
+                      className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
+                      onClick={() => setMobileOpen((v) => !v)}
+                  >
+                      {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                  </button>
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 text-center">
-          <FadeIn>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold mb-8 hover:bg-primary/10 transition-colors cursor-pointer">
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-              New Feature: AI-Powered Analytics is now live!
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/50 pb-2 leading-[1.1]">
-              Manage Your School <br />
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Like a Pro</span>
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed font-light text-balance">
-              The all-in-one platform that streamlines operations, boosts productivity, and brings your entire institution onto a single, powerful dashboard.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.3} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-            <Link to="/AdminRegister">
-              <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/AdminLogin">
-              <Button variant="outline" size="lg" className="h-14 px-8 text-lg rounded-full border-muted-foreground/20 hover:bg-muted/50 hover:border-foreground/20 transition-all">
-                View Live Demo
-              </Button>
-            </Link>
-          </FadeIn>
-
-          {/* Dashboard Mockup with Tilt Effect */}
-          <motion.div
-            style={{ scale: heroScale, rotateX: 5 }}
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.4, type: "spring", stiffness: 50 }}
-            className="group relative mx-auto max-w-6xl rounded-2xl border bg-background/50 shadow-2xl backdrop-blur-sm p-2 md:p-3"
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-blue-600/30 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-            <div className="rounded-xl border bg-card/90 shadow-inner overflow-hidden relative aspect-[16/9] md:aspect-[21/10]">
-              {/* Mock UI Content - Replaced with more detail */}
-              <div className="absolute inset-0 flex flex-col">
-                {/* Mock Window Bar */}
-                <div className="h-8 border-b bg-muted/30 flex items-center px-4 gap-2">
-                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-amber-400"></div>
-                  <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                  <div className="ml-4 h-4 w-64 bg-muted/50 rounded-full text-[10px] flex items-center px-2 text-muted-foreground">school-ms.com/dashboard/admin</div>
-                </div>
-                <div className="flex-1 flex overflow-hidden">
-                  <div className="w-16 md:w-64 border-r bg-muted/10 p-4 hidden md:flex flex-col gap-4">
-                    <div className="h-8 w-32 bg-primary/20 rounded mb-4"></div>
-                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-8 w-full bg-muted/30 rounded flex items-center px-2 gap-2"><div className="h-4 w-4 rounded bg-muted/50"></div><div className="h-3 w-20 bg-muted/40 rounded"></div></div>)}
-                  </div>
-                  <div className="flex-1 p-6 bg-background/40 overflow-hidden">
-                    <div className="flex justify-between mb-8 items-center">
-                      <div>
-                        <div className="h-8 w-48 bg-muted/50 rounded mb-2"></div>
-                        <div className="h-4 w-32 bg-muted/30 rounded"></div>
-                      </div>
-                      <div className="flex gap-3">
-                        <div className="h-10 w-32 rounded bg-primary/10"></div>
-                        <div className="h-10 w-10 rounded-full bg-muted/30 border"></div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                      {[1, 2, 3, 4].map(i => <div key={i} className="h-32 rounded-xl bg-card border shadow-sm p-4 flex flex-col justify-between">
-                        <div className="h-8 w-8 rounded bg-primary/10 mb-2"></div>
-                        <div><div className="h-6 w-16 bg-muted/40 rounded mb-1"></div><div className="h-3 w-24 bg-muted/20 rounded"></div></div>
-                      </div>)}
-                    </div>
-                    <div className="grid grid-cols-3 gap-6 h-full">
-                      <div className="col-span-2 rounded-xl border bg-card shadow-sm p-4">
-                        <div className="h-6 w-32 bg-muted/30 rounded mb-4"></div>
-                        <div className="flex items-end gap-2 h-40">
-                          {[40, 70, 45, 90, 60, 80, 50, 95, 65, 85].map((h, i) => (
-                            <div key={i} className="flex-1 bg-primary/20 rounded-t hover:bg-primary/40 transition-colors" style={{ height: `${h}%` }}></div>
+              {mobileOpen && (
+                  <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
+                      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
+                          {navItems.map((item) => (
+                              <button
+                                  key={item.id}
+                                  onClick={() => scrollTo(item.id)}
+                                  className="rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                                  {item.label}
+                  </button>
                           ))}
-                        </div>
-                      </div>
-                      <div className="col-span-1 rounded-xl border bg-card shadow-sm p-4">
-                        <div className="h-6 w-32 bg-muted/30 rounded mb-4"></div>
-                        {[1, 2, 3, 4].map(i => <div key={i} className="h-12 w-full bg-muted/10 rounded mb-2 flex items-center px-2 gap-2"><div className="h-8 w-8 rounded-full bg-muted/20"></div><div className="flex-1"><div className="h-3 w-full bg-muted/30 rounded mb-1"></div><div className="h-2 w-1/2 bg-muted/20 rounded"></div></div></div>)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Overlay Gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent pointer-events-none"></div>
-              <div className="absolute bottom-10 left-0 right-0 text-center pointer-events-none">
-                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest animate-pulse">Live Dashboard Preview</p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Social Proof (Marquee) ── */}
-      <section className="py-10 border-y bg-muted/20 overflow-hidden">
-        <div className="flex animate-marquee-container gap-12">
-          <Marquee>{trustedLogos}</Marquee>
-          <Marquee reverse>{trustedLogos}</Marquee>
-        </div>
-      </section>
-
-      {/* ── Features Bento Grid ── */}
-      <section id="features" className="py-24 md:py-32 px-6 bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto max-w-6xl">
-          <FadeIn className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Everything You Need to Succeed</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our platform offers a complete suite of tools to manage every aspect of your educational institution with ease and precision.
-            </p>
-          </FadeIn>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => (
-              <FadeIn key={i} delay={i * 0.1}>
-                <Card className="h-full border-muted/60 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 group relative overflow-hidden bg-card/50 backdrop-blur-sm">
-                  <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${f.bg} to-transparent rounded-bl-full opacity-50 transition-opacity group-hover:opacity-100`}></div>
-                  <CardHeader>
-                    <div className={`h-12 w-12 rounded-xl ${f.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <f.icon className={`h-6 w-6 ${f.color}`} />
-                    </div>
-                    <CardTitle className="text-xl group-hover:text-primary transition-colors">{f.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base leading-relaxed">
-                      {f.desc}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Stats Section ── */}
-      <section className="py-20 bg-primary/5">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-primary/10">
-            {[
-              { label: 'Students Managed', value: '10k+' },
-              { label: 'Schools Trust Us', value: '500+' },
-              { label: 'Uptime Guarantee', value: '99.9%' },
-              { label: 'Expert Support', value: '24/7' }
-            ].map((s, i) => (
-              <FadeIn key={i} delay={i * 0.1} className="p-4">
-                <div className="text-4xl md:text-5xl font-black text-primary mb-2 tabular-nums tracking-tight">{s.value}</div>
-                <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{s.label}</div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Benefits Section ── */}
-      <section id="benefits" className="py-24 relative overflow-hidden">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <FadeIn>
-              <Badge variant="outline" className="mb-4">Why Choose Us</Badge>
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight">Designed for the Future of Education</h2>
-              <p className="text-lg text-muted-foreground mb-8 text-balance leading-relaxed">
-                Built with direct input from educators and administrators, School MS focuses on what truly matters: <span className="text-foreground font-semibold">simplicity, reliability, and powerful insights</span>.
-              </p>
-
-              <div className="space-y-4">
-                {[
-                  { title: "Cloud-Based Architecture", desc: "Access your data securely from anywhere, anytime." },
-                  { title: "Real-time Notifications", desc: "Keep parents and students updated instantly." },
-                  { title: "Automated Reporting", desc: "Generate complex reports with a single click." }
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 p-4 rounded-xl hover:bg-muted/50 transition-colors border border-transparent hover:border-border">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                    </div>
-                          <div>
-                            <h3 className="font-semibold mb-1">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">{item.desc}</p>
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                              <Link to="/AdminLogin" onClick={() => setMobileOpen(false)}>
+                                  <Button variant="outline" className="w-full">Login</Button>
+                              </Link>
+                              <Link to="/AdminRegister" onClick={() => setMobileOpen(false)}>
+                                  <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">Start</Button>
+                              </Link>
                           </div>
-                        </div>
-                      ))}
-              </div>
-
-            </FadeIn>
-            <FadeIn delay={0.2} className="relative">
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-3xl opacity-50"></div>
-              <Card className="relative border bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-purple-500"></div>
-                <CardHeader>
-                  <CardTitle>Why Administrators Love Us</CardTitle>
-                  <CardDescription>Real feedback from our partners</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="p-5 rounded-xl bg-muted/30 border border-muted/50">
-                    <div className="flex gap-1 mb-3 text-amber-500">
-                      {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
-                    </div>
-                    <p className="italic text-muted-foreground mb-4 leading-relaxed">"The reporting tools have completely transformed how we handle our finances. What used to take days now takes minutes. It's simply revolutionized our workflow."</p>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
-                      <div>
-                        <p className="text-sm font-bold">Sarah Jenkins</p>
-                        <p className="text-xs text-muted-foreground">Principal, Westview Academy</p>
                       </div>
-                    </div>
                   </div>
-                  <div className="p-5 rounded-xl bg-muted/30 border border-muted/50">
-                    <div className="flex gap-1 mb-3 text-amber-500">
-                      {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-4 w-4 fill-current" />)}
-                    </div>
-                    <p className="italic text-muted-foreground mb-4 leading-relaxed">"Finally, a system that teachers actually enjoy using. The attendance and grading modules are intuitive, fast, and require zero training."</p>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
-                      <div>
-                        <p className="text-sm font-bold">Michael Ross</p>
-                        <p className="text-xs text-muted-foreground">Admin, Tech High</p>
+              )}
+          </header>
+
+          <main>
+              <section id="hero" className="mx-auto grid w-full max-w-6xl gap-8 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-2 lg:items-center">
+                  <div>
+                      <p className="mb-4 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                          Built for schools that want clarity and speed
+                      </p>
+                      <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+                          A Clean and Powerful
+                          <span className="block bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 bg-clip-text text-transparent">School Management Platform</span>
+            </h1>
+                      <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                          Manage admissions, attendance, fees, academics, and communication from one dashboard designed for daily school operations.
+                      </p>
+
+                      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                          <Link to="/AdminRegister">
+                              <Button className="h-11 px-6 bg-slate-900 text-white hover:bg-slate-800">
+                                  Start Free Setup
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                              </Button>
+                          </Link>
+                          <Link to="/AdminLogin">
+                              <Button variant="outline" className="h-11 px-6 border-slate-300 text-slate-700">
+                                  Login to Portal
+                              </Button>
+                          </Link>
                       </div>
-                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
 
-      {/* ── Pricing Section ── */}
-      <section id="pricing" className="py-24 bg-muted/30">
-        <div className="container mx-auto max-w-6xl px-6">
-          <FadeIn className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Simple, Transparent Pricing</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Choose the plan that fits your institution's needs. No hidden fees.
-            </p>
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="mb-4 flex items-center justify-between">
+                              <div>
+                                  <p className="text-sm font-semibold text-slate-900">Admin Dashboard</p>
+                                  <p className="text-xs text-slate-500">Live overview</p>
+                              </div>
+                              <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">Online</span>
+                          </div>
 
-            <div className="inline-flex items-center p-1 bg-muted rounded-full border mb-8">
-              <button
-                onClick={() => setPricingPeriod('monthly')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${pricingPeriod === 'monthly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setPricingPeriod('yearly')}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${pricingPeriod === 'yearly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              >
-                Yearly <span className="ml-1 text-[10px] text-green-600 font-bold bg-green-100 px-1.5 py-0.5 rounded-full uppercase">Save 20%</span>
-              </button>
-            </div>
-          </FadeIn>
+                          <div className="grid grid-cols-2 gap-3">
+                              {[
+                                  { label: 'Students', value: '2,450' },
+                                  { label: 'Attendance', value: '94%' },
+                                  { label: 'Collected Fees', value: '$42k' },
+                                  { label: 'Pending Dues', value: '$6.2k' },
+                              ].map((item) => (
+                                  <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-3">
+                                      <p className="text-xs text-slate-500">{item.label}</p>
+                                      <p className="mt-1 text-lg font-semibold text-slate-900">{item.value}</p>
+                                  </div>
+                              ))}
+                          </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, i) => (
-              <FadeIn key={i} delay={i * 0.1}>
-                <Card className={`h-full flex flex-col ${plan.popular ? 'border-primary shadow-2xl scale-105 relative z-10' : 'border-muted/60 hover:border-muted-foreground/30'}`}>
-                  {plan.popular && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                      MOST POPULAR
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <div className="mt-4 flex items-baseline">
-                      <span className="text-4xl font-extrabold">{plan.price}</span>
-                      <span className="text-muted-foreground ml-1">{plan.period}</span>
-                    </div>
-                    <CardDescription className="mt-2">{plan.desc}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ul className="space-y-3 mt-4">
-                      {plan.features.map((feature, j) => (
-                        <li key={j} className="flex items-center gap-3 text-sm">
-                          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant={plan.popular ? "default" : "outline"} className="w-full h-11" asChild>
-                      <Link to="/AdminRegister">{plan.cta}</Link>
+                          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                              <p className="mb-3 text-xs font-medium text-slate-500">Today Tasks</p>
+                              <div className="space-y-2">
+                                  {['Review fee defaulters', 'Approve 8 admissions', 'Publish exam timetable'].map((task) => (
+                                      <div key={task} className="flex items-center gap-2 text-sm text-slate-700">
+                                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                          {task}
+                      </div>
+                                  ))}
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </section>
+
+              <section id="features" className="border-y border-slate-200 bg-white py-16">
+                  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                      <div className="mb-10 text-center">
+                          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Simple features, serious control</h2>
+                          <p className="mt-3 text-slate-600">Everything required to run day-to-day operations without complexity.</p>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {features.map((feature) => (
+                              <article key={feature.title} className={`rounded-2xl border border-slate-200 bg-gradient-to-br ${feature.tint} p-5 transition hover:-translate-y-0.5 hover:shadow-lg`}>
+                                  <div className={`mb-4 inline-flex rounded-xl ${feature.iconBg} p-2 text-white shadow-md`}>
+                                      <feature.icon className="h-5 w-5" />
+                                  </div>
+                                  <h3 className="text-lg font-semibold text-slate-900">{feature.title}</h3>
+                                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.description}</p>
+                              </article>
+                          ))}
+                      </div>
+                  </div>
+              </section>
+
+              <section id="stats" className="bg-gradient-to-b from-slate-50 to-white py-16">
+                  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                          {[
+                              { value: '500+', label: 'Schools', ring: 'border-blue-200 bg-blue-50/60' },
+                              { value: '10k+', label: 'Students Managed', ring: 'border-emerald-200 bg-emerald-50/60' },
+                              { value: '99.9%', label: 'Uptime', ring: 'border-violet-200 bg-violet-50/60' },
+                              { value: '24/7', label: 'Support', ring: 'border-amber-200 bg-amber-50/60' },
+                          ].map((s) => (
+                              <div key={s.label} className={`rounded-2xl border p-5 text-center shadow-sm ${s.ring}`}>
+                                  <p className="text-2xl font-bold text-slate-900 sm:text-3xl">{s.value}</p>
+                                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{s.label}</p>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              </section>
+
+              <section id="pricing" className="border-y border-slate-200 bg-white py-16">
+                  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                      <div className="mb-10 text-center">
+                          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Straightforward pricing</h2>
+                          <p className="mt-3 text-slate-600">Choose what fits your school size and workflow.</p>
+                      </div>
+
+                      <div className="grid gap-4 md:grid-cols-3">
+                          {[
+                              { name: 'Starter', price: '$49/mo', points: ['Up to 200 students', 'Attendance + reports', 'Email support'], style: 'border-blue-200 bg-blue-50/50' },
+                              { name: 'Pro', price: '$99/mo', points: ['Up to 1000 students', 'Fees + exams + analytics', 'Priority support'], featured: true, style: '' },
+                              { name: 'Enterprise', price: 'Custom', points: ['Multi-campus setup', 'Custom integrations', 'Dedicated support'], style: 'border-emerald-200 bg-emerald-50/40' },
+                          ].map((plan) => (
+                              <div
+                                  key={plan.name}
+                                  className={`rounded-2xl border p-5 ${plan.featured ? 'border-slate-900 bg-slate-900 text-white shadow-xl' : plan.style}`}
+                              >
+                                  <p className="text-sm font-medium">{plan.name}</p>
+                                  <p className="mt-2 text-3xl font-bold">{plan.price}</p>
+                                  <ul className="mt-5 space-y-2 text-sm">
+                                      {plan.points.map((point) => (
+                                          <li key={point} className="flex items-start gap-2">
+                                              <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featured ? 'text-cyan-300' : 'text-emerald-600'}`} />
+                                              {point}
+                                          </li>
+                                      ))}
+                                  </ul>
+                                  <Link to="/AdminRegister" className="mt-6 inline-block w-full">
+                                      <Button className={`w-full ${plan.featured ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                                          Get Started
                     </Button>
-                  </CardFooter>
-                </Card>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ Section ── */}
-      <section id="faq" className="py-24 px-6 md:px-0">
-        <div className="container mx-auto max-w-3xl">
-          <FadeIn className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Frequently Asked Questions</h2>
-            <p className="text-lg text-muted-foreground">
-              Everything you need to know about School MS.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.2} className="bg-card border rounded-2xl p-6 md:p-8 shadow-sm">
-            <Accordion type="single" collapsible className="w-full">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`item-${i}`}>
-                  <AccordionTrigger className="text-left text-lg font-medium">{faq.q}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground text-base leading-relaxed">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── CTA Section ── */}
-      <section className="py-24 px-6 relative overflow-hidden bg-primary text-primary-foreground">
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-blue-600"></div>
-
-        <div className="container mx-auto max-w-4xl relative z-10 text-center">
-          <FadeIn>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight">Ready to Transform Your School?</h2>
-            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto font-light">
-              Join hundreds of forward-thinking institutions streamlining their operations today.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/AdminRegister">
-                <Button size="lg" variant="secondary" className="h-16 px-10 text-lg rounded-full shadow-2xl shadow-black/20 hover:scale-105 transition-transform text-primary font-bold">
-                  Get Started for Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/contact">
-                <Button variant="outline" size="lg" className="h-16 px-10 text-lg rounded-full border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 backdrop-blur-sm">
-                  Contact Sales
-                </Button>
-              </Link>
-            </div>
-            <p className="mt-8 text-sm text-primary-foreground/60">No credit card required · 14-day free trial · Cancel anytime</p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer id="contact" className="border-t bg-card pt-16 pb-8">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-1">
-              <Link to="/" className="flex items-center gap-2 mb-6">
-                <div className="bg-primary p-1.5 rounded-lg">
-                  <GraduationCap className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <span className="text-2xl font-bold tracking-tight">School MS</span>
-              </Link>
-              <p className="text-muted-foreground leading-relaxed mb-6 text-sm">
-                Empowering education through technology. The most comprehensive platform for modern institutional management.
-              </p>
-              <div className="flex gap-4">
-                {[Twitter, Linkedin, Github].map((Icon, i) => (
-                  <a key={i} href="#" className="h-10 w-10 flex items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                    <Icon className="h-4 w-4" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-foreground">Product</h4>
-              <ul className="space-y-4 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Integrations</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-foreground">Company</h4>
-              <ul className="space-y-4 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-foreground">Contact Us</h4>
-              <ul className="space-y-4 text-sm text-muted-foreground">
-                <li className="flex items-center gap-3 group cursor-pointer">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Mail className="h-4 w-4 text-primary" />
+                                  </Link>
+                              </div>
+                          ))}
+                      </div>
                   </div>
-                  <span className="group-hover:text-foreground transition-colors">support@schoolms.com</span>
-                </li>
-                <li className="flex items-center gap-3 group cursor-pointer">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Phone className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="group-hover:text-foreground transition-colors">+1 (555) 123-4567</span>
-                </li>
-                <li className="flex items-center gap-3 group cursor-pointer">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <MapPin className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="group-hover:text-foreground transition-colors">123 Education St, NY</span>
-                </li>
-              </ul>
+              </section>
+
+              <section id="contact" className="py-16">
+                  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                      <div className="rounded-3xl bg-slate-900 px-6 py-12 text-center text-white sm:px-10">
+                          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to modernize your school operations?</h2>
+                          <p className="mx-auto mt-3 max-w-2xl text-slate-300">
+                              Start in minutes and move your complete workflow to one secure dashboard.
+                          </p>
+                          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+                              <Link to="/AdminRegister">
+                                  <Button className="h-11 bg-white text-slate-900 hover:bg-slate-100">Create School Account</Button>
+                              </Link>
+                              <Link to="/AdminLogin">
+                                  <Button variant="outline" className="h-11 border-white/40 bg-transparent text-white hover:bg-white/10">Go to Login</Button>
+                              </Link>
+                          </div>
             </div>
           </div>
+              </section>
+          </main>
 
-          <Separator className="mb-8" />
-
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© 2025 School Management System. All rights reserved.</p>
-            <div className="flex gap-8">
-              <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
-            </div>
-          </div>
+          <footer className="border-t border-slate-200 bg-white py-7">
+              <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-4 text-sm text-slate-500 sm:flex-row sm:px-6">
+                  <p>© {new Date().getFullYear()} School Management System. All rights reserved.</p>
+                  <p>support@schoolms.com</p>
         </div>
       </footer>
     </div>
