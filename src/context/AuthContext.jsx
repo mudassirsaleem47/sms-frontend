@@ -8,6 +8,25 @@ const LOGIN_URL = `${API_URL}/AdminLogin`;
 const TEACHER_LOGIN_URL = `${API_URL}/TeacherLogin`;
 const STUDENT_LOGIN_URL = `${API_URL}/StudentLogin`;
 
+const getSchoolIdFromUser = (user) => {
+    if (!user) return null;
+    if (user.userType === 'admin') return user._id;
+    if (typeof user.school === 'string') return user.school;
+    if (user.school?._id) return user.school._id;
+    return null;
+};
+
+const persistSchoolSettingsToStorage = (settings) => {
+    if (!settings) return;
+    if (settings.notifications) localStorage.setItem('sms_notificationPrefs', JSON.stringify(settings.notifications));
+    if (settings.accentColor) localStorage.setItem('sms_accentColor', JSON.stringify(settings.accentColor));
+    if (settings.borderRadius) localStorage.setItem('sms_borderRadius', settings.borderRadius);
+    if (settings.fontSize) localStorage.setItem('sms_fontSize', settings.fontSize);
+    if (settings.sidebarCompact !== undefined) localStorage.setItem('sms_sidebarCompact', String(settings.sidebarCompact));
+    if (settings.animationsEnabled !== undefined) localStorage.setItem('sms_animations', String(settings.animationsEnabled));
+    if (settings.preferences) localStorage.setItem('sms_appPreferences', JSON.stringify(settings.preferences));
+};
+
 // Local Storage se data load karne ka function
 const getInitialUser = () => {
     try {
@@ -63,6 +82,67 @@ export const AuthContextProvider = ({ children }) => {
         };
         fetchActiveSession();
     }, [currentUser]);
+
+    // Keep school branding/settings in sync for all login roles
+    useEffect(() => {
+        const hydrateSchoolSettings = async () => {
+            if (!currentUser) return;
+
+            const schoolId = getSchoolIdFromUser(currentUser);
+            if (!schoolId) return;
+
+            try {
+                const res = await axios.get(`${API_URL}/Admin/${schoolId}`);
+                const admin = res.data;
+                if (!admin || !admin._id) return;
+
+                persistSchoolSettingsToStorage(admin.settings);
+
+                setCurrentUser((prev) => {
+                    if (!prev) return prev;
+                    const prevSchoolId = getSchoolIdFromUser(prev);
+                    if (prevSchoolId !== schoolId) return prev;
+
+                    const nextSchoolName = prev.schoolName || admin.schoolName || prev.school?.schoolName || '';
+                    const nextSchoolLogo = admin.schoolLogo || prev.schoolLogo || '';
+                    const nextFavicon = admin.favicon || prev.favicon || '';
+                    const nextSchoolObj = prev.school && typeof prev.school === 'object'
+                        ? {
+                            ...prev.school,
+                            schoolName: prev.school.schoolName || admin.schoolName || prev.school.schoolName,
+                            schoolLogo: admin.schoolLogo || prev.school.schoolLogo,
+                            favicon: admin.favicon || prev.school.favicon,
+                        }
+                        : prev.school;
+
+                    const isSame =
+                        prev.schoolName === nextSchoolName &&
+                        prev.schoolLogo === nextSchoolLogo &&
+                        prev.favicon === nextFavicon &&
+                        JSON.stringify(prev.school) === JSON.stringify(nextSchoolObj);
+
+                    if (isSame) return prev;
+
+                    return {
+                        ...prev,
+                        schoolName: nextSchoolName,
+                        schoolLogo: nextSchoolLogo,
+                        favicon: nextFavicon,
+                        school: nextSchoolObj,
+                        schoolAddress: admin.address || prev.schoolAddress,
+                        schoolPhoneNumber: admin.phoneNumber || prev.schoolPhoneNumber,
+                        schoolWebsite: admin.website || prev.schoolWebsite,
+                    };
+                });
+            } catch (err) {
+                if (err.response?.status !== 404) {
+                    console.error('Failed to sync school settings:', err);
+                }
+            }
+        };
+
+        hydrateSchoolSettings();
+    }, [currentUser?.userType, currentUser?._id, currentUser?.school, currentUser?.school?._id]);
     // ----------------------------------------------------------------------
 
     // Admin Login
@@ -74,17 +154,8 @@ export const AuthContextProvider = ({ children }) => {
             const userData = { ...res.data, userType: 'admin' };
             localStorage.setItem('currentUser', JSON.stringify(userData));
 
-            // Populate LocalStorage with DB Settings 
-            if (res.data.settings) {
-                const s = res.data.settings;
-                if (s.notifications) localStorage.setItem('sms_notificationPrefs', JSON.stringify(s.notifications));
-                if (s.accentColor) localStorage.setItem('sms_accentColor', JSON.stringify(s.accentColor));
-                if (s.borderRadius) localStorage.setItem('sms_borderRadius', s.borderRadius);
-                if (s.fontSize) localStorage.setItem('sms_fontSize', s.fontSize);
-                if (s.sidebarCompact !== undefined) localStorage.setItem('sms_sidebarCompact', String(s.sidebarCompact));
-                if (s.animationsEnabled !== undefined) localStorage.setItem('sms_animations', String(s.animationsEnabled));
-                if (s.preferences) localStorage.setItem('sms_appPreferences', JSON.stringify(s.preferences));
-            }
+            // Populate LocalStorage with DB Settings
+            persistSchoolSettingsToStorage(res.data.settings);
 
             setCurrentUser(userData);
             setLoading(false);

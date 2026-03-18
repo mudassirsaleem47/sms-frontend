@@ -47,6 +47,8 @@ export function NavUser({
     setTheme(checked ? "dark" : "light")
   }
 
+  const basePath = user?.basePath || '/admin'
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -106,18 +108,20 @@ export function NavUser({
                 <IconBadge />
                 Account
               </DropdownMenuItem>
-              <Link to="/admin/settings">
+              <Link to={`${basePath}/settings`}>
               <DropdownMenuItem>
                 <IconSettings />
                 Settings
               </DropdownMenuItem>
               </Link>
-              <Link to="/admin/notifications">
-                <DropdownMenuItem>
-                  <IconBell />
-                  Notifications
-                </DropdownMenuItem>
-              </Link>
+              {basePath === '/admin' && (
+                <Link to="/admin/notifications">
+                  <DropdownMenuItem>
+                    <IconBell />
+                    Notifications
+                  </DropdownMenuItem>
+                </Link>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>

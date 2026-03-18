@@ -77,6 +77,7 @@ const adminNavData = [
       { title: 'Subject Groups', url: '/admin/subject-groups' },
       { title: 'Class Schedule', url: '/admin/class-schedule' },
       { title: 'Teacher Schedule', url: '/admin/teacher-schedule' },
+      { title: 'Homework & Assignments', url: '/admin/homework' },
       { title: 'Promote Students', url: '/admin/promote' },
     ]
   },
@@ -294,6 +295,9 @@ export function AppSidebar({
   const isParent = currentUser?.userType === 'parent';
   const isAccountant = currentUser?.userType === 'accountant';
   const isReceptionist = currentUser?.userType === 'receptionist';
+  const basePath = isTeacher
+    ? '/teacher'
+    : (isParent ? '/parent' : (isAccountant ? '/accountant' : (isReceptionist ? '/receptionist' : '/admin')));
 
   // Select nav data based on role
   let navData = adminNavData;
@@ -312,7 +316,8 @@ export function AppSidebar({
   const userData = {
     name: currentUser?.name || (isTeacher ? "Teacher" : (isParent ? "Parent" : (isAccountant ? "Accountant" : (isReceptionist ? "Receptionist" : "Admin")))),
     email: currentUser?.email || (isTeacher ? "teacher@school.com" : (isParent ? "parent@school.com" : (isAccountant ? "accountant@school.com" : (isReceptionist ? "receptionist@school.com" : "admin@school.com")))),
-    avatar: currentUser?.avatar || "https://github.com/shadcn.png",
+    avatar: currentUser?.avatar || currentUser?.schoolLogo || currentUser?.school?.schoolLogo || "https://github.com/shadcn.png",
+    basePath,
   };
 
   return (

@@ -8,31 +8,41 @@ import { useSidebar } from '@/components/ui/sidebar';
 const SidebarLogo = () => {
   const { currentUser } = useAuth();
   const { state } = useSidebar ? useSidebar() : { state: 'expanded' };
+  const isTeacher = currentUser?.userType === 'teacher';
+  const isParent = currentUser?.userType === 'parent';
+  const isAccountant = currentUser?.userType === 'accountant';
+  const isReceptionist = currentUser?.userType === 'receptionist';
+  const basePath = isTeacher
+    ? '/teacher'
+    : (isParent ? '/parent' : (isAccountant ? '/accountant' : (isReceptionist ? '/receptionist' : '/admin')));
   const [logoError, setLogoError] = React.useState(false);
   const [faviconError, setFaviconError] = React.useState(false);
+
+  const schoolLogo = currentUser?.schoolLogo || currentUser?.school?.schoolLogo;
+  const schoolFavicon = currentUser?.favicon || currentUser?.school?.favicon;
 
   // Reset error states if sources change
   React.useEffect(() => {
     setLogoError(false);
-  }, [currentUser?.schoolLogo]);
+  }, [schoolLogo]);
 
   React.useEffect(() => {
     setFaviconError(false);
-  }, [currentUser?.favicon]);
+  }, [schoolFavicon]);
 
-  const logoSrc = currentUser?.schoolLogo
-    ? (currentUser.schoolLogo.startsWith('http') ? currentUser.schoolLogo : `${API_URL}/${currentUser.schoolLogo}`)
+  const logoSrc = schoolLogo
+    ? (schoolLogo.startsWith('http') ? schoolLogo : `${API_URL}/${schoolLogo}`)
     : null;
 
-  const faviconSrc = currentUser?.favicon
-    ? (currentUser.favicon.startsWith('http') ? currentUser.favicon : `${API_URL}/${currentUser.favicon}`)
+  const faviconSrc = schoolFavicon
+    ? (schoolFavicon.startsWith('http') ? schoolFavicon : `${API_URL}/${schoolFavicon}`)
     : null;
 
   const isCollapsed = state === "collapsed";
 
   return (
     <div>
-      <Link to={`/admin/dashboard`} className="flex items-center gap-2">
+      <Link to={`${basePath}/dashboard`} className="flex items-center gap-2">
         {isCollapsed ? (
           faviconSrc && !faviconError ? (
             <img 

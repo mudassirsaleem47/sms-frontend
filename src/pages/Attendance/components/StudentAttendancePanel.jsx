@@ -7,7 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Calendar, CheckSquare, XSquare, Clock } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
@@ -153,6 +153,13 @@ const StudentAttendancePanel = () => {
         setAttendanceData(newData);
     };
 
+    const statusOptions = [
+        { label: 'Present', value: 'Present', active: 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700' },
+        { label: 'Absent', value: 'Absent', active: 'bg-red-600 border-red-600 text-white hover:bg-red-700' },
+        { label: 'Late', value: 'Late', active: 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600' },
+        { label: 'Leave', value: 'Leave', active: 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700' },
+    ];
+
     return (
         <div className="space-y-6">
             <Card>
@@ -221,8 +228,8 @@ const StudentAttendancePanel = () => {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[100px]">Roll No</TableHead>
                                             <TableHead>Student Name</TableHead>
+                                            <TableHead className="w-[100px]">Roll No</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Remark</TableHead>
                                         </TableRow>
@@ -233,33 +240,28 @@ const StudentAttendancePanel = () => {
                                                 <TableCell className="font-medium hover:underline cursor-pointer text-primary" onClick={(e) => handleNameClick(e, student._id)}>{student.name}</TableCell>
                                                 <TableCell>{student.rollNum}</TableCell>
                                                 <TableCell>
-                                                    <div className="flex items-center gap-4">
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors
-                                                                ${attendanceData[student._id]?.status === 'Present' ? 'bg-green-600 border-green-600' : 'border-muted-foreground'}`}
-                                                                onClick={() => handleStatusChange(student._id, 'Present')}>
-                                                                {attendanceData[student._id]?.status === 'Present' && <CheckSquare className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                            <span className="text-sm">Present</span>
-                                                        </label>
-                                                        
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors
-                                                                ${attendanceData[student._id]?.status === 'Absent' ? 'bg-red-600 border-red-600' : 'border-muted-foreground'}`}
-                                                                onClick={() => handleStatusChange(student._id, 'Absent')}>
-                                                                {attendanceData[student._id]?.status === 'Absent' && <XSquare className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                            <span className="text-sm">Absent</span>
-                                                        </label>
-                                                        
-                                                        <label className="flex items-center gap-2 cursor-pointer">
-                                                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors
-                                                                ${attendanceData[student._id]?.status === 'Late' ? 'bg-yellow-500 border-yellow-500' : 'border-muted-foreground'}`}
-                                                                onClick={() => handleStatusChange(student._id, 'Late')}>
-                                                                {attendanceData[student._id]?.status === 'Late' && <Clock className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                            <span className="text-sm">Late</span>
-                                                        </label>
+                                                    <div className="inline-flex overflow-hidden rounded-lg border border-border">
+                                                        {statusOptions.map((option, idx) => {
+                                                            const isActive = attendanceData[student._id]?.status === option.value;
+                                                            const edgeClass = idx === 0
+                                                                ? 'rounded-l-lg'
+                                                                : idx === statusOptions.length - 1
+                                                                    ? 'rounded-r-lg border-l-0'
+                                                                    : 'rounded-none border-l-0';
+
+                                                            return (
+                                                                <Button
+                                                                    key={option.value}
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    className={`h-8 px-3 text-xs font-medium ${edgeClass} ${isActive ? option.active : 'bg-background text-foreground hover:bg-muted/60'}`}
+                                                                    onClick={() => handleStatusChange(student._id, option.value)}
+                                                                >
+                                                                    {option.label}
+                                                                </Button>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>

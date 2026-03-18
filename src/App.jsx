@@ -71,6 +71,7 @@ import ParentDashboard from './pages/ParentDashboard';
 import ParentAttendance from './pages/Parent/ParentAttendance';
 import ParentFees from './pages/Parent/ParentFees';
 import ParentHomework from './pages/Parent/ParentHomework';
+import HomeworkAssignments from './pages/HomeworkAssignments';
 import ParentReportCard from './pages/Parent/ParentReportCard';
 import AccountantDashboard from './pages/Accountant/AccountantDashboard';
 import ReceptionistDashboard from './pages/ReceptionistDashboard';
@@ -183,6 +184,7 @@ function App() {
                   <Route path="lesson-plan/topics" element={<LessonTopics />} />
                   <Route path="lesson-plan/manage" element={<PlanManager />} />
                   <Route path="lesson-plan/status" element={<SyllabusTracker />} />
+                  <Route path="homework" element={<HomeworkAssignments />} />
 
                   <Route path="birthday-wishes" element={<BirthdayWish />} />
 

@@ -15,7 +15,7 @@ import {
   Users, School, BookOpen, DollarSign, TrendingUp, Activity, Clock,
   Calendar, Bell, BarChart3, ArrowUpRight, MoreHorizontal, GraduationCap,
   Receipt, CreditCard, UserCheck, UserX, ArrowDownRight, Wallet,
-  RefreshCw, ChevronRight
+  RefreshCw, ChevronRight, ClipboardList
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,7 @@ const AdminDashboard = () => {
   const [incomeStats, setIncomeStats] = useState(null);
   const [expenseStats, setExpenseStats] = useState(null);
   const [classes, setClasses] = useState([]);
+  const [homeworkStats, setHomeworkStats] = useState({ total: 0, dueToday: 0, overdue: 0 });
 
   // Date Filters
   const [startDate, setStartDate] = useState(() => {
@@ -181,6 +182,7 @@ const AdminDashboard = () => {
         axios.get(`${API_URL}/Notifications/${schoolId}${campusQuery}`),
         axios.get(`${API_URL}/Events/${schoolId}${campusQuery}`),
         ...(isTeacher ? [] : [
+          axios.get(`${API_URL}/Homework/${schoolId}${campusQuery}`),
           axios.get(`${API_URL}/FeeStatistics/${schoolId}${statsParams}`),
           axios.get(`${API_URL}/IncomeStatistics/${schoolId}${statsParams}`),
           axios.get(`${API_URL}/ExpenseStatistics/${schoolId}${statsParams}`),
@@ -193,9 +195,20 @@ const AdminDashboard = () => {
       const eventRes = results[idx++];
       
       if (!isTeacher) {
+        const homeworkRes = results[idx++];
         const feeS = results[idx++];
         const incS = results[idx++];
         const expS = results[idx++];
+
+        if (homeworkRes?.status === 'fulfilled') {
+          const hw = Array.isArray(homeworkRes.value.data) ? homeworkRes.value.data : [];
+          const todayKey = format(new Date(), 'yyyy-MM-dd');
+          const dueToday = hw.filter(h => format(new Date(h.dueDate), 'yyyy-MM-dd') === todayKey).length;
+          const overdue = hw.filter(h => new Date(h.dueDate) < new Date() && h.status === 'Assigned').length;
+          setHomeworkStats({ total: hw.length, dueToday, overdue });
+        } else {
+          setHomeworkStats({ total: 0, dueToday: 0, overdue: 0 });
+        }
 
         if (feeS?.status === 'fulfilled') setFeeStats(feeS.value.data);
         if (incS?.status === 'fulfilled') {
@@ -362,6 +375,7 @@ const AdminDashboard = () => {
     { label: 'Class Schedule', icon: Calendar, route: '/admin/class-schedule', color: 'text-purple-600', bg: 'bg-purple-500/10' },
     { label: 'All Students', icon: School, route: '/admin/students', color: 'text-orange-600', bg: 'bg-orange-500/10' },
     { label: 'Fee Collection', icon: Receipt, route: '/admin/fee-collection', color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+      { label: 'Homework', icon: ClipboardList, route: '/admin/homework', color: 'text-amber-600', bg: 'bg-amber-500/10' },
     { label: 'Reports', icon: BarChart3, route: '/admin/reports', color: 'text-pink-600', bg: 'bg-pink-500/10' },
   ];
 
@@ -900,6 +914,35 @@ const AdminDashboard = () => {
               })}
             </CardContent>
           </Card>
+
+          {!isTeacher && (
+            <Card className="border-border/70 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Homework Snapshot</CardTitle>
+                <CardDescription>Track assignment load and urgency</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-border/60 bg-muted/30 p-2 text-center">
+                    <p className="text-[11px] text-muted-foreground">Total</p>
+                    <p className="text-lg font-semibold">{homeworkStats.total}</p>
+                  </div>
+                  <div className="rounded-lg border border-amber-300/40 bg-amber-50/60 p-2 text-center dark:bg-amber-500/10">
+                    <p className="text-[11px] text-muted-foreground">Today</p>
+                    <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">{homeworkStats.dueToday}</p>
+                  </div>
+                  <div className="rounded-lg border border-rose-300/40 bg-rose-50/60 p-2 text-center dark:bg-rose-500/10">
+                    <p className="text-[11px] text-muted-foreground">Overdue</p>
+                    <p className="text-lg font-semibold text-rose-700 dark:text-rose-300">{homeworkStats.overdue}</p>
+                  </div>
+                </div>
+                <Button className="w-full gap-2" onClick={() => navigate('/admin/homework')}>
+                  <ClipboardList className="h-4 w-4" />
+                  Open Homework Module
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Calendar Widget */}
           <div className="h-[400px]">

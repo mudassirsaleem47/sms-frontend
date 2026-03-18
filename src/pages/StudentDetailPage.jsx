@@ -55,8 +55,10 @@ const StudentDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [fees, setFees] = useState([]);
     const [examResults, setExamResults] = useState([]);
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
     const [feesLoading, setFeesLoading] = useState(false);
     const [examLoading, setExamLoading] = useState(false);
+    const [attendanceLoading, setAttendanceLoading] = useState(false);
 
     useEffect(() => {
         if (studentId) fetchStudent();
@@ -91,6 +93,17 @@ const StudentDetailPage = () => {
                 const examRes = await axios.get(`${API_BASE}/ExamResults/Student/${studentId}`);
                 setExamResults(Array.isArray(examRes.data) ? examRes.data : []);
             } catch { setExamResults([]); } finally { setExamLoading(false); }
+
+            // Fetch attendance records
+            try {
+                setAttendanceLoading(true);
+                const attendanceRes = await axios.get(`${API_BASE}/Attendance/Student/${studentId}`);
+                setAttendanceRecords(Array.isArray(attendanceRes.data) ? attendanceRes.data : []);
+            } catch {
+                setAttendanceRecords([]);
+            } finally {
+                setAttendanceLoading(false);
+            }
 
             // Fetch siblings - same father phone => siblings
             if (data?.father?.phone && currentUser?._id) {
@@ -141,6 +154,16 @@ const StudentDetailPage = () => {
     }
 
     const isActive = student.status === 'Active' || !student.status;
+    const attendanceSummary = {
+        present: attendanceRecords.filter(r => r.status === 'Present').length,
+        absent: attendanceRecords.filter(r => r.status === 'Absent').length,
+        late: attendanceRecords.filter(r => r.status === 'Late').length,
+        leave: attendanceRecords.filter(r => r.status === 'Leave').length,
+        total: attendanceRecords.length,
+    };
+    const attendancePercent = attendanceSummary.total > 0
+        ? Math.round((attendanceSummary.present / attendanceSummary.total) * 100)
+        : 0;
 
     return (
         <div className="flex-1 space-y-6 p-6 pt-4">
@@ -500,29 +523,81 @@ const StudentDetailPage = () => {
 
                                 {/* ── Attendance Tab ── */}
                                 <TabsContent value="attendance">
-                                    <div className="flex flex-col items-center justify-center py-10 gap-4">
-                                        <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center">
-                                            <div className="rounded-xl border p-4 space-y-1">
-                                                <CheckCircle2 className="h-6 w-6 text-green-500 mx-auto" />
-                                                <p className="text-2xl font-bold text-green-600">–</p>
-                                                <p className="text-xs text-muted-foreground">Present</p>
-                                            </div>
-                                            <div className="rounded-xl border p-4 space-y-1">
-                                                <XCircle className="h-6 w-6 text-destructive mx-auto" />
-                                                <p className="text-2xl font-bold text-destructive">–</p>
-                                                <p className="text-xs text-muted-foreground">Absent</p>
-                                            </div>
-                                            <div className="rounded-xl border p-4 space-y-1">
-                                                <Clock className="h-6 w-6 text-yellow-500 mx-auto" />
-                                                <p className="text-2xl font-bold text-yellow-600">–</p>
-                                                <p className="text-xs text-muted-foreground">Late</p>
-                                            </div>
+                                    {attendanceLoading ? (
+                                        <div className="space-y-3">
+                                            <Skeleton className="h-24 w-full" />
+                                            <Skeleton className="h-24 w-full" />
+                                            <Skeleton className="h-28 w-full" />
                                         </div>
-                                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <span>Attendance module coming soon</span>
+                                    ) : attendanceRecords.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+                                            <AlertCircle className="h-10 w-10 opacity-30" />
+                                            <p className="text-sm">No attendance records found</p>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+                                                <div className="rounded-xl border p-4 space-y-1 bg-green-50/40 dark:bg-green-900/10">
+                                                    <CheckCircle2 className="h-5 w-5 text-green-600 mx-auto" />
+                                                    <p className="text-xl font-bold text-green-600">{attendanceSummary.present}</p>
+                                                    <p className="text-xs text-muted-foreground">Present</p>
+                                                </div>
+                                                        <div className="rounded-xl border p-4 space-y-1 bg-red-50/40 dark:bg-red-900/10">
+                                                            <XCircle className="h-5 w-5 text-red-600 mx-auto" />
+                                                            <p className="text-xl font-bold text-red-600">{attendanceSummary.absent}</p>
+                                                            <p className="text-xs text-muted-foreground">Absent</p>
+                                                        </div>
+                                                        <div className="rounded-xl border p-4 space-y-1 bg-yellow-50/40 dark:bg-yellow-900/10">
+                                                            <Clock className="h-5 w-5 text-yellow-600 mx-auto" />
+                                                            <p className="text-xl font-bold text-yellow-600">{attendanceSummary.late}</p>
+                                                            <p className="text-xs text-muted-foreground">Late</p>
+                                                        </div>
+                                                        <div className="rounded-xl border p-4 space-y-1 bg-blue-50/40 dark:bg-blue-900/10">
+                                                            <Calendar className="h-5 w-5 text-blue-600 mx-auto" />
+                                                            <p className="text-xl font-bold text-blue-600">{attendanceSummary.leave}</p>
+                                                            <p className="text-xs text-muted-foreground">Leave</p>
+                                                        </div>
+                                                        <div className="rounded-xl border p-4 space-y-1 bg-primary/5">
+                                                            <TrendingUp className="h-5 w-5 text-primary mx-auto" />
+                                                            <p className="text-xl font-bold text-primary">{attendancePercent}%</p>
+                                                            <p className="text-xs text-muted-foreground">Attendance %</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="rounded-lg border overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow>
+                                                                    <TableHead>Date</TableHead>
+                                                                    <TableHead>Status</TableHead>
+                                                                    <TableHead>Remark</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {attendanceRecords.slice(0, 10).map((row) => (
+                                                                    <TableRow key={row._id}>
+                                                                        <TableCell>{row.date ? formatDateTime(row.date, { dateOnly: true }) : '–'}</TableCell>
+                                                                        <TableCell>
+                                                                            <Badge className={
+                                                                                row.status === 'Present'
+                                                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0'
+                                                                                    : row.status === 'Absent'
+                                                                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0'
+                                                                                        : row.status === 'Late'
+                                                                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-0'
+                                                                                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0'
+                                                                            }>
+                                                                                {row.status || 'N/A'}
+                                                                            </Badge>
+                                                                        </TableCell>
+                                                                        <TableCell className="text-muted-foreground">{row.remark || '—'}</TableCell>
+                                                                    </TableRow>
+                                                                ))}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
+                                                </div>
+                                    )}
                                 </TabsContent>
 
                                 {/* ── Documents Tab ── */}
