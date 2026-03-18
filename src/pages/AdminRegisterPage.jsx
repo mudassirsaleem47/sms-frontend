@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle, School, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle, UserPlus, Sparkles, ShieldCheck, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PasswordField } from '@/components/ui/email-pass';
 
@@ -55,106 +55,132 @@ const AdminRegisterPage = () => {
     };
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-4">
-            <div className="w-full max-w-lg space-y-8 animate-in slide-in-from-bottom-4 duration-700 fade-in zoom-in-95">
+        <div className="relative min-h-screen overflow-hidden bg-slate-950 px-4 py-8 sm:px-6 sm:py-12">
+            <div className="pointer-events-none absolute -top-28 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-400/20 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
 
-
-                {/* Register Card */}
-                <Card className="border shadow-lg">
-                    <CardHeader className="text-center pb-2">
-                        <div className="mx-auto w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                            <UserPlus className="h-5 w-5 text-primary" />
-                        </div>
-                        <CardTitle className="text-xl">Admin Registration</CardTitle>
-                        <CardDescription>
-                            Enter your details to register your school
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {/* Message Display */}
-                        {message && (
-                            <div className={cn(
-                                "mb-6 p-4 rounded-lg flex items-start gap-3 text-sm",
-                                messageType === "success"
-                                    ? "bg-green-50 border border-green-200 text-green-700"
-                                    : "bg-destructive/10 border border-destructive/20 text-destructive"
-                            )}>
-                                {messageType === "success" ? (
-                                    <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                ) : (
-                                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                )}
-                                <span>{message}</span>
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="name">Full Name</Label>
-                                    <Input
-                                        id="name"
-                                        name="name"
-                                        placeholder="Enter your full name"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        required
-                                        className="h-10"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        placeholder="admin@school.com"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        required
-                                        className="h-10"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="schoolName">School Name</Label>
-                                    <Input
-                                        id="schoolName"
-                                        name="schoolName"
-                                        placeholder="e.g., Central High School"
-                                        value={formData.schoolName}
-                                        onChange={handleChange}
-                                        required
-                                        className="h-10"
-                                    />
-                                    <p className="text-[11px] text-muted-foreground">
-                                        This will be your school's unique identifier.
-                                    </p>
-                                </div>
-                                <PasswordField
-                                    label="Password"
-                                    id="password"
-                                    placeholder="Create a strong password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                    className=""
-                                />
-                                <Button type="submit" className="w-full h-10 mt-2" disabled={loading}>
-                                    {loading ? "Creating Account..." : "Register School"}
-                                </Button>
-                            </div>
-                        </form>
-                    </CardContent>
-                    <div className="p-4 text-center text-xs text-muted-foreground border-t bg-muted/30 rounded-b-lg">
-                        Already have an account?{" "}
-                        <Link to="/login" className="text-primary hover:underline font-medium">
-                            Log in
-                        </Link>
+            <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-2">
+                <section className="rounded-3xl border border-white/15 bg-white/10 p-6 text-white backdrop-blur-xl sm:p-8 lg:p-10">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium tracking-wide text-cyan-100">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        School Setup Wizard
                     </div>
-                </Card>
+
+                    <h1 className="mt-6 text-3xl font-semibold leading-tight sm:text-4xl">
+                        Create Your School Workspace
+                    </h1>
+                    <p className="mt-3 text-sm text-slate-200/90 sm:text-base">
+                        Register your institute and start managing students, staff, classes, and finance from one panel.
+                    </p>
+
+                    <div className="mt-8 space-y-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 p-3">
+                            <ShieldCheck className="h-5 w-5 text-cyan-200" />
+                            <span className="text-sm text-slate-100">Secure account setup with role-based dashboard access</span>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 p-3">
+                            <Building2 className="h-5 w-5 text-cyan-200" />
+                            <span className="text-sm text-slate-100">Launch your school profile in just a few steps</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="rounded-3xl border border-slate-200/70 bg-white p-4 shadow-2xl sm:p-6">
+                    <Card className="border-slate-200/80 shadow-lg shadow-slate-200/60">
+                        <CardHeader className="text-center pb-2 pt-6">
+                            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
+                                <UserPlus className="h-5 w-5 text-primary" />
+                            </div>
+                            <CardTitle className="text-2xl text-slate-900">Admin Registration</CardTitle>
+                            <CardDescription>
+                                Enter your details to register your school
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {message && (
+                                <div className={cn(
+                                    "mb-6 flex items-start gap-3 rounded-lg border p-4 text-sm",
+                                    messageType === "success"
+                                        ? "border-green-200 bg-green-50 text-green-700"
+                                        : "border-destructive/20 bg-destructive/10 text-destructive"
+                                )}>
+                                    {messageType === "success" ? (
+                                        <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                                    ) : (
+                                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+                                    )}
+                                    <span>{message}</span>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit}>
+                                <div className="grid gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Full Name</Label>
+                                        <Input
+                                            id="name"
+                                            name="name"
+                                            placeholder="Enter your full name"
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            required
+                                            className="h-11"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email Address</Label>
+                                        <Input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            placeholder="admin@school.com"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
+                                            className="h-11"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="schoolName">School Name</Label>
+                                        <Input
+                                            id="schoolName"
+                                            name="schoolName"
+                                            placeholder="e.g., Central High School"
+                                            value={formData.schoolName}
+                                            onChange={handleChange}
+                                            required
+                                            className="h-11"
+                                        />
+                                        <p className="text-[11px] text-muted-foreground">
+                                            This will be your school identifier for setup and onboarding.
+                                        </p>
+                                    </div>
+                                    <PasswordField
+                                        label="Password"
+                                        id="password"
+                                        placeholder="Create a strong password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        required
+                                        className=""
+                                    />
+                                    <Button type="submit" className="mt-2 h-11 w-full" disabled={loading}>
+                                        {loading ? "Creating Account..." : "Register School"}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CardContent>
+                        <div className="rounded-b-lg border-t bg-slate-50/90 p-4 text-center text-xs text-slate-500">
+                            Already have an account?{" "}
+                            <Link to="/login" className="font-medium text-primary hover:underline">
+                                Log in
+                            </Link>
+                        </div>
+                    </Card>
+                </section>
             </div>
 
-            <div className="mt-8 text-center text-xs text-muted-foreground">
+            <div className="relative mx-auto mt-8 w-full max-w-6xl text-center text-xs text-slate-400">
                 <p>&copy; {new Date().getFullYear()} School Management System. All rights reserved.</p>
             </div>
         </div>
