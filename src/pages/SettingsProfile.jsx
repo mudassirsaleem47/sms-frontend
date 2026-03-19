@@ -170,6 +170,8 @@ const SettingsProfile = () => {
     });
     const [logo, setLogo] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [profilePreview, setProfilePreview] = useState(null);
     const [favicon, setFavicon] = useState(null);
     const [faviconPreview, setFaviconPreview] = useState(null);
 
@@ -297,6 +299,9 @@ const SettingsProfile = () => {
                 });
                 if (data.schoolLogo) {
                     setLogoPreview(data.schoolLogo.startsWith('http') ? data.schoolLogo : `${API_BASE}/${data.schoolLogo}`);
+                }
+                if (data.profilePicture) {
+                    setProfilePreview(data.profilePicture.startsWith('http') ? data.profilePicture : `${API_BASE}/${data.profilePicture}`);
                 }
                 if (data.favicon) {
                     setFaviconPreview(data.favicon.startsWith('http') ? data.favicon : `${API_BASE}/${data.favicon}`);
@@ -512,6 +517,16 @@ const SettingsProfile = () => {
         if (file) { setFavicon(file); const r = new FileReader(); r.onloadend = () => setFaviconPreview(r.result); r.readAsDataURL(file); }
     };
 
+    const handleProfilePictureChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfilePicture(file);
+            const r = new FileReader();
+            r.onloadend = () => setProfilePreview(r.result);
+            r.readAsDataURL(file);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -526,6 +541,7 @@ const SettingsProfile = () => {
                 const data = new FormData();
                 Object.keys(formData).forEach(key => data.append(key, formData[key]));
                 if (logo) data.append('schoolLogo', logo);
+                if (profilePicture) data.append('profilePicture', profilePicture);
                 if (favicon) data.append('favicon', favicon);
                 const res = await axios.put(endpoint, data, { headers: { 'Content-Type': 'multipart/form-data' } });
                 setCurrentUser({ ...currentUser, ...res.data });
@@ -790,6 +806,28 @@ const SettingsProfile = () => {
                                         <CardDescription>{isAdmin ? "Your personal admin account information." : "Update your personal details."}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
+                                        {isAdmin && (
+                                            <div className="mb-5 flex items-center gap-4">
+                                                <div className="relative group">
+                                                    <input type="file" hidden onChange={handleProfilePictureChange} accept="image/*" id="profile-picture-upload" />
+                                                    <label htmlFor="profile-picture-upload" className="cursor-pointer block">
+                                                        <Avatar className="h-20 w-20 border-2 border-dashed border-muted-foreground/25 hover:border-primary transition-colors">
+                                                            <AvatarImage src={profilePreview || currentUser?.profilePicture} className='object-cover' alt="Profile Picture" />
+                                                            <AvatarFallback className="bg-primary/5 text-primary">
+                                                                <User className="h-7 w-7" />
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Upload className="text-white h-4 w-4" />
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium">Profile Picture</p>
+                                                    <p className="text-xs text-muted-foreground">Upload your personal profile image for sidebar account card.</p>
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="adminName">Full Name <span className="text-destructive">*</span></Label>

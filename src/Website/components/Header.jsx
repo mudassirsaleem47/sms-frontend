@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { shButton } from '@/components/ui/3dButton';
 
 const navLinks = [
     { name: 'Features', id: 'features' },
@@ -30,7 +31,7 @@ function Header() {
                   </div>
                   <div className="text-left">
                       <p className="text-sm font-semibold leading-tight text-slate-900">School Management</p>
-                      <p className="text-xs leading-tight text-slate-500">Simple Premium Suite</p>
+                      <p className="text-xs leading-tight text-slate-500">Simpl Suite</p>
                   </div>
               </button>
 
@@ -48,10 +49,12 @@ function Header() {
 
               <div className="hidden items-center gap-2 md:flex">
                   <Link to="/AdminLogin">
-                      <Button variant="ghost" className="font-medium">Login</Button>
+                      <Button variant="ghost" className="font-medium">
+                          Login
+                      </Button>
                   </Link>
                   <Link to="/AdminRegister">
-                      <Button className="bg-slate-900 text-white hover:bg-slate-800">Get Started</Button>
+                      <shButton text="Get Started" />
                   </Link>
               </div>
 
@@ -81,7 +84,7 @@ function Header() {
                               <Button variant="outline" className="w-full">Login</Button>
                           </Link>
                           <Link to="/AdminRegister" onClick={() => setMobileMenuOpen(false)}>
-                              <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">Start</Button>
+                              <RippleButton text="Get Started" />
                           </Link>
                       </div>
                   </div>

@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import API_URL from '@/config/api';
-import { BookOpenCheck, CalendarDays, Plus, Pencil, Trash2, Loader2, ClipboardList } from 'lucide-react';
+import { BookOpenCheck, CalendarDays, Plus, Pencil, Trash2, Loader2, ClipboardList, Users, BellRing } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,11 +43,14 @@ const HomeworkAssignments = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reminding, setReminding] = useState(false);
   const [homework, setHomework] = useState([]);
   const [classes, setClasses] = useState([]);
 
   const [selectedClass, setSelectedClass] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [completedDialogOpen, setCompletedDialogOpen] = useState(false);
+  const [selectedHomeworkForCompletions, setSelectedHomeworkForCompletions] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [form, setForm] = useState(initialForm);
 
@@ -162,6 +165,28 @@ const HomeworkAssignments = () => {
     }
   };
 
+  const openCompletedDialog = (item) => {
+    setSelectedHomeworkForCompletions(item);
+    setCompletedDialogOpen(true);
+  };
+
+  const sendOverdueReminders = async () => {
+    if (!schoolId) return;
+    setReminding(true);
+    try {
+      const payload = selectedClass !== 'all' ? { classId: selectedClass } : {};
+      const res = await axios.post(`${API_BASE}/Homework/${schoolId}/RemindOverdue`, payload);
+      showToast(
+        `Reminders sent: ${res.data.notificationsCreated || 0} notifications for ${res.data.studentsNotified || 0} students.`,
+        'success'
+      );
+    } catch (error) {
+      showToast('Failed to send overdue reminders', 'error');
+    } finally {
+      setReminding(false);
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-4 pt-2 md:p-6 md:pt-4">
       <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur-sm md:flex-row md:items-center md:justify-between">
@@ -181,6 +206,10 @@ const HomeworkAssignments = () => {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" onClick={sendOverdueReminders} disabled={reminding} className="gap-2">
+            {reminding ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
+            Remind Overdue
+          </Button>
           <Button onClick={openCreateDialog} className="gap-2">
             <Plus className="h-4 w-4" />
             New Assignment
@@ -255,6 +284,9 @@ const HomeworkAssignments = () => {
                           <span>{item.classId?.sclassName || 'Class not found'}</span>
                           {item.section ? <span className="mx-2">• Section {item.section}</span> : null}
                         </div>
+                        <div className="text-xs text-muted-foreground">
+                          Completed by {item.completions?.length || 0} student(s)
+                        </div>
                         {item.description ? (
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                         ) : null}
@@ -265,6 +297,9 @@ const HomeworkAssignments = () => {
                       </div>
 
                       <div className="flex items-center gap-2 self-end md:self-start">
+                        <Button variant="outline" size="sm" onClick={() => openCompletedDialog(item)} className="gap-1.5">
+                          <Users className="h-3.5 w-3.5" /> Completed ({item.completions?.length || 0})
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => openEditDialog(item)} className="gap-1.5">
                           <Pencil className="h-3.5 w-3.5" /> Edit
                         </Button>
@@ -352,6 +387,46 @@ const HomeworkAssignments = () => {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {editingItem ? 'Update' : 'Create'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={completedDialogOpen} onOpenChange={setCompletedDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Completed Students</DialogTitle>
+            <DialogDescription>
+              {selectedHomeworkForCompletions?.title || 'Assignment'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[360px] overflow-y-auto pr-1">
+            {selectedHomeworkForCompletions?.completions?.length ? (
+              <div className="space-y-2">
+                {selectedHomeworkForCompletions.completions.map((entry, idx) => {
+                  const student = entry.studentId;
+                  const studentName = student?.name || 'Unknown Student';
+                  const rollNum = student?.rollNum ? `Roll #${student.rollNum}` : '';
+                  return (
+                    <div key={`${student?._id || idx}-${entry.completedAt || idx}`} className="rounded-lg border border-border/70 p-3">
+                      <p className="font-medium">{studentName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {rollNum}{rollNum ? ' • ' : ''}
+                        Completed {entry.completedAt ? format(new Date(entry.completedAt), 'PPp') : 'recently'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border/70 p-6 text-center text-sm text-muted-foreground">
+                No student has marked this assignment as completed yet.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompletedDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

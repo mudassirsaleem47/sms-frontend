@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -80,12 +80,12 @@ export function ReceptionistLoginForm({
                 <div className="grid gap-2">
                   <div className="flex items-center">
                     <Label htmlFor="password">Password</Label>
-                    <a
-                      href="#"
+                    <Link
+                      to="/forgot-password?role=receptionist"
                       className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                     >
                       Forgot your password?
-                    </a>
+                    </Link>
                   </div>
                   <Input
                     id="password"

@@ -185,7 +185,7 @@ const StaffDirectory = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <Card className="border-l-4 border-l-primary">
                     <CardContent className="p-4 flex items-center gap-3">
                         <div className="bg-primary/10 p-2 rounded-lg">

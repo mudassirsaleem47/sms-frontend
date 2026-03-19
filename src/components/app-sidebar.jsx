@@ -24,6 +24,7 @@ import { NavMain } from "./nav-main"
 import { NavUser } from "./nav-user"
 import SidebarLogo from "./Sidebar-logo"
 import { Link } from "react-router-dom"
+import API_URL from "@/config/api"
 
 import { useAuth } from "../context/AuthContext"
 
@@ -313,10 +314,15 @@ export function AppSidebar({
   else if (isReceptionist) footerData = [{ title: 'Settings', url: '/receptionist/settings', icon: IconSettings }];
 
   // Prepare user data for NavUser component
+  const avatarRaw = currentUser?.avatar || currentUser?.profilePicture || currentUser?.studentPhoto || currentUser?.schoolLogo || currentUser?.school?.schoolLogo || "";
+  const normalizedAvatar = avatarRaw
+    ? (avatarRaw.startsWith('http') ? avatarRaw : `${API_URL}/${String(avatarRaw).replace(/\\/g, '/')}`)
+    : "https://github.com/shadcn.png";
+
   const userData = {
     name: currentUser?.name || (isTeacher ? "Teacher" : (isParent ? "Parent" : (isAccountant ? "Accountant" : (isReceptionist ? "Receptionist" : "Admin")))),
     email: currentUser?.email || (isTeacher ? "teacher@school.com" : (isParent ? "parent@school.com" : (isAccountant ? "accountant@school.com" : (isReceptionist ? "receptionist@school.com" : "admin@school.com")))),
-    avatar: currentUser?.avatar || currentUser?.schoolLogo || currentUser?.school?.schoolLogo || "https://github.com/shadcn.png",
+    avatar: normalizedAvatar,
     basePath,
   };
 

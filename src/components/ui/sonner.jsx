@@ -10,8 +10,6 @@ const Toaster = ({
     <Sonner
       theme={theme === "system" ? undefined : theme}
       position="top-center"
-      closeButton
-      
       richColors={true}
       className="toaster group"
       toastOptions={{

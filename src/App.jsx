@@ -1,6 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Home from './Website/pages/Home';
 import AdminLoginPage from './pages/AdminLoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import OtpVerificationPage from './pages/OtpVerificationPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
@@ -108,6 +112,10 @@ function App() {
 
               {/* Admin Auth Routes */}
               <Route path="/login" element={<AdminLoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/verify-otp" element={<OtpVerificationPage />} />
               <Route path="/AdminLogin" element={<Navigate to="/login" replace />} />
               <Route path="/register" element={<AdminRegisterPage />} />
               <Route path="/AdminRegister" element={<Navigate to="/register" replace />} />

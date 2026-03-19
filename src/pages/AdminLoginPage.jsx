@@ -1,10 +1,4 @@
-import { useNavigate, Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "../context/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   GraduationCap,
@@ -12,233 +6,289 @@ import {
   Briefcase,
   UserCog,
   Baby,
-  ShieldCheck,
-  Sparkles,
-  Building2
+    ArrowRightToLine,
 } from "lucide-react";
-import { ParentLoginForm } from "@/components/parent-login-form";
-import { AccountantLoginForm } from "@/components/accountant-login-form";
-import { ReceptionistLoginForm } from "@/components/receptionist-login-form";
 
-const AdminLoginPage = () => {
-  const { login, loading, error } = useAuth();
-  const navigate = useNavigate();
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
+const AdminLoginPanel = () => {
+    const navigate = useNavigate();
+    const { login, loading, error } = useAuth();
+    const { showToast } = useToast();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [localError, setLocalError] = useState(null);
+    const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLocalError(null);
+      e.preventDefault();
     try {
       await login({ email, password });
       navigate("/admin/dashboard");
     } catch (err) {
-      setLocalError(error || "Invalid credentials");
+        const apiError = err.response?.data;
+        const message = apiError?.message || error || "Invalid credentials";
+        showToast(message, "error");
+        if (apiError?.code === "EMAIL_NOT_VERIFIED") {
+            navigate(`/verify-email?email=${encodeURIComponent(apiError?.email || email)}`);
+        }
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950 px-4 py-8 sm:px-6 sm:py-12">
-      <div className="pointer-events-none absolute -top-28 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-400/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
-
-      <div className="relative mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-2">
-        <section className="rounded-3xl border border-white/15 bg-white/10 p-6 text-white backdrop-blur-xl sm:p-8 lg:p-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium tracking-wide text-cyan-100">
-            <Sparkles className="h-3.5 w-3.5" />
-            Smart School Suite
+      <form onSubmit={handleSubmit} className="space-y-4 ">
+          <div className="space-y-2 transition-all">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                  id="admin-email"
+                  type="email"
+                  placeholder="admin@school.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+              />
           </div>
 
-          <h1 className="mt-6 text-3xl font-semibold leading-tight sm:text-4xl">
-            School Management System
-          </h1>
-          <p className="mt-3 text-sm text-slate-200/90 sm:text-base">
-            One secure portal for administration, academics, finance, and parent communication.
-          </p>
-
-          <div className="mt-8 space-y-3">
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 p-3">
-              <ShieldCheck className="h-5 w-5 text-cyan-200" />
-              <span className="text-sm text-slate-100">Role-based access and protected login flows</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 p-3">
-              <Building2 className="h-5 w-5 text-cyan-200" />
-              <span className="text-sm text-slate-100">Centralized controls for school operations</span>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-slate-200/70 bg-white p-4 shadow-2xl sm:p-6">
-          <div className="mb-5 text-center sm:mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Portal Login</h2>
-            <p className="mt-1 text-sm text-slate-500">Select your role to continue</p>
-          </div>
-
-          <div className="mx-auto w-full max-w-2xl">
-            <Tabs defaultValue="admin" className="w-full">
-              <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1.5 sm:grid-cols-5">
-                <TabsTrigger value="admin" className="flex h-auto flex-col gap-1 rounded-xl py-2 text-[11px] sm:text-xs data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300">
-                  <UserCog className="h-4 w-4" />
-                  <span className="font-medium">Admin</span>
-                </TabsTrigger>
-                <TabsTrigger value="teacher" className="flex h-auto flex-col gap-1 rounded-xl py-2 text-[11px] sm:text-xs data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300">
-                  <GraduationCap className="h-4 w-4" />
-                  <span className="font-medium">Teacher</span>
-                </TabsTrigger>
-                <TabsTrigger value="accountant" className="flex h-auto flex-col gap-1 rounded-xl py-2 text-[11px] sm:text-xs data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300">
-                  <Briefcase className="h-4 w-4" />
-                  <span className="font-medium">Accountant</span>
-                </TabsTrigger>
-                <TabsTrigger value="receptionist" className="flex h-auto flex-col gap-1 rounded-xl py-2 text-[11px] sm:text-xs data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300">
-                  <Users className="h-4 w-4" />
-                  <span className="font-medium">Receptionist</span>
-                </TabsTrigger>
-                <TabsTrigger value="parent" className="flex h-auto flex-col gap-1 rounded-xl py-2 text-[11px] sm:text-xs data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-300">
-                  <Baby className="h-4 w-4" />
-                  <span className="font-medium">Parent</span>
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="mt-6 min-h-[560px] animate-in slide-in-from-bottom-4 duration-500 fade-in zoom-in-95 sm:min-h-[620px]">
-                <TabsContent value="admin">
-                  <Card className="min-h-[520px] border-slate-200/80 shadow-lg shadow-slate-200/60">
-                    <CardHeader className="text-center pb-2 pt-6">
-                      <CardTitle className="text-2xl text-slate-900">Admin Login</CardTitle>
-                      <CardDescription>
-                        Enter your credentials to access the administration panel
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                      <form onSubmit={handleSubmit}>
-                        <div className="grid gap-4">
-                          {localError && (
-                            <div className="rounded-md bg-destructive/15 p-3 text-center text-sm font-medium text-destructive">
-                              {localError}
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email Address</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              placeholder="admin@school.com"
-                              required
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              className="h-11"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label htmlFor="password">Password</Label>
-                              <a href="#" className="text-xs font-medium text-primary hover:underline">
-                                Forgot password?
-                              </a>
-                            </div>
-                            <Input
-                              id="password"
-                              type="password"
-                              placeholder="••••••••"
-                              required
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              className="h-11"
-                            />
-                          </div>
-                          <Button type="submit" className="mt-2 h-11 w-full" disabled={loading}>
-                            {loading ? "Authenticating..." : "Login to Admin Portal"}
-                          </Button>
-                        </div>
-                      </form>
-                    </CardContent>
-                    <div className="rounded-b-lg border-t bg-slate-50/90 p-4 text-center text-xs text-slate-500">
-                      Don&apos;t have an account?{" "}
-                      <Link to="/register" className="font-medium text-primary hover:underline">
-                        Register School
-                      </Link>
-                    </div>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="teacher">
-                  <Card className="min-h-[520px] border-slate-200/80 shadow-lg shadow-slate-200/60">
-                    <CardHeader className="text-center pb-2 pt-6">
-                      <CardTitle className="text-2xl text-slate-900">Teacher Login</CardTitle>
-                      <CardDescription>Access class schedules and student records</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1">
-                      <LoginForm role="Teacher" />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="accountant">
-                  <AccountantLoginForm />
-                </TabsContent>
-
-                <TabsContent value="receptionist">
-                  <ReceptionistLoginForm />
-                </TabsContent>
-
-                <TabsContent value="parent">
-                  <ParentLoginForm />
-                </TabsContent>
+          <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Link to="/forgot-password?role=admin" className="text-xs font-medium text-slate-700 hover:underline">
+                      Forgot password?
+                  </Link>
               </div>
-            </Tabs>
+              <Input
+                  id="admin-password"
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+              />
           </div>
-        </section>
+
+            <button type="submit" className="w-full bg-[#2a2a2a] hover:bg-[#303030] border border-[#3a3a3a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all duration-150 text-white" disabled={loading}>
+                {loading ? "Authenticating..." : "Get Started"}
+            </button>
+        </form>
+    );
+};
+
+const TeacherLoginPanel = () => {
+    const navigate = useNavigate();
+    const { teacherLogin, loading, error } = useAuth();
+    const { showToast } = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await teacherLogin({ email, password });
+            navigate("/teacher/dashboard");
+        } catch (err) {
+            showToast(err.response?.data?.message || error || "Invalid credentials", "error");
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="teacher-email">Email</Label>
+                <Input
+                    id="teacher-email"
+                    type="email"
+                    placeholder="teacher@school.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+            </div>
+
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="teacher-password">Password</Label>
+                    <Link to="/forgot-password?role=teacher" className="text-xs font-medium text-slate-700 hover:underline">
+                        Forgot password?
+                    </Link>
+                </div>
+                <Input
+                    id="teacher-password"
+                    type="password"
+                    placeholder="Enter your password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+
+            <Button type="submit" className="w-full bg-[#2a2a2a] hover:bg-[#303030] border border-[#3a3a3a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all duration-150 text-white" disabled={loading}>
+                {loading ? "Authenticating..." : "Get Started"}
+            </Button>
+        </form>
+    );
+};
+
+const StaffRolePanel = ({ role, dashboardPath, placeholder }) => {
+    const navigate = useNavigate();
+    const { staffLogin, loading, error } = useAuth();
+    const { showToast } = useToast();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const user = await staffLogin({ email, password });
+            const normalizedRole = String(user.role || user.designation || "").toLowerCase();
+            if (normalizedRole === role) {
+                navigate(dashboardPath);
+            } else {
+                showToast(`Access denied: this account is not a ${role}.`, "error");
+            }
+        } catch (err) {
+            showToast(err.response?.data?.message || error || "Invalid credentials", "error");
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor={`${role}-email`}>Email</Label>
+                <Input
+                    id={`${role}-email`}
+                    type="email"
+                    placeholder={placeholder}
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
       </div>
 
-      <div className="relative mx-auto mt-8 w-full max-w-6xl text-center text-xs text-slate-400">
-        <p>&copy; {new Date().getFullYear()} School Management System. All rights reserved.</p>
-      </div>
-    </div>
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor={`${role}-password`}>Password</Label>
+                    <Link to={`/forgot-password?role=${role}`} className="text-xs font-medium text-slate-700 hover:underline">
+                        Forgot password?
+                    </Link>
+                </div>
+                <Input
+                    id={`${role}-password`}
+                    type="password"
+                    placeholder="Enter your password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+
+            <Button type="submit" className="w-full bg-[#2a2a2a] hover:bg-[#303030] border border-[#3a3a3a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all duration-150 text-white" disabled={loading}>
+                {loading ? "Authenticating..." : "Get Started"}
+            </Button>
+        </form>
   );
 };
 
-// Helper for Teacher login form (Refined)
-const LoginForm = ({ role }) => {
-  const { teacherLogin, loading, error } = useAuth();
+const ParentLoginPanel = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [localError, setLocalError] = useState(null);
+    const { parentLogin, loading, error } = useAuth();
+    const { showToast } = useToast();
+    const [studentName, setStudentName] = useState("");
+    const [rollNum, setRollNum] = useState("");
+    const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLocalError(null);
+      e.preventDefault();
     try {
-      if (role === 'Teacher') {
-        await teacherLogin({ email, password });
-        navigate("/teacher/dashboard");
-      }
+        await parentLogin({ studentName, rollNum, password });
+        navigate("/parent/dashboard");
     } catch (err) {
-      setLocalError(error || "Invalid credentials");
+        showToast(err.response?.data?.message || error || "Invalid credentials", "error");
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-4">
-        {localError && <div className="p-3 rounded-md bg-destructive/15 text-destructive text-sm font-medium text-center">{localError}</div>}
-        <div className="space-y-2">
-          <Label htmlFor={`${role}-email`}>Email Address</Label>
-          <Input id={`${role}-email`} type="email" placeholder="teacher@school.com" required value={email} onChange={e => setEmail(e.target.value)} className="h-10" />
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor={`${role}-password`}>Password</Label>
-            <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+      <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+              <Label htmlFor="parent-student-name">Student Name</Label>
+              <Input
+                  id="parent-student-name"
+                  placeholder="Ali Khan"
+                  required
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+              />
           </div>
-          <Input id={`${role}-password`} type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)} className="h-10" />
-        </div>
-        <Button type="submit" className="w-full h-10 mt-2" disabled={loading}>Login as {role}</Button>
+
+          <div className="space-y-2">
+              <Label htmlFor="parent-roll-number">Roll Number</Label>
+              <Input
+                  id="parent-roll-number"
+                  type="number"
+                  placeholder="101"
+                  required
+                  value={rollNum}
+                  onChange={(e) => setRollNum(e.target.value)}
+              />
+          </div>
+
+          <div className="space-y-2">
+              <Label htmlFor="parent-password">Password</Label>
+              <Input
+                  id="parent-password"
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+              />
       </div>
+
+          <Button type="submit" className="w-full bg-[#2a2a2a] hover:bg-[#303030] border border-[#3a3a3a] shadow-[inset_0_1px_1px_rgba(255,255,255,0.08),inset_0_-1px_1px_rgba(0,0,0,0.4)] transition-all duration-150 text-white" disabled={loading}>
+              {loading ? "Authenticating..." : "Get Started"}
+          </Button>
     </form>
-  )
-}
+    );
+};
+
+const AdminLoginPage = () => {
+    return (
+        <AuthLayout 
+            title="Sign in"
+            subtitle="Select your role and continue with secure access to your dashboard."
+            icon={ArrowRightToLine}
+            badgeText="School Access"
+            footer={
+                <>
+                    Don&apos;t have an account? <Link to="/register" className="font-semibold text-slate-900 hover:underline">Create school</Link>
+                </>
+            }
+        >
+            <Tabs defaultValue="admin" className="w-full">
+                <TabsList className="grid h-auto w-full grid-cols-5 rounded-xl border border-slate-200 bg-slate-100 p-1">
+                    <TabsTrigger value="admin" className="px-1.5 py-2 text-[11px] sm:text-xs"><UserCog className="mx-auto h-3.5 w-3.5" /><span>Admin</span></TabsTrigger>
+                    <TabsTrigger value="teacher" className="px-1.5 py-2 text-[11px] sm:text-xs"><GraduationCap className="mx-auto h-3.5 w-3.5" /><span>Teacher</span></TabsTrigger>
+                    <TabsTrigger value="accountant" className="px-1.5 py-2 text-[11px] sm:text-xs"><Briefcase className="mx-auto h-3.5 w-3.5" /><span>Accountant</span></TabsTrigger>
+                    <TabsTrigger value="receptionist" className="px-1.5 py-2 text-[11px] sm:text-xs"><Users className="mx-auto h-3.5 w-3.5" /><span>Reception</span></TabsTrigger>
+                    <TabsTrigger value="parent" className="px-1.5 py-2 text-[11px] sm:text-xs"><Baby className="mx-auto h-3.5 w-3.5" /><span>Parent</span></TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="admin" className="mt-4"><AdminLoginPanel /></TabsContent>
+                <TabsContent value="teacher" className="mt-4"><TeacherLoginPanel /></TabsContent>
+                <TabsContent value="accountant" className="mt-4">
+                    <StaffRolePanel role="accountant" dashboardPath="/accountant/dashboard" placeholder="accountant@school.com" />
+                </TabsContent>
+                <TabsContent value="receptionist" className="mt-4">
+                    <StaffRolePanel role="receptionist" dashboardPath="/receptionist/dashboard" placeholder="receptionist@school.com" />
+                </TabsContent>
+                <TabsContent value="parent" className="mt-4"><ParentLoginPanel /></TabsContent>
+            </Tabs>
+        </AuthLayout>
+    );
+};
 
 export default AdminLoginPage;
