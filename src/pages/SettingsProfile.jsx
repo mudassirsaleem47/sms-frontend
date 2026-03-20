@@ -163,6 +163,7 @@ const SettingsProfile = () => {
     const [loadingSessions, setLoadingSessions] = useState(false);
     const [newSessionData, setNewSessionData] = useState({ sessionYear: '', startDate: '', endDate: '' });
     const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+    const [admissionPrefix, setAdmissionPrefix] = useState('SMS');
 
     // General Profile
     const [formData, setFormData] = useState({
@@ -276,6 +277,7 @@ const SettingsProfile = () => {
                     fontSize,
                     sidebarCompact,
                     preferences,
+                    admissionPrefix,
                     theme
                 };
                 await axios.put(`${API_BASE}/Admin/Settings/${currentUser.school || currentUser._id}`, { settings: settingsObject });
@@ -285,7 +287,7 @@ const SettingsProfile = () => {
         }, 1000);
 
         return () => clearTimeout(t);
-    }, [notifications, accentColor, borderRadius, fontSize, sidebarCompact, preferences, theme, isAdmin, currentUser]);
+    }, [notifications, accentColor, borderRadius, fontSize, sidebarCompact, preferences, admissionPrefix, theme, isAdmin, currentUser]);
 
     // --- Handlers ---
     const fetchSettings = async () => {
@@ -315,6 +317,9 @@ const SettingsProfile = () => {
                     if (data.settings.fontSize) { setFontSize(data.settings.fontSize); applyFontScale(data.settings.fontSize); }
                     if (data.settings.sidebarCompact !== undefined) setSidebarCompact(data.settings.sidebarCompact);
                     if (data.settings.preferences) setPreferences(data.settings.preferences);
+                    if (typeof data.settings.admissionPrefix === 'string' && data.settings.admissionPrefix.trim()) {
+                        setAdmissionPrefix(data.settings.admissionPrefix.toUpperCase());
+                    }
                     if (data.settings.theme) setTheme(data.settings.theme);
 
                 }
@@ -783,6 +788,17 @@ const SettingsProfile = () => {
                                                         <div className="space-y-2">
                                                             <Label htmlFor="phone">Phone Number</Label>
                                                             <Input id="phone" value={formData.phoneNumber} onChange={(e) => handleChange('phoneNumber', e.target.value)} placeholder="+92 300 1234567" />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="admissionPrefix">Admission Prefix</Label>
+                                                            <Input
+                                                                id="admissionPrefix"
+                                                                value={admissionPrefix}
+                                                                onChange={(e) => setAdmissionPrefix(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                                                                placeholder="SMS"
+                                                                maxLength={6}
+                                                            />
+                                                            <p className="text-[11px] text-muted-foreground">Used in admission number, e.g. {admissionPrefix || 'SMS'}-0001</p>
                                                         </div>
                                                         <div className="space-y-2">
                                                             <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
