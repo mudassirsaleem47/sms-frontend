@@ -60,17 +60,21 @@ export const CampusProvider = ({ children }) => {
         try {
             setLoading(true);
             const response = await axios.get(`${API_URL}/Campuses/${schoolId}`);
-            if (response.data.success) {
-                setCampuses(response.data.campuses);
+            const campusesData = Array.isArray(response.data)
+                ? response.data
+                : (response.data?.campuses || []);
+
+            if (response.data?.success || Array.isArray(response.data)) {
+                setCampuses(campusesData);
                 
                 // If restricted to a campus, find and set the full object from the list
                 if (!isMainAdmin && currentUser?.campus) {
-                    const myCampus = response.data.campuses.find(c => c._id === (currentUser.campus._id || currentUser.campus));
+                    const myCampus = campusesData.find(c => c._id === (currentUser.campus._id || currentUser.campus));
                     if (myCampus) setSelectedCampus(myCampus);
                 } 
                 // Auto-select first campus for admin if none selected
-                else if (!selectedCampus && response.data.campuses.length > 0) {
-                    const mainCampus = response.data.campuses.find(c => c.isMain) || response.data.campuses[0];
+                else if (!selectedCampus && campusesData.length > 0) {
+                    const mainCampus = campusesData.find(c => c.isMain) || campusesData[0];
                     setSelectedCampus(mainCampus);
                 }
             }
