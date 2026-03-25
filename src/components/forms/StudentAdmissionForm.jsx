@@ -101,26 +101,42 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         guardianPhoto: null
     });
 
+    const getSchoolId = React.useCallback(() => (
+        currentUser?.school?._id ||
+        currentUser?.school ||
+        currentUser?.schoolId ||
+        currentUser?._id ||
+        ''
+    ), [currentUser]);
+
+    const getCampusId = React.useCallback((campusValue) => {
+        if (!campusValue) return '';
+        if (typeof campusValue === 'string') return campusValue;
+        return campusValue._id || '';
+    }, []);
+
     // --- Effects & Fetchers ---
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
             const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [currentUser]);
+    }, [getSchoolId]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
             const res = await axios.get(`${API_BASE}/Transport/Route/${schoolId}`);
             setRoutesList(res.data);
         } catch (err) {
             console.error("Failed to load routes", err);
         }
-    }, [currentUser]);
+    }, [getSchoolId]);
 
     const fetchPickupPoints = async (routeId) => {
         if (!routeId) {
@@ -142,25 +158,30 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
     const fetchClasses = React.useCallback(async () => {
         try {
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
-            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
+            const selectedCampusId = getCampusId(selectedCampus);
+            const campusQuery = selectedCampusId ? `?campus=${selectedCampusId}` : '';
             const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
-            setClassesList(res.data);
+            const classes = Array.isArray(res.data) ? res.data : (res.data?.classes || []);
+            setClassesList(classes);
         } catch {
             toast.error("Failed to load classes");
         }
-    }, [currentUser, selectedCampus]);
+    }, [getSchoolId, getCampusId, selectedCampus]);
 
     const fetchAvailableFees = React.useCallback(async () => {
         try {
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
-            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
+            const selectedCampusId = getCampusId(selectedCampus);
+            const campusQuery = selectedCampusId ? `?campus=${selectedCampusId}` : '';
             const res = await axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`);
             setFeeStructuresList(res.data);
         } catch (err) {
             console.error("Failed to fetch fees", err);
         }
-    }, [currentUser, selectedCampus]);
+    }, [getSchoolId, getCampusId, selectedCampus]);
 
     useEffect(() => {
         if (currentUser) {
@@ -218,7 +239,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     const classId = data.sclassName?._id || data.sclassName;
                     // Note: classesList might not be loaded yet, so we'll rely on the API returning valid sections for the class
                     try {
-                         const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+                         const schoolId = getSchoolId();
+                         if (!schoolId) return;
                          const cRes = await axios.get(`${API_BASE}/Sclasses/${schoolId}`);
                          const selectedClass = cRes.data.find(c => c._id === classId);
                          if (selectedClass) setSectionsList(selectedClass.sections);
@@ -242,7 +264,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         if (editStudentId && currentUser) {
             fetchStudentForEdit();
         }
-    }, [editStudentId, currentUser]);
+    }, [editStudentId, currentUser, getSchoolId]);
 
     useEffect(() => {
         if (activeSession) {
@@ -251,7 +273,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     }, [activeSession]);
 
     useEffect(() => {
-        const defaultCampusId = selectedCampus?._id || campuses[0]?._id || '';
+        const defaultCampusId = getCampusId(selectedCampus) || getCampusId(campuses[0]) || '';
         if (!defaultCampusId) return;
 
         setFormData(prev => {
@@ -260,7 +282,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (prev.campus === defaultCampusId) return prev;
             return { ...prev, campus: defaultCampusId };
         });
-    }, [selectedCampus, campuses, editStudentId]);
+    }, [selectedCampus, campuses, editStudentId, getCampusId]);
 
     // --- Handlers ---
     const handleInputChange = (e, section = null, index = null) => {
@@ -364,7 +386,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         try {
             const data = new FormData();
             
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const schoolId = getSchoolId();
             
             Object.keys(formData).forEach(key => {
                 if (key === 'name' && !formData[key]) {
@@ -372,7 +394,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                 } else if (key === 'school') {
                     data.append('school', schoolId);
                 } else if (key === 'campus') {
-                    data.append('campus', formData.campus || selectedCampus?._id || '');
+                    data.append('campus', formData.campus || getCampusId(selectedCampus) || '');
                 } else if (key === 'session' && !formData[key]) {
                     // Skip optional session when not selected/available.
                 } else if (['father', 'mother', 'guardian', 'transport', 'siblings'].includes(key)) {

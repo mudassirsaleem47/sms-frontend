@@ -13,6 +13,14 @@ export const CampusProvider = ({ children }) => {
     const [selectedCampus, setSelectedCampus] = useState(null); // null means "All Campuses"
     const [loading, setLoading] = useState(false);
 
+    const getSchoolId = () => (
+        currentUser?.school?._id ||
+        currentUser?.school ||
+        currentUser?.schoolId ||
+        currentUser?._id ||
+        ''
+    );
+
     // isMainAdmin means school owner (Admin model) OR staff assigned to a Main campus
     // We distinguish school owner by checking if they have a 'designation' (only staff/principals have it)
     const isMainAdmin = (currentUser?.userType === 'admin' && !currentUser?.designation) || 
@@ -39,7 +47,12 @@ export const CampusProvider = ({ children }) => {
     // Fetch campuses when user changes
     useEffect(() => {
         if (currentUser) {
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const schoolId = getSchoolId();
+            if (!schoolId) {
+                setCampuses([]);
+                setSelectedCampus(null);
+                return;
+            }
             fetchCampuses(schoolId);
         } else {
             setCampuses([]);
