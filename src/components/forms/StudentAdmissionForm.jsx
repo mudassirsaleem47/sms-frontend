@@ -1,47 +1,1019 @@
-import React from 'react';
-import StudentAdmissionForm from '../components/forms/StudentAdmissionForm';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, GraduationCap, Pencil } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Plus, Trash2, User, BookOpen, Users, Bus, Save, Check, Calendar as DollarSign, X } from 'lucide-react';
+import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
+import { useCampus } from '../../context/CampusContext';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from '@/components/ui/checkbox';
+import { PasswordField } from '@/components/ui/email-pass';
 
-const StudentAdmission = () => {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const editStudentId = searchParams.get('edit');
+import API_URL from '@/config/api';
+const API_BASE = API_URL;
 
-    return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
-            {/* Header */}
-            <div className="flex flex-col gap-4">
+const toInputDate = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+};
 
+const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
+    const { currentUser, activeSession } = useAuth();
+    const { campuses, selectedCampus, isMainAdmin } = useCampus();
 
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                {editStudentId ? <Pencil className="h-8 w-8 text-primary" /> : <GraduationCap className="h-8 w-8 text-primary" />}
-                            </div>
-                            {editStudentId ? "Edit Student" : "Student Admission"}
-                        </h2>
-                        <p className="text-muted-foreground mt-2 max-w-2xl">
-                            {editStudentId 
-                                ? "Update the student's details below." 
-                                : "Complete the admission form below to register a new student. Ensure all required documents and details are accurate."}
-                        </p>
-                    </div>
-                </div>
-            </div>
+    // --- State ---
+    const [classesList, setClassesList] = useState([]);
+    const [sectionsList, setSectionsList] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [nextAdmissionNum, setNextAdmissionNum] = useState('');
+    const [routesList, setRoutesList] = useState([]);
+    const [pickupPointsList, setPickupPointsList] = useState([]);
+    const [transportLoading, setTransportLoading] = useState(false);
+    const [feeStructuresList, setFeeStructuresList] = useState([]);
+    const [selectedFees, setSelectedFees] = useState([]);
 
-            {/* Form Container */}
-            <div className="grid gap-6">
-                <StudentAdmissionForm
-                    editStudentId={editStudentId} // pass ID
-                    onSuccess={() => navigate('/admin/students')}
-                    onCancel={() => navigate(-1)}
-                />
+    const [guardianType, setGuardianType] = useState('father'); // 'father', 'mother', 'other'
+
+    const initialFormState = {
+        name: '', 
+        rollNum: '',
+        password: '',
+        sclassName: '',
+        section: '',
+        school: currentUser?._id,
+        campus: selectedCampus?._id || '',
+
+        firstName: '',
+        lastName: '',
+        gender: '',
+        dateOfBirth: '',
+        category: 'General',
+        mobileNumber: '',
+        email: '',
+
+        admissionDate: toInputDate(new Date()),
+        session: activeSession?._id || '', // Will be set in useEffect based on activeSession
+        bloodGroup: '',
+        house: '',
+        height: '',
+        weight: '',
+        measurementDate: toInputDate(new Date()),
+
+        religion: '',
+        caste: '',
+
+        father: { name: '', phone: '', occupation: '', email: '', address: '' },
+        mother: { name: '', phone: '', occupation: '', email: '', address: '' },
+        guardian: { name: '', phone: '', occupation: '', email: '', address: '', relation: '' },
+
+        transport: { route: '', pickupPoint: '', feesMonth: '' },
+        siblings: [],
+        studentPhotoUrl: ''
+    };
+
+    const [formData, setFormData] = useState(initialFormState);
+    const [photos, setPhotos] = useState({
+        studentPhoto: null,
+        fatherPhoto: null,
+        motherPhoto: null,
+        guardianPhoto: null
+    });
+
+    const [previews, setPreviews] = useState({
+        studentPhoto: null,
+        fatherPhoto: null,
+        motherPhoto: null,
+        guardianPhoto: null
+    });
+
+    // --- Effects & Fetchers ---
+    const fetchNextAdmissionNum = React.useCallback(async () => {
+        try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`);
+            setNextAdmissionNum(res.data.nextAdmissionNum);
+        } catch (err) {
+            console.error("Failed to fetch next admission number", err);
+        }
+    }, [currentUser]);
+
+    const fetchRoutes = React.useCallback(async () => {
+        try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const res = await axios.get(`${API_BASE}/Transport/Route/${schoolId}`);
+            setRoutesList(res.data);
+        } catch (err) {
+            console.error("Failed to load routes", err);
+        }
+    }, [currentUser]);
+
+    const fetchPickupPoints = async (routeId) => {
+        if (!routeId) {
+            setPickupPointsList([]);
+            return;
+        }
+        setTransportLoading(true);
+        try {
+            const res = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`);
+            // RouteStop returns an array of stops, each with a pickupPoint object
+            setPickupPointsList(res.data);
+        } catch (err) {
+            console.error("Failed to load pickup points", err);
+            toast.error("Failed to load pickup points");
+        } finally {
+            setTransportLoading(false);
+        }
+    };
+
+    const fetchClasses = React.useCallback(async () => {
+        try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
+            setClassesList(res.data);
+        } catch {
+            toast.error("Failed to load classes");
+        }
+    }, [currentUser, selectedCampus]);
+
+    const fetchAvailableFees = React.useCallback(async () => {
+        try {
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
+            const res = await axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`);
+            setFeeStructuresList(res.data);
+        } catch (err) {
+            console.error("Failed to fetch fees", err);
+        }
+    }, [currentUser, selectedCampus]);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchClasses();
+            fetchAvailableFees();
+            if (!editStudentId) {
+                fetchNextAdmissionNum();
+            }
+            fetchRoutes();
+        }
+    }, [currentUser, fetchClasses, fetchNextAdmissionNum, fetchRoutes, editStudentId, fetchAvailableFees]);
+
+    // Fetch student data if edit mode
+    useEffect(() => {
+        const fetchStudentForEdit = async () => {
+            if (!editStudentId) return;
+            try {
+                setLoading(true);
+                const res = await axios.get(`${API_BASE}/Student/${editStudentId}`);
+                const data = res.data;
+                
+                // Map API data to formData structure
+                setFormData({
+                    ...initialFormState,
+                    ...data,
+                    sclassName: data.sclassName?._id || data.sclassName || '',
+                    campus: data.campus?._id || data.campus || selectedCampus?._id || '',
+                    dateOfBirth: toInputDate(data.dateOfBirth),
+                    admissionDate: toInputDate(data.admissionDate) || toInputDate(new Date()),
+                    measurementDate: toInputDate(data.measurementDate) || toInputDate(new Date()),
+                    father: data.father || initialFormState.father,
+                    mother: data.mother || initialFormState.mother,
+                    guardian: data.guardian || initialFormState.guardian,
+                    transport: data.transport || initialFormState.transport,
+                    siblings: data.siblings || [],
+                    studentPhotoUrl: data.studentPhotoUrl || '' // Ensure this field exists in your API
+                });
+
+                // Populate Previews
+                const getPreview = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}/${path?.replace(/\\/g, '/')}`) : null;
+                setPreviews({
+                    studentPhoto: getPreview(data.studentPhoto),
+                    fatherPhoto: getPreview(data.father?.photo),
+                    motherPhoto: getPreview(data.mother?.photo),
+                    guardianPhoto: getPreview(data.guardian?.photo),
+                });
+
+                // Determine active guardian tab
+                if (data.guardian?.name) setGuardianType('other');
+                else if (data.mother?.name && !data.father?.name) setGuardianType('mother');
+                else setGuardianType('father');
+
+                // Pre-fetch sections if class is selected
+                if (data.sclassName) {
+                    const classId = data.sclassName?._id || data.sclassName;
+                    // Note: classesList might not be loaded yet, so we'll rely on the API returning valid sections for the class
+                    try {
+                         const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+                         const cRes = await axios.get(`${API_BASE}/Sclasses/${schoolId}`);
+                         const selectedClass = cRes.data.find(c => c._id === classId);
+                         if (selectedClass) setSectionsList(selectedClass.sections);
+                         setClassesList(cRes.data);
+                    } catch (e) {}
+                }
+
+                // If transport route exists, fetch pickup points
+                if (data.transport?.route) {
+                    fetchPickupPoints(data.transport.route); // pass route ID if stored, though it might be stored by string in db. Let it try.
+                }
+
+            } catch (err) {
+                 toast.error("Failed to load student details for editing");
+                 console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (editStudentId && currentUser) {
+            fetchStudentForEdit();
+        }
+    }, [editStudentId, currentUser]);
+
+    useEffect(() => {
+        if (activeSession) {
+            setFormData(prev => ({ ...prev, session: activeSession._id }));
+        }
+    }, [activeSession]);
+
+    useEffect(() => {
+        const defaultCampusId = selectedCampus?._id || campuses[0]?._id || '';
+        if (!defaultCampusId) return;
+
+        setFormData(prev => {
+            // Preserve existing campus in edit mode when already present.
+            if (editStudentId && prev.campus) return prev;
+            if (prev.campus === defaultCampusId) return prev;
+            return { ...prev, campus: defaultCampusId };
+        });
+    }, [selectedCampus, campuses, editStudentId]);
+
+    // --- Handlers ---
+    const handleInputChange = (e, section = null, index = null) => {
+        const { name, value } = e.target;
+        updateFormState(name, value, section, index);
+    };
+
+    const handleSelectChange = (name, value, section = null, index = null) => {
+        updateFormState(name, value, section, index);
+    };
+
+    const updateFormState = (name, value, section, index) => {
+        if (name === 'sclassName') {
+            const selectedClass = classesList.find(c => c._id === value);
+            setSectionsList(selectedClass ? selectedClass.sections : []);
+            setFormData(prev => ({ ...prev, [name]: value, section: '' }));
+        } else if (name === 'route' && section === 'transport') {
+            const selectedRoute = routesList.find(r => r._id === value);
+            setFormData(prev => ({
+                ...prev,
+                transport: { ...prev.transport, route: selectedRoute?.routeTitle || value, pickupPoint: '' }
+            }));
+            fetchPickupPoints(value);
+        } else if (section === 'siblings' && index !== null) {
+            const newSiblings = [...formData.siblings];
+            newSiblings[index] = { ...newSiblings[index], [name]: value };
+            setFormData(prev => ({ ...prev, siblings: newSiblings }));
+        } else if (section) {
+            setFormData(prev => ({
+                ...prev,
+                [section]: { ...prev[section], [name]: value }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleFileChange = (e, type) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setPhotos(prev => ({ ...prev, [type]: file }));
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviews(prev => ({ ...prev, [type]: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemovePhoto = (type) => {
+        setPhotos(prev => ({ ...prev, [type]: null }));
+        setPreviews(prev => ({ ...prev, [type]: null }));
+        if (type === 'studentPhoto') {
+            setFormData(prev => ({ ...prev, studentPhotoUrl: '' }));
+        }
+    };
+
+    const addSibling = () => {
+        setFormData(prev => ({
+            ...prev,
+            siblings: [...prev.siblings, { name: '', class: '', section: '', rollNum: '', school: '' }]
+        }));
+    };
+
+    const removeSibling = (index) => {
+        const newSiblings = formData.siblings.filter((_, i) => i !== index);
+        setFormData(prev => ({ ...prev, siblings: newSiblings }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        // Basic student fields validation
+        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.academicYear) {
+            toast.error("Please fill in all required student identity fields mark with *");
+            setLoading(false);
+            return;
+        }
+
+        // Required Validations for Guardian
+        if (guardianType === 'father' && !formData.father.name) {
+            toast.error("Please enter Father's Name");
+            setLoading(false);
+            return;
+        }
+        if (guardianType === 'mother' && !formData.mother.name) {
+            toast.error("Please enter Mother's Name");
+            setLoading(false);
+            return;
+        }
+        if (guardianType === 'other' && !formData.guardian.name) {
+            toast.error("Please enter Guardian's Name");
+            setLoading(false);
+            return;
+        }
+
+        const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+        
+        try {
+            const data = new FormData();
+            
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            
+            Object.keys(formData).forEach(key => {
+                if (key === 'name' && !formData[key]) {
+                     data.append('name', fullName);
+                } else if (key === 'school') {
+                    data.append('school', schoolId);
+                } else if (key === 'campus') {
+                    data.append('campus', formData.campus || selectedCampus?._id || '');
+                } else if (key === 'session' && !formData[key]) {
+                    // Skip optional session when not selected/available.
+                } else if (['father', 'mother', 'guardian', 'transport', 'siblings'].includes(key)) {
+                    data.append(key, JSON.stringify(formData[key]));
+                } else if (key === 'campus' && !formData[key]) {
+                    // Skip
+                } else {
+                    data.append(key, formData[key] || '');
+                }
+            });
+
+            Object.keys(photos).forEach(key => {
+                if (photos[key]) data.append(key, photos[key]);
+            });
+
+            data.append('feeStructureIds', JSON.stringify(selectedFees));
+
+            if (editStudentId) {
+                // Ignore password if blank on edit
+                if (!data.get('password')) { data.delete('password'); }
+                await axios.put(`${API_BASE}/Student/${editStudentId}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                toast.success("Student updated successfully!");
+            } else {
+                await axios.post(`${API_BASE}/StudentRegister`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                toast.success("Student admitted successfully!");
+            }
+            if (onSuccess) onSuccess();
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || (editStudentId ? "Error updating student" : "Error admitting student"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- Components ---
+
+    // Photo Upload Component
+    const PhotoUploader = ({ label, type, preview }) => (
+        <div className="flex flex-col items-center gap-3 w-full relative">
+            <Label className="text-muted-foreground font-medium">{label}</Label>
+            <div className="relative group">
+                <label
+                    htmlFor={`file-${type}`}
+                    className={`
+                        relative flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 
+                        border-2 border-dashed rounded-full cursor-pointer
+                        transition-all overflow-hidden bg-muted/30
+                        ${preview ? 'border-primary' : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5'}
+                    `}
+                >
+                    {preview ? (
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                            <User className="w-8 h-8 mb-1" />
+                            <span className="text-[10px] uppercase font-bold tracking-wider">Upload</span>
+                        </div>
+                    )}
+
+                    {preview && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Upload className="w-6 h-6 text-white" />
+                        </div>
+                    )}
+                    <input type="file" hidden id={`file-${type}`} onChange={(e) => handleFileChange(e, type)} accept="image/*" />
+                </label>
+
+                {preview && (
+                    <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(type)}
+                        className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 shadow-lg hover:scale-110 transition-transform z-10"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
             </div>
         </div>
     );
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in-50 duration-500">
+            
+            {/* 1. Student Identity (Photo & Basic) */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-indigo-600" />
+                        <CardTitle>Student Identity</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                        {/* Photo Column */}
+                        <div className="w-full md:w-auto flex flex-col justify-center items-center md:items-start shrink-0 gap-4">
+                            <PhotoUploader label="Student Photo" type="studentPhoto" preview={previews.studentPhoto || formData.studentPhotoUrl} />
+                            <div className="w-full max-w-[160px] space-y-1 text-center md:text-left">
+                                <Label htmlFor="studentPhotoUrl" className="text-xs text-muted-foreground">Or Image URL</Label>
+                                <Input 
+                                    id="studentPhotoUrl"
+                                    name="studentPhotoUrl" 
+                                    value={formData.studentPhotoUrl || ''} 
+                                    onChange={handleInputChange} 
+                                    placeholder="https://..."
+                                    className="text-xs h-8"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Basic Info Column */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                            <div className="space-y-2">
+                                <Label htmlFor="firstName">First Name <span className="text-destructive">*</span></Label>
+                                <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="lastName">Last Name</Label>
+                                <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="admissionNum">Admission No</Label>
+                                <Input id="admissionNum" name="admissionNum" value={editStudentId ? formData.admissionNum : nextAdmissionNum} readOnly className="bg-muted font-mono" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="rollNum">Roll Number <span className="text-destructive">*</span></Label>
+                                <Input id="rollNum" name="rollNum" value={formData.rollNum} type="number" onChange={handleInputChange} required placeholder="e.g. 101" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="sclassName">Class <span className="text-destructive">*</span></Label>
+                                <Select value={formData.sclassName} onValueChange={(val) => handleSelectChange('sclassName', val)} required>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Class" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {classesList.map(cls => (
+                                            <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="section">Section <span className="text-destructive">*</span></Label>
+                                <Select value={formData.section} onValueChange={(val) => handleSelectChange('section', val)} required disabled={!formData.sclassName}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={formData.sclassName ? "Select Section" : "Select Class First"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {sectionsList.map(sec => (
+                                            <SelectItem key={sec.sectionName || sec} value={sec.sectionName || sec}>
+                                                {sec.sectionName || sec}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="campus">Campus</Label>
+                                <Select 
+                                    value={formData.campus} 
+                                    onValueChange={(val) => handleSelectChange('campus', val)}
+                                    disabled={!isMainAdmin}
+                                >
+                                    <SelectTrigger className={!isMainAdmin ? "bg-muted cursor-not-allowed" : ""}>
+                                        <SelectValue placeholder="Select Campus" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {campuses.map(c => (
+                                            <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {!isMainAdmin && <p className="text-[10px] text-muted-foreground mt-1">Campus is pre-selected based on your branch.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 2. Personal Information Detail */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-emerald-600" />
+                        <CardTitle>Personal Information</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <Label>Gender</Label>
+                            <Select value={formData.gender} onValueChange={(val) => handleSelectChange('gender', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Gender" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Male">Male</SelectItem>
+                                    <SelectItem value="Female">Female</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                            <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={formData.category} onValueChange={(val) => handleSelectChange('category', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="General">General</SelectItem>
+                                    <SelectItem value="OBC">OBC</SelectItem>
+                                    <SelectItem value="SC">SC</SelectItem>
+                                    <SelectItem value="ST">ST</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="mobileNumber">Mobile Number</Label>
+                            <Input id="mobileNumber" name="mobileNumber" value={formData.mobileNumber} onChange={handleInputChange} placeholder="e.g. +1234567890" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="student@example.com" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="admissionDate">Admission Date</Label>
+                            <Input id="admissionDate" name="admissionDate" type="date" value={formData.admissionDate} onChange={handleInputChange} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="academicYear">Academic Year <span className="text-destructive">*</span></Label>
+                            <Input id="academicYear" name="academicYear" value={formData.academicYear} onChange={handleInputChange} placeholder="e.g. 2024" required />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Blood Group</Label>
+                            <Select value={formData.bloodGroup} onValueChange={(val) => handleSelectChange('bloodGroup', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Blood Group" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'].map(bg => (
+                                        <SelectItem key={bg} value={bg}>{bg}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>House</Label>
+                            <Select value={formData.house} onValueChange={(val) => handleSelectChange('house', val)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selct House" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {['Red', 'Green', 'Blue', 'Yellow'].map(h => (
+                                        <SelectItem key={h} value={h}>{h}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="height">Height</Label>
+                            <Input id="height" name="height" value={formData.height} onChange={handleInputChange} placeholder="e.g. 120cm or 4ft 5in" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="weight">Weight</Label>
+                            <Input id="weight" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g. 45kg" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="measurementDate">Measurement Date</Label>
+                            <Input id="measurementDate" name="measurementDate" type="date" value={formData.measurementDate} onChange={handleInputChange} />
+                        </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                            <Label>Religion <span className="text-destructive">*</span></Label>
+                            <RadioGroup value={formData.religion} onValueChange={(val) => handleSelectChange('religion', val)} className="flex flex-wrap gap-4">
+                                {['Muslim', 'Christian', 'Hindu', 'Other'].map(rel => (
+                                    <div className="flex items-center space-x-2" key={rel}>
+                                        <RadioGroupItem value={rel} id={`r-${rel}`} />
+                                        <Label htmlFor={`r-${rel}`} className="cursor-pointer font-normal text-muted-foreground">{rel}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label>Caste</Label>
+                            <RadioGroup value={formData.caste} onValueChange={(val) => handleSelectChange('caste', val)} className="flex flex-wrap gap-4">
+                                {['General', 'Arain', 'Ansari', 'Jutt', 'Other'].map(cst => (
+                                    <div className="flex items-center space-x-2" key={cst}>
+                                        <RadioGroupItem value={cst} id={`c-${cst}`} />
+                                        <Label htmlFor={`c-${cst}`} className="cursor-pointer font-normal text-muted-foreground">{cst}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 3. Account Details */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Check className="h-5 w-5 text-gray-600" />
+                        <CardTitle>Login Credentials</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Set a password for the student to access the dashboard. Parents will also use this password for the Parent Portal.
+                    </p>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <PasswordField
+                            label="Login Password"
+                            id="password"
+                            value={formData.password || ''}
+                            onChange={handleInputChange}
+                            required={!editStudentId} // Not required on edit
+                            placeholder={editStudentId ? "Leave blank to keep existing password" : "Set a strong password for login"}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 4. Parent/Guardian */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
+                    <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-purple-600" />
+                        <CardTitle>Guardian Details</CardTitle>
+                    </div>
+
+                    <div className="flex p-1 bg-muted rounded-lg">
+                        {['father', 'mother', 'other'].map(type => (
+                            <button
+                                key={type}
+                                type="button"
+                                onClick={() => setGuardianType(type)}
+                                className={`
+                                    px-4 py-1.5 text-sm font-medium rounded-md transition-all capitalize
+                                    ${guardianType === type ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}
+                                `}
+                            >
+                                {type === 'other' ? 'Guardian' : type}
+                            </button>
+                        ))}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        {guardianType === 'father' && (
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="shrink-0 flex justify-center">
+                                    <PhotoUploader label="Father's Photo" type="fatherPhoto" preview={previews.fatherPhoto} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                                    <div className="space-y-2">
+                                        <Label>Father Name <span className="text-destructive">*</span></Label>
+                                        <Input name="name" value={formData.father.name} onChange={(e) => handleInputChange(e, 'father')} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Phone</Label>
+                                        <Input name="phone" value={formData.father.phone} onChange={(e) => handleInputChange(e, 'father')} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Occupation</Label>
+                                        <Input name="occupation" value={formData.father.occupation} onChange={(e) => handleInputChange(e, 'father')} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Email</Label>
+                                        <Input name="email" value={formData.father.email} onChange={(e) => handleInputChange(e, 'father')} />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 space-y-2">
+                                        <Label>Address</Label>
+                                        <Textarea name="address" value={formData.father.address} onChange={(e) => handleInputChange(e, 'father')} rows={2} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {guardianType === 'mother' && (
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="shrink-0 flex justify-center">
+                                    <PhotoUploader label="Mother's Photo" type="motherPhoto" preview={previews.motherPhoto} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                                    <div className="space-y-2">
+                                        <Label>Mother Name <span className="text-destructive">*</span></Label>
+                                        <Input name="name" value={formData.mother.name} onChange={(e) => handleInputChange(e, 'mother')} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Phone</Label>
+                                        <Input name="phone" value={formData.mother.phone} onChange={(e) => handleInputChange(e, 'mother')} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Occupation</Label>
+                                        <Input name="occupation" value={formData.mother.occupation} onChange={(e) => handleInputChange(e, 'mother')} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Email</Label>
+                                        <Input name="email" value={formData.mother.email} onChange={(e) => handleInputChange(e, 'mother')} />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 space-y-2">
+                                        <Label>Address</Label>
+                                        <Textarea name="address" value={formData.mother.address} onChange={(e) => handleInputChange(e, 'mother')} rows={2} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {guardianType === 'other' && (
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="shrink-0 flex justify-center">
+                                    <PhotoUploader label="Guardian's Photo" type="guardianPhoto" preview={previews.guardianPhoto} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                                    <div className="space-y-2">
+                                        <Label>Guardian Name <span className="text-destructive">*</span></Label>
+                                        <Input name="name" value={formData.guardian.name} onChange={(e) => handleInputChange(e, 'guardian')} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Relation <span className="text-destructive">*</span></Label>
+                                        <Input name="relation" value={formData.guardian.relation} onChange={(e) => handleInputChange(e, 'guardian')} required placeholder="e.g. Uncle" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Phone</Label>
+                                        <Input name="phone" value={formData.guardian.phone} onChange={(e) => handleInputChange(e, 'guardian')} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Occupation</Label>
+                                        <Input name="occupation" value={formData.guardian.occupation} onChange={(e) => handleInputChange(e, 'guardian')} />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 space-y-2">
+                                        <Label>Address</Label>
+                                        <Textarea name="address" value={formData.guardian.address} onChange={(e) => handleInputChange(e, 'guardian')} rows={2} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 5. Transport */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Bus className="h-5 w-5 text-orange-600" />
+                        <CardTitle>Transport</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                            <Label>Route</Label>
+                            <Select value={formData.transport.route} onValueChange={(val) => handleSelectChange('route', val, 'transport')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Route" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {routesList.map(route => (
+                                        <SelectItem key={route._id} value={route._id}>{route.routeTitle}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Pickup Point</Label>
+                            <Select value={formData.transport.pickupPoint} onValueChange={(val) => handleSelectChange('pickupPoint', val, 'transport')} disabled={!formData.transport.route || transportLoading}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={transportLoading ? "Loading..." : (formData.transport.route ? "Select Pickup Point" : "Select Route First")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {pickupPointsList.map(stop => (
+                                        <SelectItem key={stop._id} value={stop.pickupPoint?.pickupPointName || stop.pickupPointName}>
+                                            {stop.pickupPoint?.pickupPointName || stop.pickupPointName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fees Month</Label>
+                            <Select value={formData.transport.feesMonth} onValueChange={(val) => handleSelectChange('feesMonth', val, 'transport')}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => (
+                                        <SelectItem key={m} value={m}>{m}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* 6. Fee Assignment */}
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5 text-green-600" />
+                        <CardTitle>Fee Assignment {editStudentId && "(Disabled during edit)"}</CardTitle>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Select fee structures to assign to this student upon admission.
+                    </p>
+                </CardHeader>
+                <CardContent>
+                    {editStudentId ? (
+                        <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
+                            <p className="text-muted-foreground text-sm">Fee assignment is done during new admission. To manage fees for existing students, please use the Fee Collection module.</p>
+                        </div>
+                    ) : feeStructuresList.length === 0 ? (
+                        <div className="text-center py-6 border-2 border-dashed rounded-lg bg-muted/20">
+                            <p className="text-muted-foreground text-sm">No active fee structures found.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {feeStructuresList.map((fee) => (
+                                    <label
+                                        key={fee._id}
+                                        htmlFor={`fee-${fee._id}`}
+                                        className={`
+                                            flex items-center space-x-3 p-4 rounded-lg border transition-all cursor-pointer hover:bg-muted/50
+                                            ${selectedFees.includes(fee._id) ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'bg-background'}
+                                        `}
+                                    >
+                                        <Checkbox
+                                            id={`fee-${fee._id}`}
+                                            checked={selectedFees.includes(fee._id)}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedFees(prev => [...prev, fee._id]);
+                                                } else {
+                                                    setSelectedFees(prev => prev.filter(id => id !== fee._id));
+                                                }
+                                            }}
+                                        />
+                                        <div className="grid gap-0.5 leading-none">
+                                            <span className="text-sm font-medium leading-none">
+                                                {fee.feeName}
+                                            </span>
+                                            <p className="text-xs text-muted-foreground">
+                                                {fee.feeType} - {currentUser?.currency || 'PKR'} {fee.amount}
+                                            </p>
+                                        </div>
+                                    </label>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* 7. Siblings */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-cyan-600" />
+                        <CardTitle>Sibling Information</CardTitle>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={addSibling} className="gap-2">
+                        <Plus className="h-4 w-4" /> Add Sibling
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {formData.siblings.length === 0 ? (
+                        <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground text-sm">No siblings added yet.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {formData.siblings.map((sibling, index) => (
+                                <div key={index} className="bg-muted/30 p-4 rounded-lg border relative group">
+                                    <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeSibling(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="space-y-2">
+                                            <Label>Sibling Name</Label>
+                                            <Input name="name" value={sibling.name} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Class</Label>
+                                            <Input name="class" value={sibling.class} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Roll No</Label>
+                                            <Input name="rollNum" value={sibling.rollNum} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-4 pt-4">
+                {onCancel && (
+                    <Button type="button" variant="outline" size="lg" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                )}
+                <Button type="submit" size="lg" disabled={loading} className="min-w-[150px]">
+                    {loading ? "Processing..." : (
+                        <>
+                            <Save className="h-4 w-4 mr-2" /> {editStudentId ? "Update Student" : "Admit Student"}
+                        </>
+                    )}
+                </Button>
+            </div>
+        </form>
+    );
 };
 
-export default StudentAdmission;
+export default StudentAdmissionForm;

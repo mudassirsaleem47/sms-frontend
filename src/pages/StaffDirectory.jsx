@@ -92,11 +92,22 @@ const StaffDirectory = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
 
+    const getSchoolId = useCallback(() => {
+        if (!currentUser) return null;
+        if (typeof currentUser.school === 'string') return currentUser.school;
+        if (currentUser.school?._id) return currentUser.school._id;
+        return currentUser._id;
+    }, [currentUser]);
+
     const fetchAllStaff = useCallback(async () => {
         if (!currentUser) return;
         setLoading(true);
         try {
-            const schoolId = currentUser._id;
+            const schoolId = getSchoolId();
+            if (!schoolId) {
+                setAllStaff([]);
+                return;
+            }
             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
 
             // Fetch teachers and all other staff in parallel
@@ -112,9 +123,9 @@ const StaffDirectory = () => {
             const otherStaffRaw = (staffRes.status === 'fulfilled' ? (staffRes.value.data?.staff || []) : []);
             
             // Normalize role/designation if needed
-            const otherStaff = otherStaffRaw.map(s => ({ 
-                ...s, 
-                role: (s.role || s.designation || 'staff').toLowerCase() 
+            const otherStaff = otherStaffRaw.map(s => ({
+                ...s,
+                role: String(s.role || s.designation || 'staff').trim().toLowerCase()
             }));
 
             setAllStaff([...teachers, ...otherStaff]);
@@ -124,7 +135,7 @@ const StaffDirectory = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, selectedCampus, showToast]);
+    }, [currentUser, getSchoolId, selectedCampus, showToast]);
 
     const handleApprove = async (staffId) => {
         try {

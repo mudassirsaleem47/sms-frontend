@@ -81,11 +81,22 @@ const TeacherList = () => {
     // Search State
     const [searchQuery, setSearchQuery] = useState("");
 
+    const getSchoolId = React.useCallback(() => {
+        if (!currentUser) return null;
+        if (typeof currentUser.school === 'string') return currentUser.school;
+        if (currentUser.school?._id) return currentUser.school._id;
+        return currentUser._id;
+    }, [currentUser]);
+
     // --- 1. Data Fetching (Load on Page Start) ---
     const fetchData = React.useCallback(async () => {
         try {
             setLoading(true);
-            const schoolId = currentUser._id;
+            const schoolId = getSchoolId();
+            if (!schoolId) {
+                setTeachers([]);
+                return;
+            }
             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
             setTeachers([]);
             const response = await axios.get(`${API_BASE}/Teachers/${schoolId}${campusQuery}`);
@@ -96,7 +107,7 @@ const TeacherList = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, showToast]);
+    }, [getSchoolId, selectedCampus, showToast]);
 
     useEffect(() => {
         if (currentUser) fetchData();
@@ -106,7 +117,8 @@ const TeacherList = () => {
 
     const handleFormSubmit = async (formData) => {
         try {
-            const dataToSend = { ...formData, school: currentUser._id };
+            const schoolId = getSchoolId();
+            const dataToSend = { ...formData, school: schoolId };
             
             if (currentTeacher) {
                 if (!dataToSend.password) delete dataToSend.password;
