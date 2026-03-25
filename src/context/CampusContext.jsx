@@ -13,6 +13,15 @@ export const CampusProvider = ({ children }) => {
     const [selectedCampus, setSelectedCampus] = useState(null); // null means "All Campuses"
     const [loading, setLoading] = useState(false);
 
+    const getAuthConfig = () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        } catch {
+            return {};
+        }
+    };
+
     const getSchoolId = () => (
         currentUser?.school?._id ||
         currentUser?.school ||
@@ -72,7 +81,7 @@ export const CampusProvider = ({ children }) => {
     const fetchCampuses = async (schoolId) => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/Campuses/${schoolId}`);
+            const response = await axios.get(`${API_URL}/Campuses/${schoolId}`, getAuthConfig());
             const campusesData = Array.isArray(response.data)
                 ? response.data
                 : (response.data?.campuses || []);

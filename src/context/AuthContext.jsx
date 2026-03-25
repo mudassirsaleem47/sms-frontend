@@ -25,6 +25,10 @@ const getInitialToken = () => {
     }
 };
 
+// Ensure authenticated requests on first render before effects run.
+const INITIAL_AUTH_TOKEN = getInitialToken();
+setAxiosAuthHeader(INITIAL_AUTH_TOKEN);
+
 const getSchoolIdFromUser = (user) => {
     if (!user) return null;
     if (user.userType === 'admin') return user._id;
@@ -57,7 +61,7 @@ const getInitialUser = () => {
 
 export const AuthContextProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(getInitialUser); 
-    const [authToken, setAuthToken] = useState(getInitialToken);
+    const [authToken, setAuthToken] = useState(INITIAL_AUTH_TOKEN);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     useEffect(() => {

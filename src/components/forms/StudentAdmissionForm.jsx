@@ -101,6 +101,15 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         guardianPhoto: null
     });
 
+    const getAuthConfig = React.useCallback(() => {
+        try {
+            const token = localStorage.getItem('authToken');
+            return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        } catch {
+            return {};
+        }
+    }, []);
+
     const getSchoolId = React.useCallback(() => (
         currentUser?.school?._id ||
         currentUser?.school ||
@@ -120,23 +129,23 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         try {
             const schoolId = getSchoolId();
             if (!schoolId) return;
-            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`);
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, getAuthConfig());
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId]);
+    }, [getSchoolId, getAuthConfig]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
             const schoolId = getSchoolId();
             if (!schoolId) return;
-            const res = await axios.get(`${API_BASE}/Transport/Route/${schoolId}`);
+            const res = await axios.get(`${API_BASE}/Transport/Route/${schoolId}`, getAuthConfig());
             setRoutesList(res.data);
         } catch (err) {
             console.error("Failed to load routes", err);
         }
-    }, [getSchoolId]);
+    }, [getSchoolId, getAuthConfig]);
 
     const fetchPickupPoints = async (routeId) => {
         if (!routeId) {
@@ -145,7 +154,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         }
         setTransportLoading(true);
         try {
-            const res = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`);
+            const res = await axios.get(`${API_BASE}/Transport/RouteStop/${routeId}`, getAuthConfig());
             // RouteStop returns an array of stops, each with a pickupPoint object
             setPickupPointsList(res.data);
         } catch (err) {
@@ -162,13 +171,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (!schoolId) return;
             const selectedCampusId = getCampusId(selectedCampus);
             const campusQuery = selectedCampusId ? `?campus=${selectedCampusId}` : '';
-            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`);
+            const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`, getAuthConfig());
             const classes = Array.isArray(res.data) ? res.data : (res.data?.classes || []);
             setClassesList(classes);
         } catch {
             toast.error("Failed to load classes");
         }
-    }, [getSchoolId, getCampusId, selectedCampus]);
+    }, [getSchoolId, getCampusId, getAuthConfig, selectedCampus]);
 
     const fetchAvailableFees = React.useCallback(async () => {
         try {
@@ -176,12 +185,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (!schoolId) return;
             const selectedCampusId = getCampusId(selectedCampus);
             const campusQuery = selectedCampusId ? `?campus=${selectedCampusId}` : '';
-            const res = await axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`);
+            const res = await axios.get(`${API_BASE}/FeeStructures/${schoolId}${campusQuery}`, getAuthConfig());
             setFeeStructuresList(res.data);
         } catch (err) {
             console.error("Failed to fetch fees", err);
         }
-    }, [getSchoolId, getCampusId, selectedCampus]);
+    }, [getSchoolId, getCampusId, getAuthConfig, selectedCampus]);
 
     useEffect(() => {
         if (currentUser) {
@@ -241,7 +250,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     try {
                          const schoolId = getSchoolId();
                          if (!schoolId) return;
-                         const cRes = await axios.get(`${API_BASE}/Sclasses/${schoolId}`);
+                         const cRes = await axios.get(`${API_BASE}/Sclasses/${schoolId}`, getAuthConfig());
                          const selectedClass = cRes.data.find(c => c._id === classId);
                          if (selectedClass) setSectionsList(selectedClass.sections);
                          setClassesList(cRes.data);
@@ -264,7 +273,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         if (editStudentId && currentUser) {
             fetchStudentForEdit();
         }
-    }, [editStudentId, currentUser, getSchoolId]);
+    }, [editStudentId, currentUser, getSchoolId, getAuthConfig]);
 
     useEffect(() => {
         if (activeSession) {
