@@ -36,6 +36,16 @@ const isValidObjectId = (value) => (
     typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
 );
 
+const resolveSchoolId = (user) => {
+    if (!user) return '';
+    if (user.userType === 'admin') return isValidObjectId(user._id) ? user._id : '';
+    if (typeof user.school === 'string') return isValidObjectId(user.school) ? user.school : '';
+    if (user.school && typeof user.school === 'object') {
+        return isValidObjectId(user.school._id) ? user.school._id : '';
+    }
+    return isValidObjectId(user._id) ? user._id : '';
+};
+
 const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const { currentUser, activeSession } = useAuth();
     const { campuses, selectedCampus, isMainAdmin } = useCampus();
@@ -119,11 +129,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     }, []);
 
     const getSchoolId = React.useCallback(() => (
-        currentUser?.school?._id ||
-        currentUser?.school ||
-        currentUser?.schoolId ||
-        currentUser?._id ||
-        ''
+        resolveSchoolId(currentUser)
     ), [currentUser]);
 
     const getCampusId = React.useCallback((campusValue) => {

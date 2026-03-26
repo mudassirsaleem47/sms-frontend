@@ -29,11 +29,27 @@ const getInitialToken = () => {
 const INITIAL_AUTH_TOKEN = getInitialToken();
 setAxiosAuthHeader(INITIAL_AUTH_TOKEN);
 
+const isValidObjectId = (value) => (
+    typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
+);
+
+const normalizeSchoolId = (value) => {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        return isValidObjectId(value) ? value : null;
+    }
+    if (typeof value === 'object') {
+        const candidate = value._id;
+        return isValidObjectId(candidate) ? candidate : null;
+    }
+    return null;
+};
+
 const getSchoolIdFromUser = (user) => {
     if (!user) return null;
-    if (user.userType === 'admin') return user._id;
-    if (typeof user.school === 'string') return user.school;
-    if (user.school?._id) return user.school._id;
+    if (user.userType === 'admin') return normalizeSchoolId(user._id);
+    if (typeof user.school === 'string') return normalizeSchoolId(user.school);
+    if (user.school?._id) return normalizeSchoolId(user.school._id);
     return null;
 };
 
@@ -99,8 +115,8 @@ export const AuthContextProvider = ({ children }) => {
         const fetchActiveSession = async () => {
             if (!currentUser) return;
             try {
-                // For teachers or students, find their school ID
-                const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+                const schoolId = getSchoolIdFromUser(currentUser);
+                if (!schoolId) return;
                 const res = await axios.get(`${API_URL}/Sessions/Active/${schoolId}`);
                 if (res.data.success) {
                     setActiveSession(res.data.session);

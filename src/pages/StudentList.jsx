@@ -65,6 +65,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = API_URL;
 
+const isValidObjectId = (value) => (
+    typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
+);
+
+const resolveSchoolId = (user) => {
+    if (!user) return null;
+    if (user.userType === 'admin') {
+        return isValidObjectId(user._id) ? user._id : null;
+    }
+
+    if (typeof user.school === 'string') {
+        return isValidObjectId(user.school) ? user.school : null;
+    }
+
+    if (user.school && typeof user.school === 'object' && isValidObjectId(user.school._id)) {
+        return user.school._id;
+    }
+
+    return isValidObjectId(user._id) ? user._id : null;
+};
+
 const getStudentClassId = (student) => {
     if (!student?.sclassName) return '';
     if (typeof student.sclassName === 'string') return student.sclassName;
@@ -131,7 +152,12 @@ const StudentList = () => {
             setLoading(true);
             
             // Correctly derive school ID for all user types
-            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            const schoolId = resolveSchoolId(currentUser);
+            if (!schoolId) {
+                toast.error('Invalid school context. Please login again.');
+                setLoading(false);
+                return;
+            }
             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
 
             console.log(`🔍 [StudentList Debug] Fetching data for:`, {
