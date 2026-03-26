@@ -73,6 +73,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         email: '',
 
         admissionDate: toInputDate(new Date()),
+        academicYear: String(new Date().getFullYear()),
         session: activeSession?._id || '', // Will be set in useEffect based on activeSession
         bloodGroup: '',
         house: '',
@@ -139,14 +140,17 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (!schoolId) return;
             const requestConfig = {
                 ...getAuthConfig(),
-                params: activeSession?._id ? { session: activeSession._id } : {}
+                params: {
+                    ...(activeSession?._id ? { session: activeSession._id } : {}),
+                    ...(formData.academicYear ? { academicYear: formData.academicYear } : {})
+                }
             };
             const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig, activeSession]);
+    }, [getSchoolId, getAuthConfig, activeSession, formData.academicYear]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
