@@ -560,7 +560,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                 const admissionNum = response.data?.student?.admissionNum;
                 if (admissionNum) {
                     console.log(`✅ Student admitted with admission number: ${admissionNum}`);
-                    toast.success(`Student admitted successfully! Admission ID: ${admissionNum}`);
+                    toast.success(`Student admitted successfully!`);
                 } else {
                     console.warn("⚠️ Admission number not found in response");
                     toast.success("Student admitted successfully!");
