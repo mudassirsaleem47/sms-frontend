@@ -151,7 +151,12 @@ const ReportsPage = () => {
 
             if (studentsRes.status === 'fulfilled') setStudents(Array.isArray(studentsRes.value.data) ? studentsRes.value.data : []);
             if (teachersRes.status === 'fulfilled') setTeachers(Array.isArray(teachersRes.value.data) ? teachersRes.value.data : []);
-            if (staffRes.status === 'fulfilled') setStaff(Array.isArray(staffRes.value.data) ? staffRes.value.data : []);
+            if (staffRes.status === 'fulfilled') {
+                const staffData = Array.isArray(staffRes.value.data?.staff)
+                    ? staffRes.value.data.staff
+                    : (Array.isArray(staffRes.value.data) ? staffRes.value.data : []);
+                setStaff(staffData);
+            }
             if (classesRes.status === 'fulfilled') setClasses(Array.isArray(classesRes.value.data) ? classesRes.value.data : []);
             if (subjectsRes.status === 'fulfilled') setSubjects(Array.isArray(subjectsRes.value.data) ? subjectsRes.value.data : []);
             if (feeStatsRes.status === 'fulfilled') setFeeStats(feeStatsRes.value.data);

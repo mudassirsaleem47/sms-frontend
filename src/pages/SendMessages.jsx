@@ -71,7 +71,10 @@ const SendMessages = () => {
             ]);
             
             setStudents(Array.isArray(stuRes.data) ? stuRes.data : []);
-            setStaffList(Array.isArray(staffRes.data) ? staffRes.data : []);
+                const normalizedStaffList = Array.isArray(staffRes.data?.staff)
+                    ? staffRes.data.staff
+                    : (Array.isArray(staffRes.data) ? staffRes.data : []);
+                setStaffList(normalizedStaffList);
             setTemplates(Array.isArray(tempRes.data) ? tempRes.data : []);
             setClasses(Array.isArray(classesRes.data) ? classesRes.data : []);
             setDesignations(Array.isArray(designationsRes.data) ? designationsRes.data : []);
@@ -106,7 +109,11 @@ const SendMessages = () => {
                 staff.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 staff.phone?.includes(searchQuery);
 
-            const matchesDesignation = designationFilter === 'all' || staff.designation?._id === designationFilter;
+            const normalizedDesignation = String(staff.designation || staff.role || '').trim().toLowerCase();
+            const selectedDesignation = designationFilter.toLowerCase();
+            const matchesDesignation = designationFilter === 'all'
+                || String(staff.designation?._id || '').trim() === designationFilter
+                || normalizedDesignation === selectedDesignation;
 
             return matchesSearch && matchesDesignation;
         });

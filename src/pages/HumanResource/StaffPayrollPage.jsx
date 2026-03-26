@@ -83,7 +83,13 @@ const StaffPayrollPage = () => {
         if (!currentUser) return;
         setLoading(true);
         try {
-            const res = await axios.get(`${API_BASE}/Payroll/List/${currentUser._id}/${monthYear}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            if (!schoolId) {
+                setPayrolls([]);
+                return;
+            }
+
+            const res = await axios.get(`${API_BASE}/Payroll/List/${schoolId}/${monthYear}`);
             setPayrolls(res.data);
         } catch (error) {
             console.error(error);
@@ -101,8 +107,14 @@ const StaffPayrollPage = () => {
     const handleGenerate = async () => {
         try {
             setGenerating(true);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            if (!schoolId) {
+                showToast("School ID not found", "error");
+                return;
+            }
+
             const res = await axios.post(`${API_BASE}/Payroll/Generate`, {
-                school: currentUser._id,
+                school: schoolId,
                 monthYear
             });
             

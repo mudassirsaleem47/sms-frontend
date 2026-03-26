@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import {
     Edit,
@@ -55,6 +56,7 @@ const API_BASE = API_URL;
 
 const ReceptionistList = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
 
     // --- State Management ---
@@ -73,14 +75,26 @@ const ReceptionistList = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     const fetchReceptionists = React.useCallback(async () => {
-        if (!currentUser || !currentUser._id) return;
+        if (!currentUser) return;
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE}/Staff/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            if (!schoolId) {
+                setReceptionists([]);
+                return;
+            }
+
+            const campusQuery = selectedCampus?._id ? `?campus=${selectedCampus._id}` : '';
+            const response = await axios.get(`${API_BASE}/Staff/${schoolId}${campusQuery}`);
             if (response.data.success) {
-                // Filter only receptionists
-                const allStaff = response.data.staff || [];
-                const filtered = allStaff.filter(s => s.designation === 'Receptionist');
+                const allStaff = Array.isArray(response.data.staff)
+                    ? response.data.staff
+                    : (Array.isArray(response.data) ? response.data : []);
+
+                const filtered = allStaff.filter((s) => {
+                    const normalizedRole = String(s.role || s.designation || '').trim().toLowerCase();
+                    return normalizedRole === 'receptionist';
+                });
                 setReceptionists(filtered);
             }
         } catch (error) {
@@ -89,7 +103,7 @@ const ReceptionistList = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, showToast]);
+    }, [currentUser, selectedCampus, showToast]);
 
     useEffect(() => {
         fetchReceptionists();

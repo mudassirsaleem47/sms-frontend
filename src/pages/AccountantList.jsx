@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useCampus } from '../context/CampusContext';
 import { useToast } from '../context/ToastContext';
 import {
     Edit,
@@ -55,6 +56,7 @@ const API_BASE = API_URL;
 
 const AccountantList = () => {
     const { currentUser } = useAuth();
+    const { selectedCampus } = useCampus();
     const { showToast } = useToast();
     // const location = useLocation();
 
@@ -74,14 +76,26 @@ const AccountantList = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     const fetchAccountants = React.useCallback(async () => {
-        if (!currentUser || !currentUser._id) return;
+        if (!currentUser) return;
         try {
             setLoading(true);
-            const response = await axios.get(`${API_BASE}/Staff/${currentUser._id}`);
+            const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
+            if (!schoolId) {
+                setAccountants([]);
+                return;
+            }
+
+            const campusQuery = selectedCampus?._id ? `?campus=${selectedCampus._id}` : '';
+            const response = await axios.get(`${API_BASE}/Staff/${schoolId}${campusQuery}`);
             if (response.data.success) {
-                // Filter only accountants
-                const allStaff = response.data.staff || [];
-                const filtered = allStaff.filter(s => s.designation === 'Accountant');
+                const allStaff = Array.isArray(response.data.staff)
+                    ? response.data.staff
+                    : (Array.isArray(response.data) ? response.data : []);
+
+                const filtered = allStaff.filter((s) => {
+                    const normalizedRole = String(s.role || s.designation || '').trim().toLowerCase();
+                    return normalizedRole === 'accountant';
+                });
                 setAccountants(filtered);
             }
         } catch (error) {
@@ -90,7 +104,7 @@ const AccountantList = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentUser, showToast]);
+    }, [currentUser, selectedCampus, showToast]);
 
     useEffect(() => {
         fetchAccountants();
