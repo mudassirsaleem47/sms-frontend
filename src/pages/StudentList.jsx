@@ -65,6 +65,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const API_BASE = API_URL;
 
+const getStudentClassId = (student) => {
+    if (!student?.sclassName) return '';
+    if (typeof student.sclassName === 'string') return student.sclassName;
+    return student.sclassName?._id || '';
+};
+
 const StudentList = () => {
     const { currentUser, activeSession } = useAuth();
     const { selectedCampus } = useCampus();
@@ -155,8 +161,9 @@ const StudentList = () => {
                     // For now, let's just set the search query which filters across the currently selected class or all? 
                     // Wait, `filteredStudents` depends on `selectedClass`. 
                     // If filter doesn't show students without a class selected, we must select the class.
-                    if (targetStudent.sclassName) {
-                        setSearchParams({ class: targetStudent.sclassName._id });
+                    const targetClassId = getStudentClassId(targetStudent);
+                    if (targetClassId) {
+                        setSearchParams({ class: targetClassId });
                     }
                     setSearchQuery(targetStudent.name || "");
 
@@ -177,7 +184,7 @@ const StudentList = () => {
     const filteredStudents = useMemo(() => {
         if (!selectedClass) return [];
 
-        let filtered = students.filter(s => s.sclassName?._id === selectedClass._id);
+        let filtered = students.filter(s => getStudentClassId(s) === selectedClass._id);
 
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -333,7 +340,7 @@ const StudentList = () => {
     };
 
     // Helper: Get student count for a class
-    const getCount = (classId) => students.filter(s => s.sclassName?._id === classId).length;
+    const getCount = (classId) => students.filter(s => getStudentClassId(s) === classId).length;
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
