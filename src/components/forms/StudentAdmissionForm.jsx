@@ -731,18 +731,20 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                 <Select 
                                     value={formData.campus} 
                                     onValueChange={(val) => handleSelectChange('campus', val)}
-                                    disabled={!isMainAdmin}
                                 >
-                                    <SelectTrigger className={!isMainAdmin ? "bg-muted cursor-not-allowed" : ""}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Select Campus" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {campuses.map(c => (
-                                            <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
-                                        ))}
+                                        {campuses && campuses.length > 0 ? (
+                                            campuses.map(c => (
+                                                <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
+                                            ))
+                                        ) : (
+                                            <SelectItem value="" disabled>No campuses available</SelectItem>
+                                        )}
                                     </SelectContent>
                                 </Select>
-                                {!isMainAdmin && <p className="text-[10px] text-muted-foreground mt-1">Campus is pre-selected based on your branch.</p>}
                             </div>
                         </div>
                     </div>
