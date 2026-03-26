@@ -176,19 +176,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         try {
             const schoolId = getSchoolId();
             if (!schoolId) return;
-            const requestConfig = {
-                ...getAuthConfig(),
-                params: {
-                    ...(activeSession?._id ? { session: activeSession._id } : {}),
-
-                }
-            };
-            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, getAuthConfig());
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig, activeSession]);
+    }, [getSchoolId, getAuthConfig]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
