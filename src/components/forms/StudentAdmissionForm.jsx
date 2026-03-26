@@ -53,6 +53,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     // --- State ---
     const [classesList, setClassesList] = useState([]);
     const [sectionsList, setSectionsList] = useState([]);
+    const [sessionsList, setSessionsList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [nextAdmissionNum, setNextAdmissionNum] = useState('');
     const [routesList, setRoutesList] = useState([]);
@@ -84,7 +85,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         email: '',
 
         admissionDate: toInputDate(new Date()),
-        academicYear: String(new Date().getFullYear()),
         session: activeSession?._id || '', // Will be set in useEffect based on activeSession
         bloodGroup: '',
         house: '',
@@ -141,6 +141,24 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     }, []);
 
     // --- Effects & Fetchers ---
+    useEffect(() => {
+        if (currentUser) {
+            fetchSessions();
+        }
+    }, [currentUser, fetchSessions]);
+
+    const fetchSessions = React.useCallback(async () => {
+        try {
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
+            const response = await axios.get(`${API_BASE}/Sessions/${schoolId}`, getAuthConfig());
+            const sessions = Array.isArray(response.data) ? response.data : (response.data?.sessions || []);
+            setSessionsList(sessions);
+        } catch (err) {
+            console.error('Error fetching sessions:', err);
+        }
+    }, [getSchoolId, getAuthConfig]);
+
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
             const schoolId = getSchoolId();
@@ -149,7 +167,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                 ...getAuthConfig(),
                 params: {
                     ...(activeSession?._id ? { session: activeSession._id } : {}),
-                    ...(formData.academicYear ? { academicYear: formData.academicYear } : {})
+
                 }
             };
             const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
@@ -811,9 +829,23 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="academicYear">Academic Year <span className="text-destructive">*</span></Label>
-                            <Input id="academicYear" name="academicYear" value={formData.academicYear} onChange={handleInputChange} placeholder="e.g. 2024" required />
-                        </div>
+                            <Label htmlFor="session">Academic Session <span className="text-destructive">*</span></Label>
+                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} required>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Session" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {sessionsList && sessionsList.length > 0 ? (
+                                        sessionsList.map(sess => (
+                                            <SelectItem key={sess._id} value={sess._id}>
+                                                {sess.sessionName || `${sess.startYear}-${sess.endYear}`}
+                                            </SelectItem>
+                                        ))
+                                    ) : (
+                                        <SelectItem value="" disabled>No sessions available</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
 
                         <div className="space-y-2">
                             <Label>Blood Group</Label>
