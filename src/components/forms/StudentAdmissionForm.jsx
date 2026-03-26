@@ -565,6 +565,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     console.warn("⚠️ Admission number not found in response");
                     toast.success("Student admitted successfully!");
                 }
+
+                // 🔄 Refresh next admission number for the next student
+                try {
+                    await fetchNextAdmissionNum();
+                    console.log(`✅ Refreshed next admission number after admission`);
+                } catch (refreshErr) {
+                    console.warn(`⚠️ Could not refresh next admission number:`, refreshErr.message);
+                }
             }
             if (onSuccess) onSuccess();
         } catch (err) {
