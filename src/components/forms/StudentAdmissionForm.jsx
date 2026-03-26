@@ -140,13 +140,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         return isValidObjectId(campusValue?._id) ? campusValue._id : '';
     }, []);
 
-    // --- Effects & Fetchers ---
-    useEffect(() => {
-        if (currentUser) {
-            fetchSessions();
-        }
-    }, [currentUser, fetchSessions]);
-
     const fetchSessions = React.useCallback(async () => {
         try {
             const schoolId = getSchoolId();
@@ -158,6 +151,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             console.error('Error fetching sessions:', err);
         }
     }, [getSchoolId, getAuthConfig]);
+
+    // --- Effects & Fetchers ---
+    useEffect(() => {
+        if (currentUser) {
+            fetchSessions();
+        }
+    }, [currentUser, fetchSessions]);
 
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
@@ -175,7 +175,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig, activeSession, formData.academicYear]);
+    }, [getSchoolId, getAuthConfig, activeSession]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
@@ -520,7 +520,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         setLoading(true);
 
         // Basic student fields validation
-        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.academicYear) {
+        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.session) {
             toast.error("Please fill in all required student identity fields mark with *");
             setLoading(false);
             return;
@@ -758,9 +758,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                             campuses.map(c => (
                                                 <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
                                             ))
-                                        ) : (
-                                            <SelectItem value="" disabled>No campuses available</SelectItem>
-                                        )}
+                                        ) : null}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -830,22 +828,21 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                         <div className="space-y-2">
                             <Label htmlFor="session">Academic Session <span className="text-destructive">*</span></Label>
-                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Session" />
+                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} disabled={!sessionsList || sessionsList.length === 0} required>
+                                <SelectTrigger className={!sessionsList || sessionsList.length === 0 ? "bg-muted cursor-not-allowed" : ""}>
+                                    <SelectValue placeholder={sessionsList && sessionsList.length > 0 ? "Select Session" : "No sessions available"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {sessionsList && sessionsList.length > 0 ? (
+                                    {sessionsList && sessionsList.length > 0 && (
                                         sessionsList.map(sess => (
                                             <SelectItem key={sess._id} value={sess._id}>
                                                 {sess.sessionName || `${sess.startYear}-${sess.endYear}`}
                                             </SelectItem>
                                         ))
-                                    ) : (
-                                        <SelectItem value="" disabled>No sessions available</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
+                        </div>
 
                         <div className="space-y-2">
                             <Label>Blood Group</Label>
