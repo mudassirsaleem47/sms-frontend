@@ -26,7 +26,7 @@ const StudentAdmission = () => {
                         <p className="text-muted-foreground mt-2 max-w-2xl">
                             {editStudentId 
                                 ? "Update the student's details below." 
-                                : "Complete56 the admission form below to register a new student. Ensure all required documents and details are accurate."}
+                                : "Complete the admission form below to register a new student. Ensure all required documents and details are accurate."}
                         </p>
                     </div>
                 </div>
