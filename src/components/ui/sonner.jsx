@@ -11,6 +11,7 @@ const Toaster = ({
       theme={theme === "system" ? undefined : theme}
       position="top-center"
       richColors={true}
+      closeButton
       className="toaster group"
       toastOptions={{
         classNames: {
