@@ -912,7 +912,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         <div className="space-y-3">
                             <Label>Caste</Label>
                             <RadioGroup value={formData.caste} onValueChange={(val) => handleSelectChange('caste', val)} className="flex flex-wrap gap-4">
-                                {['General', 'Arain', 'Ansari', 'Jutt', 'Comboh', 'Dogar', 'Rahmani Malik', 'Rajpoot', 'Khokhar', 'Butt', 'Other'].map(cst => (
+                                {['Arain', 'Ansari', 'Jutt', 'Comboh', 'Dogar', 'Rahmani', 'Malik', 'Rajpoot', 'Khokhar', 'Butt', 'Other'].map(cst => (
                                     <div className="flex items-center space-x-2" key={cst}>
                                         <RadioGroupItem value={cst} id={`c-${cst}`} />
                                         <Label htmlFor={`c-${cst}`} className="cursor-pointer font-normal text-muted-foreground">{cst}</Label>
