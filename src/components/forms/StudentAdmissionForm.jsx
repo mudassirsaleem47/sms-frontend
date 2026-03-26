@@ -32,6 +32,10 @@ const toInputDate = (value) => {
     return d.toISOString().split('T')[0];
 };
 
+const isValidObjectId = (value) => (
+    typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
+);
+
 const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const { currentUser, activeSession } = useAuth();
     const { campuses, selectedCampus, isMainAdmin } = useCampus();
@@ -120,8 +124,10 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
     const getCampusId = React.useCallback((campusValue) => {
         if (!campusValue) return '';
-        if (typeof campusValue === 'string') return campusValue;
-        return campusValue._id || '';
+        if (typeof campusValue === 'string') {
+            return isValidObjectId(campusValue) ? campusValue : '';
+        }
+        return isValidObjectId(campusValue?._id) ? campusValue._id : '';
     }, []);
 
     // --- Effects & Fetchers ---

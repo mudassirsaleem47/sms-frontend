@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import API_URL from '../config/api.js';
 
 const CampusContext = createContext();
+const isValidObjectId = (value) => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 
 export const useCampus = () => useContext(CampusContext);
 
@@ -46,9 +47,15 @@ export const CampusProvider = ({ children }) => {
         const savedCampus = localStorage.getItem('selectedCampus');
         if (savedCampus && savedCampus !== 'null') {
             try {
-                setSelectedCampus(JSON.parse(savedCampus));
+                const parsedCampus = JSON.parse(savedCampus);
+                if (parsedCampus && typeof parsedCampus === 'object' && isValidObjectId(parsedCampus._id)) {
+                    setSelectedCampus(parsedCampus);
+                } else {
+                    localStorage.removeItem('selectedCampus');
+                }
             } catch (error) {
                 console.error('Failed to parse saved campus:', error);
+                localStorage.removeItem('selectedCampus');
             }
         }
     }, [currentUser, isMainAdmin]);
@@ -86,19 +93,23 @@ export const CampusProvider = ({ children }) => {
                 ? response.data
                 : (response.data?.campuses || []);
 
-            if (response.data?.success || Array.isArray(response.data)) {
-                setCampuses(campusesData);
-                
-                // If restricted to a campus, find and set the full object from the list
-                if (!isMainAdmin && currentUser?.campus) {
-                    const myCampus = campusesData.find(c => c._id === (currentUser.campus._id || currentUser.campus));
-                    if (myCampus) setSelectedCampus(myCampus);
-                } 
-                // Auto-select first campus for admin if none selected
-                else if (!selectedCampus && campusesData.length > 0) {
-                    const mainCampus = campusesData.find(c => c.isMain) || campusesData[0];
-                    setSelectedCampus(mainCampus);
-                }
+            if (!Array.isArray(campusesData)) {
+                setCampuses([]);
+                return;
+            }
+
+            setCampuses(campusesData);
+
+            // If restricted to a campus, find and set the full object from the list
+            if (!isMainAdmin && currentUser?.campus) {
+                const assignedCampusId = currentUser.campus?._id || currentUser.campus;
+                const myCampus = campusesData.find(c => c._id === assignedCampusId);
+                if (myCampus) setSelectedCampus(myCampus);
+            }
+            // Auto-select first campus for admin if none selected or invalid selected campus
+            else if ((!selectedCampus || !isValidObjectId(selectedCampus?._id)) && campusesData.length > 0) {
+                const mainCampus = campusesData.find(c => c.isMain) || campusesData[0];
+                setSelectedCampus(mainCampus);
             }
         } catch (error) {
             console.error('Error fetching campuses:', error);
