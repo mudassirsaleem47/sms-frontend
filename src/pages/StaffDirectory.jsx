@@ -116,11 +116,19 @@ const StaffDirectory = () => {
                 axios.get(`${API_BASE}/Staff/${schoolId}${campusQuery}`),
             ]);
 
-            const teachers = (teachersRes.status === 'fulfilled' ? (Array.isArray(teachersRes.value.data) ? teachersRes.value.data : []) : [])
+            const teacherPayload = teachersRes.status === 'fulfilled' ? teachersRes.value.data : [];
+            const teacherList = Array.isArray(teacherPayload)
+                ? teacherPayload
+                : (Array.isArray(teacherPayload?.teachers) ? teacherPayload.teachers : []);
+
+            const teachers = teacherList
                 .map(t => ({ ...t, role: 'teacher' }));
             
             // Other staff includes all non-teacher roles like Accountants and Receptionists
-            const otherStaffRaw = (staffRes.status === 'fulfilled' ? (staffRes.value.data?.staff || []) : []);
+            const staffPayload = staffRes.status === 'fulfilled' ? staffRes.value.data : [];
+            const otherStaffRaw = Array.isArray(staffPayload)
+                ? staffPayload
+                : (Array.isArray(staffPayload?.staff) ? staffPayload.staff : []);
             
             // Normalize role/designation if needed
             const otherStaff = otherStaffRaw.map(s => ({
@@ -128,7 +136,12 @@ const StaffDirectory = () => {
                 role: String(s.role || s.designation || 'staff').trim().toLowerCase()
             }));
 
-            setAllStaff([...teachers, ...otherStaff]);
+            const combined = [...teachers, ...otherStaff];
+            setAllStaff(combined);
+
+            if (teachersRes.status === 'rejected' && staffRes.status === 'rejected') {
+                showToast('Unable to load staff data. Please check login/session and try again.', 'error');
+            }
         } catch (err) {
             console.error("Error loading staff data:", err);
             showToast('Error loading staff data', 'error');
@@ -336,7 +349,7 @@ const StaffDirectory = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredStaff.filter(s => s.status !== 'pending' || !isMainAdmin).map((member) => {
+                                    {filteredStaff.map((member) => {
                                         const config = ROLE_CONFIG[member.role];
                                         return (
                                             <TableRow key={member._id + member.role} className="hover:bg-muted/30 transition-colors">
@@ -384,7 +397,7 @@ const StaffDirectory = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                            {filteredStaff.filter(s => s.status !== 'pending' || !isMainAdmin).map((member) => {
+                            {filteredStaff.map((member) => {
                                 const config = ROLE_CONFIG[member.role];
                                 return (
                                     <Card key={member._id + member.role} className="group overflow-hidden hover:shadow-lg transition-all border-none ring-1 ring-border shadow-sm">
