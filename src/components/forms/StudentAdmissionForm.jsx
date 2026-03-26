@@ -50,6 +50,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const [transportLoading, setTransportLoading] = useState(false);
     const [feeStructuresList, setFeeStructuresList] = useState([]);
     const [selectedFees, setSelectedFees] = useState([]);
+    const [allStudentsList, setAllStudentsList] = useState([]);
+    const [siblingSearchTerms, setSiblingSearchTerms] = useState({});
 
     const [guardianType, setGuardianType] = useState('father'); // 'father', 'mother', 'other'
 
@@ -135,12 +137,16 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         try {
             const schoolId = getSchoolId();
             if (!schoolId) return;
-            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, getAuthConfig());
+            const requestConfig = {
+                ...getAuthConfig(),
+                params: activeSession?._id ? { session: activeSession._id } : {}
+            };
+            const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig]);
+    }, [getSchoolId, getAuthConfig, activeSession]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
@@ -323,7 +329,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             fetchPickupPoints(value);
         } else if (section === 'siblings' && index !== null) {
             const newSiblings = [...formData.siblings];
-            newSiblings[index] = { ...newSiblings[index], [name]: value };
+            const existingSibling = newSiblings[index] || {};
+
+            if (name === 'class') {
+                newSiblings[index] = { ...existingSibling, class: value, section: '' };
+            } else {
+                newSiblings[index] = { ...existingSibling, [name]: value };
+            }
+
             setFormData(prev => ({ ...prev, siblings: newSiblings }));
         } else if (section) {
             setFormData(prev => ({
@@ -359,13 +372,108 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const addSibling = () => {
         setFormData(prev => ({
             ...prev,
-            siblings: [...prev.siblings, { name: '', class: '', section: '', rollNum: '', school: '' }]
+            siblings: [...prev.siblings, { name: '', class: '', section: '', rollNum: '', school: '', siblingStudentId: '' }]
         }));
     };
 
     const removeSibling = (index) => {
         const newSiblings = formData.siblings.filter((_, i) => i !== index);
+        const newSearchTerms = { ...siblingSearchTerms };
+        delete newSearchTerms[index];
+        const normalizedSearchTerms = {};
+        Object.keys(newSearchTerms).forEach((key) => {
+            const numericKey = Number(key);
+            const normalizedKey = numericKey > index ? numericKey - 1 : numericKey;
+            normalizedSearchTerms[normalizedKey] = newSearchTerms[key];
+        });
+        setSiblingSearchTerms(normalizedSearchTerms);
         setFormData(prev => ({ ...prev, siblings: newSiblings }));
+    };
+
+    const fetchStudentsForSiblingLookup = React.useCallback(async () => {
+        try {
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
+
+            const selectedCampusId = getCampusId(selectedCampus);
+            const requestConfig = {
+                ...getAuthConfig(),
+                params: {
+                    ...(activeSession?._id ? { session: activeSession._id } : {}),
+                    ...(selectedCampusId ? { campus: selectedCampusId } : {})
+                }
+            };
+
+            const res = await axios.get(`${API_BASE}/Students/${schoolId}`, requestConfig);
+            const students = Array.isArray(res.data) ? res.data : [];
+            setAllStudentsList(students);
+        } catch (err) {
+            console.error('Failed to fetch students for sibling lookup', err);
+        }
+    }, [getSchoolId, getCampusId, selectedCampus, getAuthConfig, activeSession]);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchStudentsForSiblingLookup();
+        }
+    }, [currentUser, fetchStudentsForSiblingLookup]);
+
+    const getSiblingSections = (siblingClassValue) => {
+        if (!siblingClassValue) return [];
+        const matchedClass = classesList.find(
+            (cls) => cls._id === siblingClassValue || cls.sclassName === siblingClassValue
+        );
+        return matchedClass?.sections || [];
+    };
+
+    const getFilteredSiblingStudents = (sibling, index) => {
+        const searchTerm = (siblingSearchTerms[index] || '').toLowerCase().trim();
+
+        const filtered = allStudentsList.filter((student) => {
+            const studentClassId = student?.sclassName?._id || student?.sclassName || '';
+            const siblingClassFilter = sibling?.class || '';
+            const classMatches = !siblingClassFilter || studentClassId === siblingClassFilter;
+            const sectionMatches = !sibling?.section || student?.section === sibling.section;
+
+            if (!classMatches || !sectionMatches) return false;
+            if (!searchTerm) return true;
+
+            const fullName = `${student?.firstName || ''} ${student?.lastName || ''}`.trim() || student?.name || '';
+            const haystack = `${fullName} ${student?.admissionNum || ''} ${student?.rollNum || ''}`.toLowerCase();
+            return haystack.includes(searchTerm);
+        });
+
+        return filtered.slice(0, 12);
+    };
+
+    const getSiblingStudentOptionLabel = (student) => {
+        const fullName = `${student?.firstName || ''} ${student?.lastName || ''}`.trim() || student?.name || 'Unnamed';
+        const className = student?.sclassName?.sclassName || '';
+        const section = student?.section || '';
+        const roll = student?.rollNum || '-';
+        const admissionNo = student?.admissionNum || '-';
+        return `${fullName} | ${className} ${section} | Roll ${roll} | Adm ${admissionNo}`;
+    };
+
+    const handleSiblingStudentSelect = (index, studentId) => {
+        const selectedStudent = allStudentsList.find((student) => student._id === studentId);
+        if (!selectedStudent) return;
+
+        const fullName = `${selectedStudent.firstName || ''} ${selectedStudent.lastName || ''}`.trim() || selectedStudent.name || '';
+        const studentClassId = selectedStudent?.sclassName?._id || selectedStudent?.sclassName || '';
+        const updatedSiblings = [...formData.siblings];
+        updatedSiblings[index] = {
+            ...updatedSiblings[index],
+            siblingStudentId: selectedStudent._id,
+            name: fullName,
+            class: studentClassId,
+            section: selectedStudent.section || '',
+            rollNum: selectedStudent.rollNum || '',
+            school: selectedStudent.school || ''
+        };
+
+        setFormData((prev) => ({ ...prev, siblings: updatedSiblings }));
+        setSiblingSearchTerms((prev) => ({ ...prev, [index]: fullName }));
     };
 
     const handleSubmit = async (e) => {
@@ -1015,12 +1123,66 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                     </Button>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <div className="space-y-2">
-                                            <Label>Sibling Name</Label>
+                                            <Label>Sibling Name (Optional)</Label>
                                             <Input name="name" value={sibling.name} onChange={(e) => handleInputChange(e, 'siblings', index)} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Class</Label>
-                                            <Input name="class" value={sibling.class} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                            <Select value={sibling.class || ''} onValueChange={(val) => handleSelectChange('class', val, 'siblings', index)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select Class" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {classesList.map(cls => (
+                                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Section</Label>
+                                            <Select value={sibling.section || ''} onValueChange={(val) => handleSelectChange('section', val, 'siblings', index)} disabled={!sibling.class}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={sibling.class ? 'Select Section' : 'Select Class First'} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {getSiblingSections(sibling.class).map((sec) => {
+                                                        const sectionName = sec.sectionName || sec;
+                                                        return (
+                                                            <SelectItem key={sectionName} value={sectionName}>
+                                                                {sectionName}
+                                                            </SelectItem>
+                                                        );
+                                                    })}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label>Live Search Student List</Label>
+                                            <Input
+                                                value={siblingSearchTerms[index] || ''}
+                                                onChange={(e) => setSiblingSearchTerms(prev => ({ ...prev, [index]: e.target.value }))}
+                                                placeholder="Search by name, admission no, or roll no"
+                                            />
+                                            <div className="mt-2 border rounded-md bg-background max-h-48 overflow-auto">
+                                                {getFilteredSiblingStudents(sibling, index).length === 0 ? (
+                                                    <p className="text-xs text-muted-foreground px-3 py-2">No matching students found.</p>
+                                                ) : (
+                                                    getFilteredSiblingStudents(sibling, index).map((student) => (
+                                                        <button
+                                                            key={student._id}
+                                                            type="button"
+                                                            className={`w-full text-left px-3 py-2 text-sm border-b last:border-b-0 hover:bg-muted/60 ${sibling.siblingStudentId === student._id ? 'bg-primary/10' : ''}`}
+                                                            onClick={() => handleSiblingStudentSelect(index, student._id)}
+                                                        >
+                                                            {getSiblingStudentOptionLabel(student)}
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Roll No</Label>
