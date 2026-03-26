@@ -134,6 +134,12 @@ const StudentList = () => {
             const schoolId = currentUser.school?._id || currentUser.school || currentUser._id;
             const campusQuery = selectedCampus ? `?campus=${selectedCampus._id}` : '';
 
+            console.log(`🔍 [StudentList Debug] Fetching data for:`, {
+                schoolId: schoolId,
+                userType: currentUser?.userType,
+                campus: selectedCampus?._id || 'none'
+            });
+
             const [classesRes, studentsRes] = await Promise.all([
                 axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`),
                 axios.get(`${API_BASE}/Students/${schoolId}${campusQuery}`)
@@ -141,6 +147,21 @@ const StudentList = () => {
 
             let fetchedClasses = Array.isArray(classesRes.data) ? classesRes.data : [];
             const fetchedStudents = Array.isArray(studentsRes.data) ? studentsRes.data : [];
+
+            console.log(`📋 [StudentList Debug] Fetched:`, {
+                classesCount: fetchedClasses.length,
+                studentsCount: fetchedStudents.length
+            });
+
+            if (fetchedStudents.length > 0) {
+                console.log(`👥 [StudentList Debug] Sample students:`, fetchedStudents.slice(0, 2).map(s => ({
+                    name: s.name,
+                    sclassName: s.sclassName?.sclassName || s.sclassName,
+                    school: s.school,
+                    status: s.status,
+                    section: s.section
+                })));
+            }
 
             // If teacher, filter classes to only show assigned ones
             if (currentUser.userType === 'teacher' && currentUser.assignedClasses) {
@@ -173,7 +194,7 @@ const StudentList = () => {
             }
 
         } catch (err) {
-            console.error("Error fetching data:", err);
+            console.error("❌ [StudentList Debug] Error fetching data:", err);
             toast.error("Failed to load data");
         } finally {
             setLoading(false);
@@ -340,7 +361,21 @@ const StudentList = () => {
     };
 
     // Helper: Get student count for a class
-    const getCount = (classId) => students.filter(s => getStudentClassId(s) === classId).length;
+    const getCount = (classId) => {
+        const count = students.filter(s => {
+            const studentClassId = getStudentClassId(s);
+            return studentClassId === classId;
+        }).length;
+
+        if (count === 0 && students.length > 0) {
+            // Debug: log why count is 0
+            console.log(`📊 [getCount Debug] classId: ${classId}, total students: ${students.length}`);
+            students.slice(0, 2).forEach(s => {
+                console.log(`   Student: ${s.name}, sclassName: ${s.sclassName?._id || s.sclassName} (${s.sclassName?.sclassName})`);
+            });
+        }
+        return count;
+    };
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">

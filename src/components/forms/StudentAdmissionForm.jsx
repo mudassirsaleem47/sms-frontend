@@ -61,8 +61,9 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         password: '',
         sclassName: '',
         section: '',
-        school: currentUser?._id,
+        school: currentUser?._id || '',
         campus: selectedCampus?._id || '',
+        status: 'Active', // IMPORTANT: Students must be Active to display
 
         firstName: '',
         lastName: '',
@@ -308,6 +309,16 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             return { ...prev, campus: defaultCampusId };
         });
     }, [selectedCampus, campuses, editStudentId, getCampusId]);
+
+    // Sync formData.school with currentUser to ensure school is always up-to-date
+    useEffect(() => {
+        if (!editStudentId) {
+            const schoolId = getSchoolId();
+            if (schoolId && formData.school !== schoolId) {
+                setFormData(prev => ({ ...prev, school: schoolId }));
+            }
+        }
+    }, [currentUser, getSchoolId, editStudentId]);
 
     // --- Handlers ---
     const handleInputChange = (e, section = null, index = null) => {
