@@ -32,6 +32,19 @@ const toInputDate = (value) => {
     return d.toISOString().split('T')[0];
 };
 
+const getSessionLabel = (session) => {
+    if (!session) return 'Session';
+    if (session.sessionYear) return session.sessionYear;
+    if (session.sessionName) return session.sessionName;
+
+    const start = session.startDate ? new Date(session.startDate).getFullYear() : null;
+    const end = session.endDate ? new Date(session.endDate).getFullYear() : null;
+    if (start && end) return `${start}-${end}`;
+    if (start) return `${start}`;
+
+    return 'Session';
+};
+
 const isValidObjectId = (value) => (
     typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
 );
@@ -836,7 +849,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                     {sessionsList && sessionsList.length > 0 && (
                                         sessionsList.map(sess => (
                                             <SelectItem key={sess._id} value={sess._id}>
-                                                {sess.sessionName || `${sess.startYear}-${sess.endYear}`}
+                                                {getSessionLabel(sess)}
                                             </SelectItem>
                                         ))
                                     )}
