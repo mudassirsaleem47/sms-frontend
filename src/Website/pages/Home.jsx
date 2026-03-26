@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import Header from '../components/Header';
 import {
-    GraduationCap,
-    Menu,
-    X,
     ArrowRight,
     Users,
     Wallet,
@@ -14,13 +11,6 @@ import {
     BellRing,
     CheckCircle2,
 } from 'lucide-react';
-
-const navItems = [
-    { label: 'Features', id: 'features' },
-    { label: 'Stats', id: 'stats' },
-    { label: 'Pricing', id: 'pricing' },
-    { label: 'Contact', id: 'contact' },
-];
 
 const features = [
     {
@@ -68,170 +58,142 @@ const features = [
 ];
 
 function Home() {
-    const [mobileOpen, setMobileOpen] = useState(false);
-
-    const scrollTo = (id) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-        setMobileOpen(false);
-    };
-
   return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="school-body-font min-h-screen bg-slate-50 text-slate-900">
           <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
               <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-200/40 blur-3xl" />
               <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-200/40 blur-3xl" />
           </div>
 
-          <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
-              <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-                  <button onClick={() => scrollTo('hero')} className="flex items-center gap-2">
-                      <div className="rounded-xl bg-slate-900 p-2 text-white">
-                          <GraduationCap className="h-5 w-5" />
-            </div>
-                      <div className="text-left">
-                          <p className="text-sm font-semibold leading-tight">School Management</p>
-                          <p className="text-xs text-slate-500 leading-tight">Simple Premium Suite</p>
-                      </div>
-                  </button>
-
-                  <nav className="hidden items-center gap-7 md:flex">
-                      {navItems.map((item) => (
-                          <button
-                              key={item.id}
-                              onClick={() => scrollTo(item.id)}
-                              className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
-                >
-                              {item.label}
-                </button>
-                      ))}
-                  </nav>
-
-                  <div className="hidden items-center gap-2 md:flex">
-                      <Link to="/AdminLogin">
-                          <Button variant="ghost" className="font-medium">Login</Button>
-                      </Link>
-                      <Link to="/AdminRegister">
-                          <Button className="bg-slate-900 text-white hover:bg-slate-800">Get Started</Button>
-                      </Link>
-          </div>
-
-                  <button
-                      className="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
-                      onClick={() => setMobileOpen((v) => !v)}
-                  >
-                      {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                  </button>
-        </div>
-
-              {mobileOpen && (
-                  <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
-                      <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
-                          {navItems.map((item) => (
-                              <button
-                                  key={item.id}
-                                  onClick={() => scrollTo(item.id)}
-                                  className="rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
-                  >
-                                  {item.label}
-                  </button>
-                          ))}
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                              <Link to="/AdminLogin" onClick={() => setMobileOpen(false)}>
-                                  <Button variant="outline" className="w-full">Login</Button>
-                              </Link>
-                              <Link to="/AdminRegister" onClick={() => setMobileOpen(false)}>
-                                  <Button className="w-full bg-slate-900 text-white hover:bg-slate-800">Start</Button>
-                              </Link>
-                          </div>
-                      </div>
-                  </div>
-              )}
-          </header>
+          <Header />
 
           <main>
-              <section id="hero" className="mx-auto grid w-full max-w-6xl gap-8 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-2 lg:items-center">
-                  <div>
-                      <p className="mb-4 inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
-                          Built for schools that want clarity and speed
-                      </p>
-                      <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-                          A Clean and Powerful
-                          <span className="block bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 bg-clip-text text-transparent">School Management Platform</span>
-            </h1>
-                      <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                          Manage admissions, attendance, fees, academics, and communication from one dashboard designed for daily school operations.
-                      </p>
+              <section id="hero" className="relative mx-auto w-full max-w-6xl px-4 pb-20 pt-14 sm:px-6">
+                  <img
+                      src="/upen-element.webp"
+                      alt="Decorative element"
+                      className="hero-spark pointer-events-none absolute right-[22%] top-8 hidden h-20 w-20 opacity-90 md:block"
+                  />
+                  <img
+                      src="/text-layer.webp"
+                      alt="Decorative element"
+                      className="hero-spark pointer-events-none absolute left-[28%] top-[14%] hidden h-10 w-10 opacity-80 md:block"
+                  />
 
-                      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                          <Link to="/AdminRegister">
-                              <Button className="h-11 px-6 bg-slate-900 text-white hover:bg-slate-800">
-                                  Start Free Setup
-                                  <ArrowRight className="ml-2 h-4 w-4" />
-                              </Button>
-                          </Link>
-                          <Link to="/AdminLogin">
-                              <Button variant="outline" className="h-11 px-6 border-slate-300 text-slate-700">
-                                  Login to Portal
-                              </Button>
-                          </Link>
+                  <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_1.35fr_1fr]">
+                      <div className="order-2 lg:order-1">
+                          <img
+                              src="/Hero-section-image-1.webp"
+                              alt="Student"
+                              className="hero-float-left mx-auto w-full max-w-[300px] object-contain drop-shadow-2xl"
+                          />
                       </div>
-                  </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70">
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="mb-4 flex items-center justify-between">
-                              <div>
-                                  <p className="text-sm font-semibold text-slate-900">Admin Dashboard</p>
-                                  <p className="text-xs text-slate-500">Live overview</p>
-                              </div>
-                              <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-semibold text-emerald-700">Online</span>
+                      <div className="order-1 text-center lg:order-2">
+                          <p className="mx-auto mb-4 inline-flex items-center rounded-full border border-[#153170]/20 bg-[#153170]/5 px-3 py-1 text-xs font-semibold text-[#153170]">
+                              Welcome to our learning community
+                          </p>
+
+                          <h1 className="school-display-font text-4xl font-extrabold uppercase leading-[1.02] tracking-tight sm:text-5xl lg:text-6xl">
+                              <span className="school-gradient-blue block">Exploring The</span>
+                              <span className="mt-1 block text-slate-900">School Of</span>
+                              <span className="bg-gradient-to-r from-amber-300 to-yellow-500 bg-clip-text text-transparent to-yellow-500 mt-1 block">Ilm-o-Hikmat</span>
+                          </h1>
+
+                          <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-relaxed text-slate-600 sm:text-lg">
+                              We are dedicated to nurturing the leaders of tomorrow. With a strong emphasis on academic excellence, moral values, and holistic development.
+                          </p>
+
+                          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                              <Link to="/AdminRegister">
+                                  <Button className="h-11 px-6 bg-[#153170] text-white hover:bg-[#102858]">
+                                      Apply for Admission
+                                      <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
+                              </Link>
+                              <Link to="/AdminLogin">
+                                  <Button variant="outline" className="h-11 border-[#153170]/30 px-6 text-[#153170] hover:bg-[#153170]/5">
+                                      About Us
+                                  </Button>
+                              </Link>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-3">
-                              {[
-                                  { label: 'Students', value: '2,450' },
-                                  { label: 'Attendance', value: '94%' },
-                                  { label: 'Collected Fees', value: '$42k' },
-                                  { label: 'Pending Dues', value: '$6.2k' },
-                              ].map((item) => (
-                                  <div key={item.label} className="rounded-xl border border-slate-200 bg-white p-3">
-                                      <p className="text-xs text-slate-500">{item.label}</p>
-                                      <p className="mt-1 text-lg font-semibold text-slate-900">{item.value}</p>
-                                  </div>
-                              ))}
-                          </div>
-
-                          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
-                              <p className="mb-3 text-xs font-medium text-slate-500">Today Tasks</p>
-                              <div className="space-y-2">
-                                  {['Review fee defaulters', 'Approve 8 admissions', 'Publish exam timetable'].map((task) => (
-                                      <div key={task} className="flex items-center gap-2 text-sm text-slate-700">
-                                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                          {task}
                       </div>
-                                  ))}
-                              </div>
-                          </div>
+
+                      <div className="order-3">
+                          <img
+                              src="/Hero-section-image-2.webp"
+                              alt="Student"
+                              className="hero-float-right mx-auto w-full max-w-[300px] object-contain drop-shadow-2xl"
+                          />
                       </div>
                   </div>
               </section>
 
-              <section id="features" className="border-y border-slate-200 bg-white py-16">
-                  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-                      <div className="mb-10 text-center">
-                          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Simple features, serious control</h2>
-                          <p className="mt-3 text-slate-600">Everything required to run day-to-day operations without complexity.</p>
+              <section id="features" className="border-b border-slate-200 bg-gradient-to-br from-slate-50/50 to-white py-16 md:py-20">
+                  <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 md:gap-12 md:grid-cols-2 md:px-6">
+                      <div>
+                          <p className="school-nav-font mb-3 text-sm font-bold uppercase tracking-widest text-amber-500">Key Features</p>
+                          <h2 className="school-display-font mb-6 text-4xl font-extrabold text-slate-900">
+                              <span className="school-gradient-warm">ILM-O-HIKMAT</span>
+                          </h2>
+                          <p className="mb-6 text-base font-semibold leading-relaxed text-slate-700">
+                              At ILM-O-HIKMAT, we offer a balanced education that focuses on both academics and personal growth.
+                          </p>
+
+                          <ul className="space-y-3 text-sm font-medium text-slate-600">
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Hands-on activities to build creativity and critical thinking.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>A structured curriculum for measurable progress.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Combining quality education with spiritual development.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Fun programs to enhance leadership and teamwork.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Assessments focused on understanding, not memorization.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Modern tech tools for interactive learning.</span>
+                              </li>
+                              <li className="flex items-start gap-3">
+                                  <span className="mt-1 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#153170] text-white text-xs font-bold">✓</span>
+                                  <span>Platforms to showcase talent and creativity.</span>
+                              </li>
+                          </ul>
+
+                          <p className="mt-8 text-sm font-semibold text-[#153170]">
+                              Join us to inspire young minds and shape a brighter future!
+                          </p>
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {features.map((feature) => (
-                              <article key={feature.title} className={`rounded-2xl border border-slate-200 bg-gradient-to-br ${feature.tint} p-5 transition hover:-translate-y-0.5 hover:shadow-lg`}>
-                                  <div className={`mb-4 inline-flex rounded-xl ${feature.iconBg} p-2 text-white shadow-md`}>
-                                      <feature.icon className="h-5 w-5" />
+                      <div className="grid auto-rows-max grid-cols-2 gap-6 sm:gap-8">
+                          {[
+                              { label: 'Activity & Skillbase\nlearning', color: 'from-amber-400 to-orange-500', icon: '🎯' },
+                              { label: 'SLO Base Study', color: 'from-rose-400 to-rose-500', icon: '📊' },
+                              { label: 'Hifz-Ul-Quran +\nNazra', color: 'from-blue-400 to-blue-500', icon: '📖' },
+                              { label: 'Co-curricular\nactivities', color: 'from-indigo-600 to-slate-900', icon: '⚽' },
+                              { label: 'Concept Base\nPaper System', color: 'from-emerald-400 to-green-500', icon: '✏️' },
+                              { label: 'Educational\nexhibition', color: 'from-slate-500 to-slate-600', icon: '🎨' },
+                              { label: 'E-Lab System', color: 'from-slate-600 to-slate-700', icon: '💻' },
+                          ].map((feature, idx) => (
+                              <div key={idx} className="flex flex-col items-center justify-center gap-3 text-center">
+                                  <div className={`flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br ${feature.color} text-4xl shadow-lg transition hover:scale-110 hover:shadow-xl`}>
+                                      {feature.icon}
                                   </div>
-                                  <h3 className="text-lg font-semibold text-slate-900">{feature.title}</h3>
-                                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{feature.description}</p>
-                              </article>
+                                  <p className="school-nav-font text-sm font-semibold leading-snug text-slate-700 whitespace-pre-line">
+                                      {feature.label}
+                                  </p>
+                              </div>
                           ))}
                       </div>
                   </div>

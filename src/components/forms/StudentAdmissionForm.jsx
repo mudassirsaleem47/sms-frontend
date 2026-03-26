@@ -514,6 +514,11 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             const data = new FormData();
             
             const schoolId = getSchoolId();
+            if (!schoolId) {
+                toast.error("School information is missing. Please refresh and try again.");
+                setLoading(false);
+                return;
+            }
             
             Object.keys(formData).forEach(key => {
                 if (key === 'name' && !formData[key]) {
@@ -542,20 +547,31 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (editStudentId) {
                 // Ignore password if blank on edit
                 if (!data.get('password')) { data.delete('password'); }
-                await axios.put(`${API_BASE}/Student/${editStudentId}`, data, {
+                const response = await axios.put(`${API_BASE}/Student/${editStudentId}`, data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success("Student updated successfully!");
             } else {
-                await axios.post(`${API_BASE}/StudentRegister`, data, {
+                const response = await axios.post(`${API_BASE}/StudentRegister`, data, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                toast.success("Student admitted successfully!");
+
+                // Extract admission number from response
+                const admissionNum = response.data?.student?.admissionNum;
+                if (admissionNum) {
+                    console.log(`✅ Student admitted with admission number: ${admissionNum}`);
+                    toast.success(`Student admitted successfully! Admission ID: ${admissionNum}`);
+                } else {
+                    console.warn("⚠️ Admission number not found in response");
+                    toast.success("Student admitted successfully!");
+                }
             }
             if (onSuccess) onSuccess();
         } catch (err) {
-            console.error(err);
-            toast.error(err.response?.data?.message || (editStudentId ? "Error updating student" : "Error admitting student"));
+            console.error("❌ Error during admission:", err);
+            const errorMsg = err.response?.data?.message || (editStudentId ? "Error updating student" : "Error admitting student");
+            console.error("Error details:", err.response?.data);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
