@@ -302,14 +302,6 @@ const FeeManagement = () => {
     fee.feeType.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-100px)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       {/* Header */}
@@ -333,10 +325,16 @@ const FeeManagement = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs. {(statistics?.pendingFees?.amount || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {statistics?.pendingFees?.count || 0} students pending
-            </p>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (
+              <>
+                  <div className="text-2xl font-bold">Rs. {(statistics?.pendingFees?.amount || 0).toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics?.pendingFees?.count || 0} students pending
+                  </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -348,10 +346,16 @@ const FeeManagement = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs. {(statistics?.todayCollection?.amount || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {statistics?.todayCollection?.count || 0} transactions today
-            </p>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (
+              <>
+                  <div className="text-2xl font-bold">Rs. {(statistics?.todayCollection?.amount || 0).toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics?.todayCollection?.count || 0} transactions today
+                  </p>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -363,10 +367,16 @@ const FeeManagement = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Rs. {(statistics?.monthlyCollection?.amount || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {statistics?.monthlyCollection?.count || 0} transactions this month
-            </p>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : (
+              <>
+                  <div className="text-2xl font-bold">Rs. {(statistics?.monthlyCollection?.amount || 0).toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics?.monthlyCollection?.count || 0} transactions this month
+                  </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -401,7 +411,11 @@ const FeeManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredFees.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredFees.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p>No fee structures found</p>
@@ -416,6 +430,7 @@ const FeeManagement = () => {
                         <Checkbox 
                           checked={selectedFees.length === filteredFees.length && filteredFees.length > 0} 
                           onCheckedChange={toggleSelectAll} 
+                              disabled={loading || filteredFees.length === 0}
                           aria-label="Select all"
                         />
                       </TableHead>

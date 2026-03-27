@@ -73,6 +73,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
     // --- State ---
     const [classesList, setClassesList] = useState([]);
+    const [classesLoading, setClassesLoading] = useState(false);
     const [sectionsList, setSectionsList] = useState([]);
     const [sessionsList, setSessionsList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -238,9 +239,13 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     };
 
     const fetchClasses = React.useCallback(async () => {
+        setClassesLoading(true);
         try {
             const schoolId = getSchoolId();
-            if (!schoolId) return;
+            if (!schoolId) {
+                setClassesList([]);
+                return;
+            }
             const selectedCampusId = getCampusId(selectedCampus);
             const campusQuery = selectedCampusId ? `?campus=${selectedCampusId}` : '';
             const res = await axios.get(`${API_BASE}/Sclasses/${schoolId}${campusQuery}`, getAuthConfig());
@@ -248,6 +253,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             setClassesList(classes);
         } catch {
             toast.error("Failed to load classes");
+        } finally {
+            setClassesLoading(false);
         }
     }, [getSchoolId, getCampusId, getAuthConfig, selectedCampus]);
 
@@ -827,11 +834,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                             <div className="space-y-2">
                                 <Label htmlFor="sclassName">Class <span className="text-destructive">*</span></Label>
-                                <Select value={formData.sclassName} onValueChange={(val) => handleSelectChange('sclassName', val)} required>
+                                <Select value={formData.sclassName} onValueChange={(val) => handleSelectChange('sclassName', val)} required disabled={classesLoading}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Class" />
+                                        <SelectValue placeholder={classesLoading ? 'Loading classes...' : 'Select Class'} />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        {classesLoading && (
+                                            <div className="px-2 py-2 text-sm text-muted-foreground">Loading classes...</div>
+                                        )}
                                         {classesList.map(cls => (
                                             <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
                                         ))}
@@ -1012,7 +1022,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
                     <Separator className="my-6" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2">
                         <div className="space-y-3">
                             <Label>Religion <span className="text-destructive">*</span></Label>
                             <RadioGroup value={formData.religion} onValueChange={(val) => handleSelectChange('religion', val)} className="flex flex-wrap gap-4">
