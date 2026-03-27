@@ -443,10 +443,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     };
 
     const addSibling = () => {
-        if (!formData.firstName || !formData.sclassName || !formData.section) {
-            toast.error('Please complete student basic information first.');
-            return;
-        }
         setSiblingDraft({
             name: '',
             class: '',
@@ -876,6 +872,17 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                         ) : null}
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            <div className="space-y-2 flex items-end">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={addSibling}
+                                    className="gap-2 w-full md:w-auto"
+                                >
+                                    <Plus className="h-4 w-4" /> Add Sibling
+                                </Button>
                             </div>
                         </div>
                     </div>
@@ -1307,7 +1314,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         size="sm"
                         onClick={addSibling}
                         className="gap-2"
-                        disabled={!formData.firstName || !formData.sclassName || !formData.section}
                     >
                         <Plus className="h-4 w-4" /> Add Sibling
                     </Button>
