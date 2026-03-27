@@ -122,7 +122,11 @@ const StaffDirectory = () => {
                 : (Array.isArray(teacherPayload?.teachers) ? teacherPayload.teachers : []);
 
             const teachers = teacherList
-                .map(t => ({ ...t, role: 'teacher' }));
+                .map((t) => ({
+                    ...t,
+                    role: 'teacher',
+                    status: String(t?.status || 'active').toLowerCase(),
+                }));
             
             // Other staff includes all non-teacher roles like Accountants and Receptionists
             const staffPayload = staffRes.status === 'fulfilled' ? staffRes.value.data : [];
@@ -131,10 +135,14 @@ const StaffDirectory = () => {
                 : (Array.isArray(staffPayload?.staff) ? staffPayload.staff : []);
             
             // Normalize role/designation if needed
-            const otherStaff = otherStaffRaw.map(s => ({
-                ...s,
-                role: String(s.role || s.designation || 'staff').trim().toLowerCase()
-            }));
+            const otherStaff = otherStaffRaw
+                .map((s) => ({
+                    ...s,
+                    role: String(s.role || s.designation || 'staff').trim().toLowerCase(),
+                    status: String(s?.status || '').toLowerCase(),
+                }))
+                // Teachers should come only from Teachers endpoint; avoid duplicate rows.
+                .filter((s) => s.role !== 'teacher');
 
             const combined = [...teachers, ...otherStaff];
             setAllStaff(combined);

@@ -631,7 +631,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         setLoading(true);
 
         // Basic student fields validation
-        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.session) {
+        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section) {
             toast.error("Please fill in all required student identity fields mark with *");
             setLoading(false);
             return;
@@ -874,12 +874,12 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                 </Select>
                             </div>
 
-                            <div className="space-y-2 flex items-end">
+                            <div className=" flex items-end">
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="link"
                                     onClick={addSibling}
-                                    className="gap-2 w-full md:w-auto"
+                                    className=""
                                 >
                                     <Plus className="h-4 w-4" /> Add Sibling
                                 </Button>
@@ -949,8 +949,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="session">Academic Session <span className="text-destructive">*</span></Label>
-                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} disabled={!sessionsList || sessionsList.length === 0} required>
+                            <Label htmlFor="session">Academic Session</Label>
+                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} disabled={!sessionsList || sessionsList.length === 0}>
                                 <SelectTrigger className={!sessionsList || sessionsList.length === 0 ? "bg-muted cursor-not-allowed" : ""}>
                                     <SelectValue placeholder={sessionsList && sessionsList.length > 0 ? "Select Session" : "No sessions available"} />
                                 </SelectTrigger>

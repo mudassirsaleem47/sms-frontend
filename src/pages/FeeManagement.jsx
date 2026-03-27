@@ -66,6 +66,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import API_URL from '@/config/api';
 const API_BASE = API_URL;
 
+const buildAutoFeeName = ({ frequency, month, feeType }) => {
+  const cleanType = String(feeType || '').trim();
+  if (!cleanType) return '';
+
+  if (frequency === 'Monthly') {
+    const cleanMonth = String(month || '').trim();
+    return cleanMonth ? `${cleanMonth} ${cleanType}` : cleanType;
+  }
+
+  return cleanType;
+};
+
 const FeeManagement = () => {
   const { currentUser } = useAuth();
   const { selectedCampus } = useCampus();
@@ -142,7 +154,16 @@ const FeeManagement = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+
+      // In create mode, keep fee name synced with Month + Fee Type selection.
+      if (!editingFee && ['feeType', 'month', 'frequency'].includes(field)) {
+        next.feeName = buildAutoFeeName(next);
+      }
+
+      return next;
+    });
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
@@ -157,7 +178,6 @@ const FeeManagement = () => {
     if (!formData.feeType) newErrors.feeType = 'Fee Type is required';
     if (!formData.amount) newErrors.amount = 'Amount is required';
     if (!formData.academicYear) newErrors.academicYear = 'Academic Year is required';
-    if (!formData.dueDate) newErrors.dueDate = 'Due Date is required';
     if (formData.frequency === 'Monthly' && !formData.month) newErrors.month = 'Month is required';
 
     if (Object.keys(newErrors).length > 0) {
@@ -173,6 +193,11 @@ const FeeManagement = () => {
         campus: selectedCampus?._id,
         amount: parseFloat(formData.amount)
       };
+
+      // Due date is optional.
+      if (!payload.dueDate) {
+        delete payload.dueDate;
+      }
 
       if (editingFee) {
         await axios.put(`${API_BASE}/FeeStructure/${editingFee._id}`, payload);
@@ -258,7 +283,7 @@ const FeeManagement = () => {
 
   const resetForm = () => {
     setFormData({
-      feeName: '',
+      feeName: buildAutoFeeName({ frequency: 'Monthly', month: '', feeType: 'Tuition' }),
       feeType: 'Tuition',
       amount: '',
       academicYear: new Date().getFullYear().toString(),
@@ -556,12 +581,11 @@ const FeeManagement = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Due Date *</Label>
+                <Label>Due Date (Optional)</Label>
                 <DatePicker
                   value={formData.dueDate}
                   onChange={(val) => handleInputChange('dueDate', val)}
                   placeholder="Select due date"
-                  required
                 />
                 {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate}</p>}
               </div>

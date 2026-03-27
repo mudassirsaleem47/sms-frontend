@@ -457,10 +457,6 @@ const SettingsProfile = () => {
         try {
             const res = await axios.put(`${API_BASE}/Sessions/MakeActive`, { schoolId: currentUser._id, sessionId: id });
             showToast("Session marked as active", "success");
-            if (res.data.activeSession) {
-                setActiveSession(res.data.activeSession);
-                localStorage.setItem('sms_activeSession', JSON.stringify(res.data.activeSession));
-            }
             fetchSessions();
         } catch (error) {
             showToast("Failed to make session active", "error");

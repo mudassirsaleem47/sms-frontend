@@ -269,7 +269,6 @@ function App() {
 
               </Route>
             </Routes>
-            <AiChatbot />
             <Toaster />
           </ThemeProvider>
         </CampusProvider>

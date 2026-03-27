@@ -90,12 +90,7 @@ export const AuthContextProvider = ({ children }) => {
         }
     }, [authToken]);
 
-    const [activeSession, setActiveSession] = useState(() => {
-        try {
-            const s = localStorage.getItem('sms_activeSession');
-            return s ? JSON.parse(s) : null;
-        } catch { return null; }
-    });
+    const [activeSession, setActiveSession] = useState(null);
 
     // --- EFFECT: currentUser change hone par Local Storage update karna ---
     useEffect(() => {
@@ -110,26 +105,7 @@ export const AuthContextProvider = ({ children }) => {
         }
     }, [currentUser]);
 
-    // --- EFFECT: Fetch Active Session on login/reload ---
-    useEffect(() => {
-        const fetchActiveSession = async () => {
-            if (!currentUser) return;
-            try {
-                const schoolId = getSchoolIdFromUser(currentUser);
-                if (!schoolId) return;
-                const res = await axios.get(`${API_URL}/Sessions/Active/${schoolId}`);
-                if (res.data.success) {
-                    setActiveSession(res.data.session);
-                    localStorage.setItem('sms_activeSession', JSON.stringify(res.data.session));
-                }
-            } catch (err) {
-                if (err.response?.status !== 404) {
-                    console.error("Failed to fetch active session:", err);
-                }
-            }
-        };
-        fetchActiveSession();
-    }, [currentUser]);
+    // Session system disabled intentionally.
 
     // Keep school branding/settings in sync for all login roles
     useEffect(() => {
