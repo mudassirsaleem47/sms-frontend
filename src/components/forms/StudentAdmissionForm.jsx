@@ -40,6 +40,19 @@ const toInputDate = (value) => {
     return d.toISOString().split('T')[0];
 };
 
+const getSessionLabel = (session) => {
+    if (!session) return 'Session';
+    if (session.sessionYear) return session.sessionYear;
+    if (session.sessionName) return session.sessionName;
+
+    const start = session.startDate ? new Date(session.startDate).getFullYear() : null;
+    const end = session.endDate ? new Date(session.endDate).getFullYear() : null;
+    if (start && end) return `${start}-${end}`;
+    if (start) return `${start}`;
+
+    return 'Session';
+};
+
 const isValidObjectId = (value) => (
     typeof value === 'string' && /^[a-f\d]{24}$/i.test(value)
 );
@@ -61,6 +74,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     // --- State ---
     const [classesList, setClassesList] = useState([]);
     const [sectionsList, setSectionsList] = useState([]);
+    const [sessionsList, setSessionsList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [nextAdmissionNum, setNextAdmissionNum] = useState('');
     const [routesList, setRoutesList] = useState([]);
@@ -157,21 +171,42 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         return isValidObjectId(campusValue?._id) ? campusValue._id : '';
     }, []);
 
+    const fetchSessions = React.useCallback(async () => {
+        try {
+            const schoolId = getSchoolId();
+            if (!schoolId) return;
+            const response = await axios.get(`${API_BASE}/Sessions/${schoolId}`, getAuthConfig());
+            const sessions = Array.isArray(response.data) ? response.data : (response.data?.sessions || []);
+            setSessionsList(sessions);
+        } catch (err) {
+            console.error('Error fetching sessions:', err);
+        }
+    }, [getSchoolId, getAuthConfig]);
+
     // --- Effects & Fetchers ---
+    useEffect(() => {
+        if (currentUser) {
+            fetchSessions();
+        }
+    }, [currentUser, fetchSessions]);
+
     const fetchNextAdmissionNum = React.useCallback(async () => {
         try {
             const schoolId = getSchoolId();
             if (!schoolId) return;
             const requestConfig = {
                 ...getAuthConfig(),
-                params: activeSession?._id ? { session: activeSession._id } : {}
+                params: {
+                    ...(activeSession?._id ? { session: activeSession._id } : {}),
+                    ...(formData.academicYear ? { academicYear: formData.academicYear } : {})
+                }
             };
             const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig, activeSession]);
+    }, [getSchoolId, getAuthConfig, activeSession, formData.academicYear]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
@@ -600,7 +635,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         setLoading(true);
 
         // Basic student fields validation
-        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.academicYear) {
+        if (!formData.firstName || !formData.rollNum || !formData.sclassName || !formData.section || !formData.session) {
             toast.error("Please fill in all required student identity fields mark with *");
             setLoading(false);
             return;
@@ -829,18 +864,18 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                 <Select 
                                     value={formData.campus} 
                                     onValueChange={(val) => handleSelectChange('campus', val)}
-                                    disabled={!isMainAdmin}
                                 >
-                                    <SelectTrigger className={!isMainAdmin ? "bg-muted cursor-not-allowed" : ""}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Select Campus" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {campuses.map(c => (
-                                            <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
-                                        ))}
+                                        {campuses && campuses.length > 0 ? (
+                                            campuses.map(c => (
+                                                <SelectItem key={c._id} value={c._id}>{c.campusName}</SelectItem>
+                                            ))
+                                        ) : null}
                                     </SelectContent>
                                 </Select>
-                                {!isMainAdmin && <p className="text-[10px] text-muted-foreground mt-1">Campus is pre-selected based on your branch.</p>}
                             </div>
                         </div>
                     </div>
@@ -907,8 +942,21 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="academicYear">Academic Year <span className="text-destructive">*</span></Label>
-                            <Input id="academicYear" name="academicYear" value={formData.academicYear} onChange={handleInputChange} placeholder="e.g. 2024" required />
+                            <Label htmlFor="session">Academic Session <span className="text-destructive">*</span></Label>
+                            <Select value={formData.session} onValueChange={(val) => handleSelectChange('session', val)} disabled={!sessionsList || sessionsList.length === 0} required>
+                                <SelectTrigger className={!sessionsList || sessionsList.length === 0 ? "bg-muted cursor-not-allowed" : ""}>
+                                    <SelectValue placeholder={sessionsList && sessionsList.length > 0 ? "Select Session" : "No sessions available"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {sessionsList && sessionsList.length > 0 && (
+                                        sessionsList.map(sess => (
+                                            <SelectItem key={sess._id} value={sess._id}>
+                                                {getSessionLabel(sess)}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="space-y-2">
@@ -973,7 +1021,7 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         <div className="space-y-3">
                             <Label>Caste</Label>
                             <RadioGroup value={formData.caste} onValueChange={(val) => handleSelectChange('caste', val)} className="flex flex-wrap gap-4">
-                                {['General', 'Arain', 'Ansari', 'Jutt', 'Comboh', 'Dogar', 'Rahmani Malik', 'Rajpoot', 'Khokhar', 'Butt', 'Other'].map(cst => (
+                                {['Arain', 'Ansari', 'Jutt', 'Comboh', 'Dogar', 'Rahmani', 'Malik', 'Rajpoot', 'Khokhar', 'Butt', 'Other'].map(cst => (
                                     <div className="flex items-center space-x-2" key={cst}>
                                         <RadioGroupItem value={cst} id={`c-${cst}`} />
                                         <Label htmlFor={`c-${cst}`} className="cursor-pointer font-normal text-muted-foreground">{cst}</Label>
