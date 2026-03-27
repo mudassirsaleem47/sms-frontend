@@ -12,6 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from '@/components/ui/dialog';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -61,7 +69,17 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     const [feeStructuresList, setFeeStructuresList] = useState([]);
     const [selectedFees, setSelectedFees] = useState([]);
     const [allStudentsList, setAllStudentsList] = useState([]);
-    const [siblingSearchTerms, setSiblingSearchTerms] = useState({});
+    const [isSiblingDialogOpen, setIsSiblingDialogOpen] = useState(false);
+    const [siblingSearchTerm, setSiblingSearchTerm] = useState('');
+    const [siblingDraft, setSiblingDraft] = useState({
+        name: '',
+        class: '',
+        section: '',
+        rollNum: '',
+        school: '',
+        siblingStudentId: ''
+    });
+    const [isParentAutoFilledFromSibling, setIsParentAutoFilledFromSibling] = useState(false);
 
     const [guardianType, setGuardianType] = useState('father'); // 'father', 'mother', 'other'
 
@@ -84,7 +102,6 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         email: '',
 
         admissionDate: toInputDate(new Date()),
-        academicYear: String(new Date().getFullYear()),
         session: activeSession?._id || '', // Will be set in useEffect based on activeSession
         bloodGroup: '',
         house: '',
@@ -147,17 +164,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
             if (!schoolId) return;
             const requestConfig = {
                 ...getAuthConfig(),
-                params: {
-                    ...(activeSession?._id ? { session: activeSession._id } : {}),
-                    ...(formData.academicYear ? { academicYear: formData.academicYear } : {})
-                }
+                params: activeSession?._id ? { session: activeSession._id } : {}
             };
             const res = await axios.get(`${API_BASE}/NextAdmissionNumber/${schoolId}`, requestConfig);
             setNextAdmissionNum(res.data.nextAdmissionNum);
         } catch (err) {
             console.error("Failed to fetch next admission number", err);
         }
-    }, [getSchoolId, getAuthConfig, activeSession, formData.academicYear]);
+    }, [getSchoolId, getAuthConfig, activeSession]);
 
     const fetchRoutes = React.useCallback(async () => {
         try {
@@ -360,6 +374,9 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
 
             setFormData(prev => ({ ...prev, siblings: newSiblings }));
         } else if (section) {
+            if (['father', 'mother', 'guardian'].includes(section)) {
+                setIsParentAutoFilledFromSibling(false);
+            }
             setFormData(prev => ({
                 ...prev,
                 [section]: { ...prev[section], [name]: value }
@@ -391,23 +408,24 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
     };
 
     const addSibling = () => {
-        setFormData(prev => ({
-            ...prev,
-            siblings: [...prev.siblings, { name: '', class: '', section: '', rollNum: '', school: '', siblingStudentId: '' }]
-        }));
+        if (!formData.firstName || !formData.sclassName || !formData.section) {
+            toast.error('Please complete student basic information first.');
+            return;
+        }
+        setSiblingDraft({
+            name: '',
+            class: '',
+            section: '',
+            rollNum: '',
+            school: '',
+            siblingStudentId: ''
+        });
+        setSiblingSearchTerm('');
+        setIsSiblingDialogOpen(true);
     };
 
     const removeSibling = (index) => {
         const newSiblings = formData.siblings.filter((_, i) => i !== index);
-        const newSearchTerms = { ...siblingSearchTerms };
-        delete newSearchTerms[index];
-        const normalizedSearchTerms = {};
-        Object.keys(newSearchTerms).forEach((key) => {
-            const numericKey = Number(key);
-            const normalizedKey = numericKey > index ? numericKey - 1 : numericKey;
-            normalizedSearchTerms[normalizedKey] = newSearchTerms[key];
-        });
-        setSiblingSearchTerms(normalizedSearchTerms);
         setFormData(prev => ({ ...prev, siblings: newSiblings }));
     };
 
@@ -447,8 +465,8 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         return matchedClass?.sections || [];
     };
 
-    const getFilteredSiblingStudents = (sibling, index) => {
-        const searchTerm = (siblingSearchTerms[index] || '').toLowerCase().trim();
+    const getFilteredSiblingStudents = (sibling, searchTermValue = '') => {
+        const searchTerm = (searchTermValue || '').toLowerCase().trim();
 
         const filtered = allStudentsList.filter((student) => {
             const studentClassId = student?.sclassName?._id || student?.sclassName || '';
@@ -476,25 +494,105 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
         return `${fullName} | ${className} ${section} | Roll ${roll} | Adm ${admissionNo}`;
     };
 
-    const handleSiblingStudentSelect = (index, studentId) => {
+    const handleSiblingDraftClassChange = (value) => {
+        setSiblingDraft((prev) => ({
+            ...prev,
+            class: value,
+            section: '',
+            siblingStudentId: '',
+            name: '',
+            rollNum: '',
+            school: ''
+        }));
+        setSiblingSearchTerm('');
+    };
+
+    const handleSiblingDraftSectionChange = (value) => {
+        setSiblingDraft((prev) => ({
+            ...prev,
+            section: value,
+            siblingStudentId: '',
+            name: '',
+            rollNum: '',
+            school: ''
+        }));
+        setSiblingSearchTerm('');
+    };
+
+    const handleSiblingDraftStudentSelect = (studentId) => {
         const selectedStudent = allStudentsList.find((student) => student._id === studentId);
         if (!selectedStudent) return;
 
         const fullName = `${selectedStudent.firstName || ''} ${selectedStudent.lastName || ''}`.trim() || selectedStudent.name || '';
         const studentClassId = selectedStudent?.sclassName?._id || selectedStudent?.sclassName || '';
-        const updatedSiblings = [...formData.siblings];
-        updatedSiblings[index] = {
-            ...updatedSiblings[index],
+
+        setSiblingDraft({
             siblingStudentId: selectedStudent._id,
             name: fullName,
             class: studentClassId,
             section: selectedStudent.section || '',
             rollNum: selectedStudent.rollNum || '',
             school: selectedStudent.school || ''
-        };
+        });
+        setSiblingSearchTerm(fullName);
+    };
 
-        setFormData((prev) => ({ ...prev, siblings: updatedSiblings }));
-        setSiblingSearchTerms((prev) => ({ ...prev, [index]: fullName }));
+    const applyParentsFromSibling = (selectedStudent) => {
+        setFormData((prev) => ({
+            ...prev,
+            father: selectedStudent?.father || prev.father,
+            mother: selectedStudent?.mother || prev.mother,
+            guardian: selectedStudent?.guardian || prev.guardian
+        }));
+        setIsParentAutoFilledFromSibling(true);
+
+        if (selectedStudent?.guardian?.name) setGuardianType('other');
+        else if (selectedStudent?.mother?.name && !selectedStudent?.father?.name) setGuardianType('mother');
+        else if (selectedStudent?.father?.name) setGuardianType('father');
+    };
+
+    const handleAddSiblingFromDialog = () => {
+        if (!siblingDraft.class) {
+            toast.error('Please select sibling class.');
+            return;
+        }
+        if (!siblingDraft.section) {
+            toast.error('Please select sibling section.');
+            return;
+        }
+        if (!siblingDraft.siblingStudentId) {
+            toast.error('Please select a sibling student from list.');
+            return;
+        }
+
+        const selectedStudent = allStudentsList.find((student) => student._id === siblingDraft.siblingStudentId);
+        if (!selectedStudent) {
+            toast.error('Selected sibling student is no longer available.');
+            return;
+        }
+
+        const duplicateSibling = formData.siblings.some(
+            (sib) => sib.siblingStudentId && sib.siblingStudentId === siblingDraft.siblingStudentId
+        );
+        if (duplicateSibling) {
+            toast.error('This sibling is already added.');
+            return;
+        }
+
+        setFormData((prev) => ({ ...prev, siblings: [...prev.siblings, siblingDraft] }));
+        applyParentsFromSibling(selectedStudent);
+
+        setIsSiblingDialogOpen(false);
+        setSiblingDraft({
+            name: '',
+            class: '',
+            section: '',
+            rollNum: '',
+            school: '',
+            siblingStudentId: ''
+        });
+        setSiblingSearchTerm('');
+        toast.success('Sibling added and parent details fetched.');
     };
 
     const handleSubmit = async (e) => {
@@ -918,6 +1016,11 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     <div className="flex items-center gap-2">
                         <Users className="h-5 w-5 text-purple-600" />
                         <CardTitle>Guardian Details</CardTitle>
+                        {isParentAutoFilledFromSibling && (
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                Auto-filled from sibling
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex p-1 bg-muted rounded-lg">
@@ -1150,7 +1253,14 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                         <Users className="h-5 w-5 text-cyan-600" />
                         <CardTitle>Sibling Information</CardTitle>
                     </div>
-                    <Button type="button" variant="outline" size="sm" onClick={addSibling} className="gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addSibling}
+                        className="gap-2"
+                        disabled={!formData.firstName || !formData.sclassName || !formData.section}
+                    >
                         <Plus className="h-4 w-4" /> Add Sibling
                     </Button>
                 </CardHeader>
@@ -1166,72 +1276,24 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeSibling(index)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label>Sibling Name (Optional)</Label>
-                                            <Input name="name" value={sibling.name} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm pr-10">
+                                        <div>
+                                            <p className="text-muted-foreground">Name</p>
+                                            <p className="font-medium">{sibling.name || '-'}</p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Class</Label>
-                                            <Select value={sibling.class || ''} onValueChange={(val) => handleSelectChange('class', val, 'siblings', index)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select Class" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {classesList.map(cls => (
-                                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        <div>
+                                            <p className="text-muted-foreground">Class</p>
+                                            <p className="font-medium">
+                                                {classesList.find((cls) => cls._id === sibling.class)?.sclassName || sibling.class || '-'}
+                                            </p>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Section</Label>
-                                            <Select value={sibling.section || ''} onValueChange={(val) => handleSelectChange('section', val, 'siblings', index)} disabled={!sibling.class}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={sibling.class ? 'Select Section' : 'Select Class First'} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {getSiblingSections(sibling.class).map((sec) => {
-                                                        const sectionName = sec.sectionName || sec;
-                                                        return (
-                                                            <SelectItem key={sectionName} value={sectionName}>
-                                                                {sectionName}
-                                                            </SelectItem>
-                                                        );
-                                                    })}
-                                                </SelectContent>
-                                            </Select>
+                                        <div>
+                                            <p className="text-muted-foreground">Section</p>
+                                            <p className="font-medium">{sibling.section || '-'}</p>
                                         </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>Live Search Student List</Label>
-                                            <Input
-                                                value={siblingSearchTerms[index] || ''}
-                                                onChange={(e) => setSiblingSearchTerms(prev => ({ ...prev, [index]: e.target.value }))}
-                                                placeholder="Search by name, admission no, or roll no"
-                                            />
-                                            <div className="mt-2 border rounded-md bg-background max-h-48 overflow-auto">
-                                                {getFilteredSiblingStudents(sibling, index).length === 0 ? (
-                                                    <p className="text-xs text-muted-foreground px-3 py-2">No matching students found.</p>
-                                                ) : (
-                                                    getFilteredSiblingStudents(sibling, index).map((student) => (
-                                                        <button
-                                                            key={student._id}
-                                                            type="button"
-                                                            className={`w-full text-left px-3 py-2 text-sm border-b last:border-b-0 hover:bg-muted/60 ${sibling.siblingStudentId === student._id ? 'bg-primary/10' : ''}`}
-                                                            onClick={() => handleSiblingStudentSelect(index, student._id)}
-                                                        >
-                                                            {getSiblingStudentOptionLabel(student)}
-                                                        </button>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Roll No</Label>
-                                            <Input name="rollNum" value={sibling.rollNum} onChange={(e) => handleInputChange(e, 'siblings', index)} />
+                                        <div>
+                                            <p className="text-muted-foreground">Roll No</p>
+                                            <p className="font-medium">{sibling.rollNum || '-'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1240,6 +1302,91 @@ const StudentAdmissionForm = ({ onSuccess, onCancel, editStudentId }) => {
                     )}
                 </CardContent>
             </Card>
+
+            <Dialog open={isSiblingDialogOpen} onOpenChange={setIsSiblingDialogOpen}>
+                <DialogContent className="sm:max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Add Sibling</DialogTitle>
+                        <DialogDescription>
+                            Select class, then section, then choose student from searchable list.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Class</Label>
+                            <Select value={siblingDraft.class} onValueChange={handleSiblingDraftClassChange}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classesList.map((cls) => (
+                                        <SelectItem key={cls._id} value={cls._id}>{cls.sclassName}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Section</Label>
+                            <Select
+                                value={siblingDraft.section}
+                                onValueChange={handleSiblingDraftSectionChange}
+                                disabled={!siblingDraft.class}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={siblingDraft.class ? 'Select Section' : 'Select Class First'} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {getSiblingSections(siblingDraft.class).map((sec) => {
+                                        const sectionName = sec.sectionName || sec;
+                                        return (
+                                            <SelectItem key={sectionName} value={sectionName}>
+                                                {sectionName}
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Student Search</Label>
+                        <Input
+                            value={siblingSearchTerm}
+                            onChange={(e) => setSiblingSearchTerm(e.target.value)}
+                            placeholder="Search by name, admission no, or roll no"
+                            disabled={!siblingDraft.class || !siblingDraft.section}
+                        />
+                        <div className="mt-2 border rounded-md bg-background max-h-56 overflow-auto">
+                            {getFilteredSiblingStudents(siblingDraft, siblingSearchTerm).length === 0 ? (
+                                <p className="text-xs text-muted-foreground px-3 py-2">No matching students found.</p>
+                            ) : (
+                                    getFilteredSiblingStudents(siblingDraft, siblingSearchTerm).map((student) => (
+                                        <button
+                                            key={student._id}
+                                            type="button"
+                                            className={`w-full text-left px-3 py-2 text-sm border-b last:border-b-0 hover:bg-muted/60 ${siblingDraft.siblingStudentId === student._id ? 'bg-primary/10' : ''}`}
+                                            onClick={() => handleSiblingDraftStudentSelect(student._id)}
+                                        >
+                                            {getSiblingStudentOptionLabel(student)}
+                                        </button>
+                                    ))
+                            )}
+                        </div>
+                    </div>
+
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsSiblingDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="button" onClick={handleAddSiblingFromDialog}>
+                            Add Sibling
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Actions */}
             <div className="flex justify-end gap-4 pt-4">

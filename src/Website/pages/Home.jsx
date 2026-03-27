@@ -134,7 +134,7 @@ function Home() {
                       <div>
                           <p className="school-nav-font mb-3 text-sm font-bold uppercase tracking-widest text-amber-500">Key Features</p>
                           <h2 className="school-display-font mb-6 text-4xl font-extrabold text-slate-900">
-                              <span className="school-gradient-warm">ILM-O-HIKMAT</span>
+                              <span className="">ILM-O-HIKMAT</span>
                           </h2>
                           <p className="mb-6 text-base font-semibold leading-relaxed text-slate-700">
                               At ILM-O-HIKMAT, we offer a balanced education that focuses on both academics and personal growth.
